@@ -6,9 +6,9 @@
     <title>EXPO 展場配置模擬器 </title>
     <style>
         :root {
-            --bg-glass: rgba(22, 22, 25, 0.88);
+            --bg-glass: rgba(22, 22, 25, 0.82);
             --bg-glass-card: rgba(35, 35, 40, 0.6);
-            --border-glass: rgba(255, 255, 255, 0.12);
+            --border-glass: rgba(255, 255, 255, 0.08);
             --border-glass-focus: rgba(0, 149, 255, 0.5);
             --primary: #0084ff;
             --primary-hover: #006cc7;
@@ -46,11 +46,22 @@
             z-index: 1;
         }
 
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
+        /* 捲軸美化 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
 
+        /* 通用面板樣式 (玻璃擬態) */
         .glass-panel {
             position: absolute;
             background: var(--bg-glass);
@@ -64,92 +75,92 @@
             border: 1px solid var(--border-glass);
             max-height: 94vh;
             overflow-y: auto;
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
         }
 
+        /* 左側控制面板：高度限制在操作說明面板上方，確保內容能完全捲出點擊 */
         #ui-panel-left {
-            top: 60px;
+            top: 20px;
             left: 20px;
-            width: 320px;
-            max-height: calc(100vh - 220px);
+            width: 330px;
+            max-height: calc(100vh - 180px);
         }
 
+        /* 右側專屬物件屬性面板 */
         #ui-panel-right {
-            top: 60px;
+            top: 20px;
             right: 20px;
-            width: 320px;
+            width: 330px;
             border: 1px solid rgba(0, 132, 255, 0.3);
             display: none;
         }
 
-        .panel-collapsed-left {
-            transform: translateX(-360px) !important;
-            opacity: 0 !important;
-            pointer-events: none !important;
-        }
-
-        .panel-collapsed-right {
-            transform: translateX(360px) !important;
-            opacity: 0 !important;
-            pointer-events: none !important;
-        }
-
-        .toggle-panel-btn {
-            position: absolute;
-            top: 15px;
-            z-index: 20;
-            width: auto !important;
-            padding: 8px 12px !important;
-            background: rgba(35, 35, 40, 0.85) !important;
-            backdrop-filter: blur(15px);
-            border: 1px solid var(--border-glass) !important;
-            border-radius: var(--radius-sm);
-            color: #fff !important;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            box-shadow: var(--shadow-subtle);
-            margin: 0 !important;
-        }
-
-        #btn-toggle-left { left: 15px; }
-        #btn-toggle-right { right: 15px; display: none; }
-
+        /* 右上角視角切換面板 */
         #ui-panel-view-presets {
             position: absolute;
-            top: 15px;
-            left: 50%;
-            transform: translateX(-50%);
+            top: 20px;
+            right: 370px; 
             z-index: 10;
             display: flex;
-            gap: 4px;
+            gap: 6px;
             background: var(--bg-glass);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            padding: 4px 6px;
+            padding: 6px;
             border-radius: var(--radius-sm);
             border: 1px solid var(--border-glass);
             box-shadow: var(--shadow-subtle);
         }
 
+        /* 左下角固定操作說明面板 */
         #ui-panel-controls-help {
             position: absolute;
             bottom: 20px;
             left: 20px;
             z-index: 10;
-            width: 320px;
+            width: 330px;
             background: var(--bg-glass);
             backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             padding: 12px 14px;
             border-radius: var(--radius-md);
             border: 1px solid var(--border-glass);
+            box-shadow: var(--shadow-subtle);
             color: var(--text-main);
         }
 
-        .help-title { font-size: 12px; font-weight: 600; color: var(--accent); margin-bottom: 6px; }
-        .help-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; font-size: 11px; color: var(--text-secondary); }
-        .help-item { display: flex; align-items: center; gap: 4px; }
-        .help-key { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 4px; padding: 1px 5px; font-size: 10px; color: #fff; }
+        .help-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .help-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px 10px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .help-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .help-key {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            padding: 1px 5px;
+            font-size: 10px;
+            color: #fff;
+            font-weight: 500;
+        }
 
         #expo-title-input {
             width: 100%;
@@ -158,65 +169,327 @@
             border-radius: var(--radius-sm);
             color: var(--text-main);
             font-size: 13px;
-            padding: 8px 10px;
+            font-weight: 500;
+            padding: 10px 12px;
             outline: none;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             margin-bottom: 2px;
         }
+        #expo-title-input:focus {
+            border-style: solid;
+            background: rgba(0, 0, 0, 0.5);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 132, 255, 0.15);
+        }
 
-        h3 { margin-bottom: 10px; font-size: 12px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-secondary); }
-        .section { margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-        .section:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
-        label { display: block; font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; margin-top: 8px; }
+        h3 {
+            margin-bottom: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .section {
+            margin-bottom: 16px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .section:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            margin-top: 8px;
+        }
 
         button {
-            width: 100%; padding: 8px 10px; background-color: rgba(255, 255, 255, 0.06); color: var(--text-main);
-            border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-sm); cursor: pointer;
-            font-weight: 500; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px;
+            width: 100%;
+            padding: 9px 12px;
+            background-color: rgba(255, 255, 255, 0.06);
+            color: var(--text-main);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-weight: 500;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 12px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        button:hover { background-color: rgba(255, 255, 255, 0.12); }
+        button:hover { 
+            background-color: rgba(255, 255, 255, 0.12); 
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
 
         button.action-btn { background-color: rgba(0, 132, 255, 0.12); border-color: rgba(0, 132, 255, 0.3); color: #4da6ff; }
+        button.action-btn:hover { background-color: rgba(0, 132, 255, 0.22); border-color: var(--primary); color: #fff; }
+
         button.load-btn { background-color: rgba(0, 132, 255, 0.08); border-color: rgba(0, 132, 255, 0.2); color: #4da6ff; }
+        button.load-btn:hover { background-color: rgba(0, 132, 255, 0.18); color: #fff; }
+
         button.save-btn { background-color: rgba(52, 199, 89, 0.12); border-color: rgba(52, 199, 89, 0.3); color: #30d158; }
+        button.save-btn:hover { background-color: rgba(52, 199, 89, 0.25); color: #fff; }
+
         button.img-btn { background-color: rgba(90, 200, 250, 0.12); border-color: rgba(90, 200, 250, 0.3); color: #64d2ff; }
+        button.img-btn:hover { background-color: rgba(90, 200, 250, 0.25); color: #fff; }
+        
+        #ui-panel-view-presets button {
+            width: auto;
+            margin-bottom: 0;
+            padding: 5px 10px;
+            font-size: 11px;
+            background-color: transparent;
+            border: 1px solid transparent;
+            color: var(--text-secondary);
+        }
+        #ui-panel-view-presets button:hover {
+            background-color: rgba(255, 255, 255, 0.08);
+            color: var(--text-main);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        #ui-panel-view-presets button.reset-view-btn {
+            color: var(--accent);
+        }
+        #ui-panel-view-presets button.reset-view-btn:hover {
+            background-color: rgba(255, 159, 10, 0.15);
+            border-color: rgba(255, 159, 10, 0.3);
+            color: var(--accent);
+        }
 
-        #ui-panel-view-presets button { width: auto; margin-bottom: 0; padding: 4px 8px; font-size: 10px; background: transparent; border: none; color: var(--text-secondary); }
-        #ui-panel-view-presets button.reset-view-btn { color: var(--accent); }
+        button.upload-face-btn {
+            background-color: rgba(255, 159, 10, 0.08);
+            border: 1px dashed rgba(255, 159, 10, 0.4);
+            color: var(--accent);
+            font-size: 12px;
+        }
+        button.upload-face-btn:hover { background-color: rgba(255, 159, 10, 0.18); border-color: var(--accent); color: #fff; }
+        
+        button.remove-face-btn {
+            background-color: rgba(255, 69, 58, 0.1);
+            border: 1px solid rgba(255, 69, 58, 0.2);
+            color: #ff6961;
+            font-size: 11px;
+            padding: 5px;
+            margin-bottom: 10px;
+        }
+        button.remove-face-btn:hover { background-color: rgba(255, 69, 58, 0.2); color: #fff; }
 
-        button.upload-face-btn { background-color: rgba(255, 159, 10, 0.08); border: 1px dashed rgba(255, 159, 10, 0.4); color: var(--accent); }
-        button.remove-face-btn { background-color: rgba(255, 69, 58, 0.1); border: 1px solid rgba(255, 69, 58, 0.2); color: #ff6961; padding: 5px; }
+        .grid-map {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 6px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        .grid-cell {
+            aspect-ratio: 1;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: var(--text-secondary);
+            user-select: none;
+            transition: all 0.15s ease;
+        }
+        .grid-cell:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-main);
+        }
+        .grid-cell.active {
+            background: var(--success);
+            border-color: transparent;
+            color: white;
+            font-weight: 600;
+        }
 
-        .grid-map { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; background: rgba(0, 0, 0, 0.3); padding: 6px; border-radius: var(--radius-sm); margin-bottom: 8px; }
-        .grid-cell { aspect-ratio: 1; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--text-secondary); }
-        .grid-cell.active { background: var(--success); color: white; font-weight: 600; }
+        #right-obj-title {
+            font-size: 13px;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 12px;
+            text-align: center;
+            background: rgba(255, 159, 10, 0.08);
+            padding: 8px;
+            border-radius: var(--radius-sm);
+            border: 1px solid rgba(255, 159, 10, 0.2);
+        }
 
-        #right-obj-title { font-size: 12px; color: var(--accent); font-weight: 600; margin-bottom: 10px; text-align: center; background: rgba(255, 159, 10, 0.08); padding: 6px; border-radius: var(--radius-sm); }
-        .two-btn-group { display: flex; gap: 6px; }
-        .two-btn-group button { font-size: 11px; padding: 6px; }
+        .two-btn-group {
+            display: flex;
+            gap: 6px;
+        }
+        .two-btn-group button {
+            font-size: 11px;
+            padding: 7px;
+        }
 
-        .struct-box { background: var(--bg-glass-card); padding: 8px 10px; border-radius: var(--radius-sm); margin-top: 6px; }
-        .struct-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; font-size: 11px; }
-        .wall-checkboxes { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; padding-top: 6px; border-top: 1px dashed rgba(255, 255, 255, 0.08); }
-        .wall-checkboxes label { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--text-secondary); margin: 0; }
-        input[type="checkbox"] { accent-color: var(--primary); width: 14px; height: 14px; }
+        .struct-box {
+            background: var(--bg-glass-card);
+            padding: 10px 12px;
+            border-radius: var(--radius-sm);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            margin-top: 8px;
+        }
+        .struct-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 12px;
+            color: var(--text-main);
+        }
+        .wall-checkboxes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 1px dashed rgba(255, 255, 255, 0.08);
+        }
+        .wall-checkboxes label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            margin: 0;
+            transition: color 0.15s;
+        }
+        .wall-checkboxes label:hover {
+            color: var(--text-main);
+        }
+        
+        input[type="checkbox"] {
+            accent-color: var(--primary);
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+        }
 
-        .color-picker-row { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
-        .color-picker-row input[type="color"] { border: none; width: 24px; height: 20px; border-radius: 4px; cursor: pointer; background: transparent; }
-        .quick-colors { display: flex; gap: 6px; }
-        .color-dot { width: 14px; height: 14px; border-radius: 50%; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.2); }
+        .color-picker-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 4px;
+        }
+        .color-picker-row input[type="color"] {
+            border: none;
+            width: 28px;
+            height: 22px;
+            border-radius: 4px;
+            cursor: pointer;
+            background: transparent;
+        }
+        .quick-colors {
+            display: flex;
+            gap: 6px;
+        }
+        .color-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.15s;
+        }
+        .color-dot:hover {
+            transform: scale(1.15);
+        }
 
-        .dim-input-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 8px; }
-        .dim-input-box { background: rgba(0, 0, 0, 0.25); padding: 4px; border-radius: 6px; text-align: center; }
-        .dim-input-box label { font-size: 9px; color: var(--accent); margin: 0 0 2px 0; }
-        .dim-input-box input { width: 100%; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); color: #fff; text-align: center; font-size: 11px; border-radius: 4px; padding: 2px; outline: none; }
+        .dim-input-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        .dim-input-box {
+            background: rgba(0, 0, 0, 0.25);
+            padding: 6px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            text-align: center;
+        }
+        .dim-input-box label {
+            font-size: 10px;
+            color: var(--accent);
+            margin: 0 0 2px 0;
+        }
+        .dim-input-box input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            text-align: center;
+            font-size: 12px;
+            border-radius: 4px;
+            padding: 3px;
+            outline: none;
+        }
+        .dim-input-box input:focus {
+            border-color: var(--accent);
+        }
 
+        /* ================= 手機/平板響應式優化 (Media Queries) ================= */
         @media (max-width: 768px) {
-            .glass-panel { width: 260px !important; padding: 12px !important; font-size: 11px !important; }
-            #ui-panel-left { top: 55px !important; left: 10px !important; max-height: calc(100vh - 70px) !important; }
-            #ui-panel-right { top: 55px !important; right: 10px !important; max-height: calc(100vh - 70px) !important; }
-            #ui-panel-view-presets { top: 15px !important; padding: 2px 4px !important; }
-            #ui-panel-view-presets button { padding: 3px 5px !important; font-size: 9px !important; }
-            #ui-panel-controls-help { display: none !important; }
+            .glass-panel {
+                width: 280px !important;
+                padding: 12px !important;
+                font-size: 11px !important;
+            }
+
+            #ui-panel-left {
+                top: 60px !important;
+                left: 10px !important;
+                max-height: 55vh !important;
+            }
+
+            #ui-panel-right {
+                top: 60px !important;
+                right: 10px !important;
+                max-height: 55vh !important;
+            }
+
+            #ui-panel-view-presets {
+                top: 10px !important;
+                right: 10px !important;
+                gap: 3px !important;
+                padding: 4px !important;
+            }
+
+            #ui-panel-view-presets button {
+                padding: 4px 6px !important;
+                font-size: 10px !important;
+            }
+
+            #ui-panel-controls-help {
+                display: none !important; /* 手機上預設隱藏說明面板，避免干擾畫面 */
+            }
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -224,18 +497,17 @@
 </head>
 <body>
 
-    <button id="btn-toggle-left" class="toggle-panel-btn" onclick="togglePanel('left')">☰ 展位選單</button>
-    <button id="btn-toggle-right" class="toggle-panel-btn" onclick="togglePanel('right')">⚙️ 展具屬性</button>
-
-    <!-- 右上角快速視角切換面板 (已移除透視按鈕) -->
+    <!-- 右上角快速視角切換面板 -->
     <div id="ui-panel-view-presets">
         <button class="reset-view-btn" onclick="switchView('reset')">🏠 預設</button>
+        <button onclick="switchView('perspective')">📐 透視</button>
         <button onclick="switchView('top')">🗺️ 俯瞰</button>
         <button onclick="switchView('front')">⏹️ 正面</button>
         <button onclick="switchView('left')">⬅️ 左側</button>
         <button onclick="switchView('right')">➡️ 右側</button>
     </div>
 
+    <!-- 左側面板 -->
     <div id="ui-panel-left" class="glass-panel">
         <div class="section">
             <h3>📝 活動場次備註</h3>
@@ -248,6 +520,7 @@
             <button onclick="clearAllFloors()" style="background-color: rgba(255,255,255,0.04); font-size: 11px; padding: 5px; color: var(--text-secondary);">重設所有格子</button>
 
             <div class="struct-box">
+                <!-- 地板顏色選擇 -->
                 <div class="color-picker-row">
                     <span style="font-size:11px; color:var(--text-main); font-weight:500;">🎨 展位地板顏色</span>
                     <div style="display:flex; align-items:center; gap:8px;">
@@ -261,6 +534,7 @@
                     </div>
                 </div>
 
+                <!-- 地板網格線控制開關 -->
                 <div class="wall-checkboxes" style="margin-top:8px;">
                     <label><input type="checkbox" id="show-main-grid-check" checked onchange="updateStructureUI()"> 3m 主紅框線</label>
                     <label><input type="checkbox" id="show-sub-grid-check" checked onchange="updateStructureUI()"> 1m 網格細線</label>
@@ -289,7 +563,7 @@
             <button class="action-btn" onclick="createObject('cabinet')">📦 新增中島 (150x60x160)</button>
             <button class="action-btn" onclick="createObject('folding_table')">🏷️ 新增摺疊桌 (120x60x60)</button>
             <button class="action-btn" onclick="createObject('straight_rack')">👗 新增直桿吊衣架 (100x40x160)</button>
-            <button class="action-btn" onclick="createObject('round_rack')">⭕ 新盤環形衣架 (80x80x160)</button>
+            <button class="action-btn" onclick="createObject('round_rack')">⭕ 新增圓盤環形衣架 (80x80x160)</button>
             <button class="action-btn" onclick="createObject('fitting_room')">🚪 新增更衣室/試衣間 (100x100x250)</button>
             <button class="action-btn" onclick="createObject('backdrop')">🧱 新增背板 (300x30x250)</button>
             <button class="action-btn" onclick="createObject('wall_shelf')">🪜 新增牆面層架 (100x35x180)</button>
@@ -305,6 +579,7 @@
         </div>
     </div>
 
+    <!-- 左下角：固定操作說明面板 -->
     <div id="ui-panel-controls-help">
         <div class="help-title">💡 3D 視角與物件操作說明</div>
         <div class="help-grid">
@@ -319,12 +594,14 @@
         </div>
     </div>
 
+    <!-- 右側面板：單一展具屬性面板 -->
     <div id="ui-panel-right" class="glass-panel">
         <h3 style="color:var(--accent);">⚙️ 展具屬性與輸出面板</h3>
         <div id="right-obj-title">目前選取：無</div>
         
         <input type="file" id="face-image-upload" accept="image/*" style="display:none;" onchange="handleFaceUpload(event)">
 
+        <!-- 單段牆面專屬控制區 -->
         <div id="wall-segment-control" class="section" style="background: rgba(0, 132, 255, 0.08); padding: 12px; border-radius: var(--radius-sm); border: 1px solid rgba(0, 132, 255, 0.2); display: none;">
             <h4 style="font-size:12px; color:var(--accent); margin-bottom:8px; font-weight:600;">🧱 獨立單段隔牆控制</h4>
             <button id="toggle-wall-height-btn" onclick="toggleWallSegmentHeight()" style="background-color: var(--accent); color: #111; border: none; margin-bottom: 8px; font-weight:600;">➕ 雙層加高：追加 150cm 頂層看板</button>
@@ -333,9 +610,11 @@
                 <label style="color:#fff; font-weight:500;">🖼️ 牆面看板輸出設定</label>
                 <button class="upload-face-btn" onclick="triggerFaceUpload('front')" style="margin-top:4px;">🖼️ 上傳單片牆面圖片</button>
                 
+                <!-- 自選相鄰牆面跨圖區塊 -->
                 <div style="background: rgba(0, 132, 255, 0.12); padding: 8px; border-radius: 6px; border: 1px solid rgba(0, 132, 255, 0.3); margin-top: 8px;">
                     <div id="wall-group-title" style="font-size:11px; color:#4da6ff; font-weight:600; margin-bottom:6px;">🔗 自選相鄰牆面跨圖輸出</div>
-                    <div id="wall-multiselect-container" style="display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto; margin-bottom: 6px; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 4px;"></div>
+                    <div id="wall-multiselect-container" style="display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto; margin-bottom: 6px; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 4px;">
+                    </div>
                     <button class="upload-face-btn" onclick="triggerCustomGroupUpload()" style="background-color: rgba(0, 132, 255, 0.25); border:1px solid rgba(0, 132, 255, 0.6); color:#fff; font-weight:600; margin-bottom:0;">✨ 上傳勾選牆面「跨圖大圖」</button>
                 </div>
 
@@ -345,12 +624,14 @@
             <button onclick="removeSelectedWallSegment()" style="background-color: rgba(255, 69, 58, 0.15); color: #ff6961; border: 1px solid rgba(255, 69, 58, 0.3); margin-top: 10px; margin-bottom: 0;">🗑️ 隱藏／移除此段隔牆 (Del)</button>
         </div>
 
+        <!-- 雙層背板/招牌控制區 -->
         <div id="backdrop-layer-control" class="section" style="background: rgba(0, 132, 255, 0.06); padding: 12px; border-radius: var(--radius-sm); border: 1px solid rgba(0, 132, 255, 0.2); display: none;">
             <h4 style="font-size:12px; color:#fff; margin-bottom:4px; font-weight:600;">🧱 雙層背板/招牌結構控制</h4>
             <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;">基底結構固定 250cm</div>
             <button id="toggle-layer-btn" onclick="toggleBackdropLayer()" style="background-color: var(--accent); color: #111; border: none; margin-bottom: 0; font-weight:600;">➕ 追加 150cm 頂層獨立招牌</button>
         </div>
 
+        <!-- 牆面層架控制區 -->
         <div id="shelf-layer-control" class="section" style="background: rgba(52, 199, 89, 0.08); padding: 12px; border-radius: var(--radius-sm); border: 1px solid rgba(52, 199, 89, 0.2); display: none;">
             <h4 style="font-size:12px; color:var(--success); margin-bottom:6px; font-weight:600;">🪜 牆面層板層數自由設定</h4>
             <div id="shelf-count-display" style="font-size: 12px; color: #fff; font-weight: 600; margin-bottom: 8px;">目前層數：3 層板</div>
@@ -360,7 +641,9 @@
             </div>
         </div>
 
+        <!-- 普通道具控制項 -->
         <div id="normal-object-controls">
+            <!-- 自訂展具長寬高控制區 -->
             <div id="dimension-control-section" class="section" style="background: rgba(255, 159, 10, 0.06); padding:10px; border-radius:var(--radius-sm); border:1px solid rgba(255, 159, 10, 0.2);">
                 <h4 style="font-size:12px; color:var(--accent); margin-bottom:6px; font-weight:600;">📐 展具自訂尺寸 (cm)</h4>
                 <div class="dim-input-group">
@@ -379,6 +662,7 @@
                 </div>
             </div>
 
+            <!-- 可隱藏的圖片管理區塊 -->
             <div class="section" id="image-management-section">
                 <h4 id="output-section-title" style="font-size:12px; color:var(--text-secondary); margin-bottom:8px;">📋 各面輸出示意圖管理</h4>
                 
@@ -386,9 +670,11 @@
                 <button class="upload-face-btn" onclick="triggerFaceUpload('front')">🖼️ 上傳單個正面圖片</button>
                 <button id="btn-group-fitting" class="upload-face-btn" onclick="triggerGroupFittingUpload()" style="display:none; margin-top:6px; background-color: rgba(0, 132, 255, 0.15); border:1px solid rgba(0, 132, 255, 0.4); color:#4da6ff;">✨ 上傳多間更衣室「招牌跨圖大圖」</button>
                 
+                <!-- 展櫃類自選跨圖區塊 -->
                 <div id="cabinet-group-box" style="display:none; background: rgba(0, 132, 255, 0.12); padding: 8px; border-radius: 6px; border: 1px solid rgba(0, 132, 255, 0.3); margin-top: 8px;">
                     <div style="font-size:11px; color:#4da6ff; font-weight:600; margin-bottom:6px;">🔗 自選相鄰展櫃/中島正面跨圖</div>
-                    <div id="cabinet-multiselect-container" style="display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto; margin-bottom: 6px; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 4px;"></div>
+                    <div id="cabinet-multiselect-container" style="display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto; margin-bottom: 6px; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 4px;">
+                    </div>
                     <button class="upload-face-btn" onclick="triggerGroupCabinetUpload()" style="background-color: rgba(0, 132, 255, 0.25); border:1px solid rgba(0, 132, 255, 0.6); color:#fff; font-weight:600; margin-bottom:0;">✨ 上傳勾選展櫃「跨圖大圖」</button>
                 </div>
 
@@ -467,16 +753,6 @@
 
         let FACE_INDEX_MAP = { right: 0, left: 1, front: 4 };
 
-        function togglePanel(panelSide) {
-            if (panelSide === 'left') {
-                let p = document.getElementById('ui-panel-left');
-                p.classList.toggle('panel-collapsed-left');
-            } else if (panelSide === 'right') {
-                let p = document.getElementById('ui-panel-right');
-                p.classList.toggle('panel-collapsed-right');
-            }
-        }
-
         function saveToLocalStorage() {
             try {
                 let cleanElevatedWalls = {};
@@ -519,7 +795,7 @@
                 };
                 localStorage.setItem('expo_simulator_autosave_v47', JSON.stringify(currentLayout));
             } catch (e) {
-                console.warn("自動暫存失敗：", e);
+                console.warn("自動暫存失敗，可能遇到極端儲存限制：", e);
             }
         }
 
@@ -569,7 +845,7 @@
                 }
                 selectObject(null);
             } catch (e) {
-                console.error("讀取存檔失敗：", e);
+                console.error("讀取存檔失敗，檔案可能已損壞：", e);
                 localStorage.removeItem('expo_simulator_autosave_v47');
             }
         }
@@ -596,6 +872,7 @@
             orbitControls.enableDamping = true;
             orbitControls.dampingFactor = 0.05;
             
+            // 設定手機與平版的觸控手勢（單指旋轉，雙指縮放與平移）
             orbitControls.touches = {
                 ONE: THREE.TOUCH.ROTATE,
                 TWO: THREE.TOUCH.DOLLY_PAN
@@ -669,6 +946,7 @@
             targetControlsTarget = new THREE.Vector3(0, 0, 0);
             switch (viewType) {
                 case 'reset': targetCameraPosition = new THREE.Vector3(0, 12, 15); break;
+                case 'perspective': targetCameraPosition = new THREE.Vector3(0, 12, 15); break;
                 case 'top': targetCameraPosition = new THREE.Vector3(0, 18, 0.001); break;
                 case 'front': targetCameraPosition = new THREE.Vector3(0, 1.25, 15); break; 
                 case 'left': targetCameraPosition = new THREE.Vector3(-15, 1.25, 0); break;
@@ -1318,9 +1596,7 @@
         }
 
         function onPointerDown(event) {
-            if (event.target.closest('.glass-panel') || event.target.closest('.toggle-panel-btn') || event.target.closest('#ui-panel-view-presets') || event.target.closest('#ui-panel-controls-help')) {
-                return;
-            }
+            if (event.clientX < 350 || event.clientX > window.innerWidth - 350 || event.clientY < 80) return;
             if (isSpacePressed) return; 
 
             let raycaster = new THREE.Raycaster();
@@ -1344,7 +1620,6 @@
 
                 if (hitObject.userData.type !== 'booth_wall' && hitObject.userData.type !== 'booth_wall_top') {
                     isDragging = true;
-                    orbitControls.enabled = false; 
                     previousPosition.copy(hitObject.position);
                     previousRotation.copy(hitObject.rotation);
                     let intersectionPoint = new THREE.Vector3();
@@ -1374,7 +1649,7 @@
         }
 
         function onPointerUp() {
-            orbitControls.enabled = true; 
+            orbitControls.mouseButtons.LEFT = THREE.MOUSE.NONE;
             if (isSpacePressed) return; 
             if (!isDragging) return;
             isDragging = false; 
@@ -1937,7 +2212,6 @@
 
             selectedObject = obj;
             let rightPanel = document.getElementById('ui-panel-right');
-            let btnToggleRight = document.getElementById('btn-toggle-right');
 
             if (selectedObject) {
                 if (selectedObject.userData.type === 'booth_wall' || selectedObject.userData.type === 'booth_wall_top') {
@@ -1966,11 +2240,9 @@
                     }
                 }
                 rightPanel.style.display = 'block';
-                if (btnToggleRight) btnToggleRight.style.display = 'block';
                 updateRightPanelUI();
             } else {
                 rightPanel.style.display = 'none';
-                if (btnToggleRight) btnToggleRight.style.display = 'none';
             }
         }
 

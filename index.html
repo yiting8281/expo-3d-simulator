@@ -1908,11 +1908,11 @@
 
         function getWallInnerFaceIndex(mesh) {
             let segId = mesh.userData.segmentId || '';
-            if (mesh.userData.type === 'booth_wall_top') return 4;
-            if (segId.endsWith('-left')) return 0;
-            if (segId.endsWith('-right')) return 1;
-            if (segId.endsWith('-front')) return 5;
-            return 4;
+            let dir = mesh.userData.dir || '';
+            if (dir === 'left' || segId.endsWith('-left')) return 0;
+            if (dir === 'right' || segId.endsWith('-right')) return 1;
+            if (dir === 'front' || segId.endsWith('-front')) return 5;
+            return 4; // 後牆
         }
 
         function applyTextureToWallBase(mesh, base64Data) {
@@ -1956,7 +1956,6 @@
                 texture.encoding = THREE.sRGBEncoding;
 
                 if (Array.isArray(mesh.material)) {
-                    // 修正：依據牆面方向對應正確的材質面 (後牆、前牆、左牆、右牆)
                     let faceIdx = getWallInnerFaceIndex(mesh);
                     mesh.material[faceIdx].map = texture; 
                     mesh.material[faceIdx].color.setHex(0xffffff);
@@ -1972,32 +1971,18 @@
             let faceHeight = mesh.userData.customH || 2.5;
             let faceIndex = 4; 
 
-            if (type === 'booth_wall') {
+            if (type === 'booth_wall' || type === 'booth_wall_top') {
                 let segId = mesh.userData.segmentId || '';
+                let dir = mesh.userData.dir || '';
                 let params = mesh.geometry.parameters;
                 faceWidth = params.width;
                 faceHeight = params.height;
 
-                if (segId.endsWith('-left')) {
+                if (dir === 'left' || segId.endsWith('-left')) {
                     faceIndex = 0; faceWidth = params.depth;
-                } else if (segId.endsWith('-right')) {
+                } else if (dir === 'right' || segId.endsWith('-right')) {
                     faceIndex = 1; faceWidth = params.depth;
-                } else if (segId.endsWith('-front')) {
-                    faceIndex = 5; faceWidth = params.width;
-                } else {
-                    faceIndex = 4; faceWidth = params.width;
-                }
-            } else if (type === 'booth_wall_top') {
-                let segId = mesh.userData.segmentId || '';
-                let params = mesh.geometry.parameters;
-                faceWidth = params.width;
-                faceHeight = params.height;
-
-                if (segId.endsWith('-left')) {
-                    faceIndex = 0; faceWidth = params.depth;
-                } else if (segId.endsWith('-right')) {
-                    faceIndex = 1; faceWidth = params.depth;
-                } else if (segId.endsWith('-front')) {
+                } else if (dir === 'front' || segId.endsWith('-front')) {
                     faceIndex = 5; faceWidth = params.width;
                 } else {
                     faceIndex = 4; faceWidth = params.width;
@@ -2569,7 +2554,7 @@
 
                 render3DFloor();
                 data.objects.forEach(objData => {
-                    createObject(objData.type, objData.position, objData.rotation, false, objData.images, objData.hasTopLayer, objData.shelfLayers, objData.customDims);
+                    createObject(objData.type, objData.position, objData.rotation, false, objData.images, objData.hasTopLayer, objdata.shelfLayers, objData.customDims);
                 });
                 selectObject(null);
                 saveToLocalStorage();

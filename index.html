@@ -837,22 +837,24 @@
             
             setOrbitControlsMode(false);
 
-            let ambientLight = new THREE.AmbientLight(0xffffff, 1.1); 
+            // 1. 將環境光強度從 1.1 調降至 0.6，避免全場爆亮洗白顏色
+            let ambientLight = new THREE.AmbientLight(0xffffff, 0.6); 
             scene.add(ambientLight);
 
-            let topFrontLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            // 2. 調降頂部與側面直射光強度，讓光影更自然
+            let topFrontLight = new THREE.DirectionalLight(0xffffff, 0.3);
             topFrontLight.position.set(0, 15, 10);
             scene.add(topFrontLight);
 
-            let topBackLight = new THREE.DirectionalLight(0xffffff, 0.3);
+            let topBackLight = new THREE.DirectionalLight(0xffffff, 0.2);
             topBackLight.position.set(0, 15, -10);
             scene.add(topBackLight);
 
-            let sideLeftLight = new THREE.DirectionalLight(0xffffff, 0.25);
+            let sideLeftLight = new THREE.DirectionalLight(0xffffff, 0.15);
             sideLeftLight.position.set(-15, 10, 0);
             scene.add(sideLeftLight);
 
-            let sideRightLight = new THREE.DirectionalLight(0xffffff, 0.25);
+            let sideRightLight = new THREE.DirectionalLight(0xffffff, 0.15);
             sideRightLight.position.set(15, 10, 0);
             scene.add(sideRightLight);
 
@@ -980,7 +982,7 @@
                 let posZ = r * CELL_SIZE - offset;
 
                 let tileGeo = new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE);
-                let tileMat = new THREE.MeshStandardMaterial({ color: parseInt(currentFloorColorHex.replace('#', '0x')), side: THREE.DoubleSide, roughness: 0.9 });
+                let tileMat = new THREE.MeshBasicMaterial({ color: parseInt(currentFloorColorHex.replace('#', '0x')), side: THREE.DoubleSide });
                 let tile = new THREE.Mesh(tileGeo, tileMat);
                 tile.rotation.x = -Math.PI / 2;
                 tile.position.set(posX, 0, posZ);

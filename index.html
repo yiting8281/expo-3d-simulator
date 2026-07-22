@@ -539,7 +539,7 @@
                 <div class="wall-checkboxes">
                     <label><input type="checkbox" id="wall-back-check" checked onchange="updateStructureUI()"> 後方牆 (Back)</label>
                     <label><input type="checkbox" id="wall-left-check" checked onchange="updateStructureUI()"> 左側牆 (Left)</label>
-                    <label><input type="checkbox" id="wall-right-check" checked onchange="updateStructureUI()"> 右側牆 (Right)</label>
+                    <label><input type="checkbox" id="wall-right-check" onchange="updateStructureUI()"> 右側牆 (Right)</label>
                     <label><input type="checkbox" id="wall-front-check" onchange="updateStructureUI()"> 前方牆 (Front)</label>
                 </div>
                 <button onclick="resetDisabledWalls()" style="background-color: rgba(255,255,255,0.04); font-size: 11px; padding: 5px; margin-top: 8px; color: var(--text-secondary);">🔄 還原隱藏牆面</button>
@@ -773,7 +773,7 @@
                         images: obj.userData.images || { front: null, left: null, right: null }
                     }))
                 };
-                localStorage.setItem('expo_simulator_autosave_v49', JSON.stringify(currentLayout));
+                localStorage.setItem('expo_simulator_autosave_v50', JSON.stringify(currentLayout));
             } catch (e) {
                 console.warn("自動暫存失敗：", e);
             }
@@ -781,7 +781,7 @@
 
         function loadFromLocalStorage() {
             try {
-                let savedDataStr = localStorage.getItem('expo_simulator_autosave_v49');
+                let savedDataStr = localStorage.getItem('expo_simulator_autosave_v50');
                 if (!savedDataStr) {
                     toggleGridCell(2, 2);
                     toggleGridCell(2, 3);
@@ -826,7 +826,7 @@
                 selectObject(null);
             } catch (e) {
                 console.error("讀取存檔失敗：", e);
-                localStorage.removeItem('expo_simulator_autosave_v49');
+                localStorage.removeItem('expo_simulator_autosave_v50');
             }
         }
 
@@ -1016,7 +1016,7 @@
                 let posZ = r * CELL_SIZE - offset;
 
                 let tileGeo = new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE);
-                let tileMat = new THREE.MeshBasicMaterial({ color: parseInt(currentFloorColorHex.replace('#', '0x')), side: THREE.DoubleSide });
+                let tileMat = new THREE.MeshStandardMaterial({ color: parseInt(currentFloorColorHex.replace('#', '0x')), roughness: 0.8, side: THREE.DoubleSide });
                 let tile = new THREE.Mesh(tileGeo, tileMat);
                 tile.rotation.x = -Math.PI / 2;
                 tile.position.set(posX, 0, posZ);
@@ -1042,7 +1042,6 @@
             let checkFront = document.getElementById('wall-front-check').checked;
 
             let lineMat = new THREE.LineBasicMaterial({ color: 0x0084ff, linewidth: 2 });
-            let wallThick = 0.05;
 
             function addFrameLine(x1, z1, x2, z2, y1, y2) {
                 let points = [
@@ -1059,7 +1058,7 @@
                 structureGroup.add(new THREE.LineSegments(geo, lineMat));
             }
 
-            function createWallSegment(w, d, px, pz, segmentId, dirLabel) {
+            function createWallSegment(w, d, px, pz, segmentId, dirLabel, rotY = 0) {
                 if (disabledWallSegments.includes(segmentId)) return;
 
                 let wallState = elevatedWallSegments[segmentId] || {};
@@ -1069,15 +1068,19 @@
                 let cIdx = parseInt(segmentId.split('-')[1]);
                 let dirStr = segmentId.split('-')[2];
 
-                let baseGeo = new THREE.BoxGeometry(w, FRAME_HEIGHT, d);
-                let baseMaterials = [];
-                for(let i=0; i<6; i++) {
-                    baseMaterials.push(new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX, roughness: 0.6 }));
-                }
-                let baseMesh = new THREE.Mesh(baseGeo, baseMaterials);
-                baseMesh.position.set(px, FRAME_HEIGHT / 2, pz);
-                
-                baseMesh.userData = {
+                let wallGroup = new THREE.Group();
+                wallGroup.position.set(px, 0, pz);
+                wallGroup.rotation.y = rotY;
+
+                // 基底牆面 (250cm 高)
+                let baseGeo = new THREE.PlaneGeometry(CELL_SIZE, FRAME_HEIGHT);
+                let baseMat = new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX, roughness: 0.6, side: THREE.DoubleSide });
+                let baseMesh = new THREE.Mesh(baseGeo, baseMat);
+                baseMesh.name = 'wallInnerFace';
+                baseMesh.position.set(0, FRAME_HEIGHT / 2, 0);
+                wallGroup.add(baseMesh);
+
+                wallGroup.userData = {
                     type: 'booth_wall',
                     segmentId: segmentId,
                     r: rIdx,
@@ -1088,24 +1091,27 @@
                 };
 
                 if (wallState.baseImg) {
-                    applyTextureToWallBase(baseMesh, wallState.baseImg);
+                    applyTextureToWallPlane(baseMesh, wallState.baseImg, CELL_SIZE, FRAME_HEIGHT);
                 }
 
-                structureGroup.add(baseMesh);
-                wallObjects.push(baseMesh);
+                structureGroup.add(wallGroup);
+                wallObjects.push(wallGroup);
 
+                // 頂層加高看板 (150cm 高，總高 400cm)
                 if (hasTop) {
                     let topH = 1.5;
-                    let topGeo = new THREE.BoxGeometry(w, topH, d);
-                    let topMaterials = [];
-                    for(let i=0; i<6; i++) {
-                        topMaterials.push(new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX, roughness: 0.6 }));
-                    }
-                    let topMesh = new THREE.Mesh(topGeo, topMaterials);
+                    let topGroup = new THREE.Group();
+                    topGroup.position.set(px, 0, pz);
+                    topGroup.rotation.y = rotY;
+
+                    let topGeo = new THREE.PlaneGeometry(CELL_SIZE, topH);
+                    let topMat = new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX, roughness: 0.6, side: THREE.DoubleSide });
+                    let topMesh = new THREE.Mesh(topGeo, topMat);
                     topMesh.name = 'wallTopBannerMesh';
-                    topMesh.position.set(px, FRAME_HEIGHT + topH / 2, pz);
-                    
-                    topMesh.userData = {
+                    topMesh.position.set(0, FRAME_HEIGHT + topH / 2, 0);
+                    topGroup.add(topMesh);
+
+                    topGroup.userData = {
                         type: 'booth_wall_top',
                         segmentId: segmentId,
                         r: rIdx,
@@ -1114,11 +1120,11 @@
                         name: `外圍牆面頂層看板 (${dirLabel})`
                     };
 
-                    structureGroup.add(topMesh);
-                    wallObjects.push(topMesh);
+                    structureGroup.add(topGroup);
+                    wallObjects.push(topGroup);
 
                     if (wallState.img) {
-                        applyTextureToWallTop(topMesh, wallState.img);
+                        applyTextureToWallPlane(topMesh, wallState.img, CELL_SIZE, topH);
                     }
                 }
             }
@@ -1137,22 +1143,22 @@
 
                     if (r === 0 || !gridMap[r - 1][c]) {
                         let segId = `${r}-${c}-back`;
-                        if (checkBack) createWallSegment(CELL_SIZE, wallThick, posX, minZ - wallThick/2, segId, '後牆');
+                        if (checkBack) createWallSegment(CELL_SIZE, wallThick, posX, minZ, segId, '後牆', 0);
                         if (showFrame) { addFrameLine(minX, minZ, maxX, minZ, 0, FRAME_HEIGHT); addVerticalPost(minX, minZ); addVerticalPost(maxX, minZ); }
                     }
                     if (r === GRID_MAP_SIZE - 1 || !gridMap[r + 1][c]) {
                         let segId = `${r}-${c}-front`;
-                        if (checkFront) createWallSegment(CELL_SIZE, wallThick, posX, maxZ + wallThick/2, segId, '前牆');
+                        if (checkFront) createWallSegment(CELL_SIZE, wallThick, posX, maxZ, segId, '前牆', Math.PI);
                         if (showFrame) { addFrameLine(minX, maxZ, maxX, maxZ, 0, FRAME_HEIGHT); addVerticalPost(minX, maxZ); addVerticalPost(maxX, maxZ); }
                     }
                     if (c === 0 || !gridMap[r][c - 1]) {
                         let segId = `${r}-${c}-left`;
-                        if (checkLeft) createWallSegment(wallThick, CELL_SIZE, minX - wallThick/2, posZ, segId, '左牆');
+                        if (checkLeft) createWallSegment(wallThick, CELL_SIZE, minX, posZ, segId, '左牆', Math.PI / 2);
                         if (showFrame) { addFrameLine(minX, minZ, minX, maxZ, 0, FRAME_HEIGHT); addVerticalPost(minX, minZ); addVerticalPost(minX, maxZ); }
                     }
                     if (c === GRID_MAP_SIZE - 1 || !gridMap[r][c + 1]) {
                         let segId = `${r}-${c}-right`;
-                        if (checkRight) createWallSegment(wallThick, CELL_SIZE, maxX + wallThick/2, posZ, segId, '右牆');
+                        if (checkRight) createWallSegment(wallThick, CELL_SIZE, maxX, posZ, segId, '右牆', -Math.PI / 2);
                         if (showFrame) { addFrameLine(maxX, minZ, maxX, maxZ, 0, FRAME_HEIGHT); addVerticalPost(maxX, minZ); addVerticalPost(maxX, maxZ); }
                     }
                 }
@@ -1300,8 +1306,6 @@
 
         function createFittingRoomGeometry(data, customW = null, customD = null, customH = null, hasTopLayer = false) {
             let group = new THREE.Group();
-            group.name = 'fittingRoomGroup';
-
             let w = customW || data.w; 
             let d = customD || data.d; 
             let h = customH || data.h; 
@@ -1595,6 +1599,7 @@
             if (intersects.length > 0) {
                 let hitObject = intersects[0].object;
                 
+                // 如果點到的是牆面的群組內的子網格，往上尋找帶有 userData.type 的根群組或網格
                 while (hitObject.parent && hitObject.parent !== scene && !hitObject.userData.type) {
                     hitObject = hitObject.parent;
                 }
@@ -1721,10 +1726,10 @@
                                 if (!elevatedWallSegments[segId]) elevatedWallSegments[segId] = { hasTop: isTopLayer, img: null, baseImg: null };
                                 if (isTopLayer) {
                                     elevatedWallSegments[segId].img = base64Data;
-                                    applyTextureToWallTop(matchedWalls[0], base64Data);
+                                    applyTextureToWallTopGroup(matchedWalls[0], base64Data);
                                 } else {
                                     elevatedWallSegments[segId].baseImg = base64Data;
-                                    applyTextureToWallBase(matchedWalls[0], base64Data);
+                                    applyTextureToWallBaseGroup(matchedWalls[0], base64Data);
                                 }
                             }
                         }
@@ -1770,10 +1775,10 @@
                         }
                         if (isTopLayer) {
                             elevatedWallSegments[segId].img = base64Data;
-                            applyTextureToWallTop(selectedObject, base64Data);
+                            applyTextureToWallTopGroup(selectedObject, base64Data);
                         } else {
                             elevatedWallSegments[segId].baseImg = base64Data;
-                            applyTextureToWallBase(selectedObject, base64Data);
+                            applyTextureToWallBaseGroup(selectedObject, base64Data);
                         }
                     } else {
                         if (selectedObject.userData.type === 'fitting_room' && currentTargetUploadFace === 'front' && !selectedObject.userData.hasTopLayer) {
@@ -1844,10 +1849,10 @@
             img.src = base64Data;
         }
 
-        function applyCustomGroupTextureToWalls(wallMeshes, base64Data, isTopLayer) {
+        function applyCustomGroupTextureToWalls(wallGroups, base64Data, isTopLayer) {
             let img = new Image();
             img.onload = function() {
-                let totalCount = wallMeshes.length;
+                let totalCount = wallGroups.length;
                 let canvasW = 1024 * totalCount; 
                 let canvasH = isTopLayer ? 512 : 1024;
 
@@ -1860,31 +1865,27 @@
                 masterCtx.fillRect(0, 0, canvasW, canvasH);
                 masterCtx.drawImage(img, 0, 0, canvasW, canvasH);
 
-                wallMeshes.forEach((mesh, index) => {
+                wallGroups.forEach((group, index) => {
                     let subCanvas = document.createElement('canvas');
                     let subCtx = subCanvas.getContext('2d');
                     subCanvas.width = 1024;
                     subCanvas.height = canvasH;
 
                     subCtx.drawImage(masterCanvas, index * 1024, 0, 1024, canvasH, 0, 0, 1024, canvasH);
+                    let slicedBase64 = subCanvas.toDataURL('image/jpeg', 0.8);
 
-                    let texture = new THREE.CanvasTexture(subCanvas);
-                    texture.encoding = THREE.sRGBEncoding;
-
-                    if (Array.isArray(mesh.material)) {
-                        let faceIdx = isTopLayer ? 4 : getWallInnerFaceIndex(mesh);
-                        mesh.material[faceIdx].map = texture;
-                        mesh.material[faceIdx].color.setHex(0xffffff);
-                        mesh.material[faceIdx].needsUpdate = true;
+                    let targetMesh = group.getObjectByName(isTopLayer ? 'wallTopBannerMesh' : 'wallInnerFace');
+                    if (targetMesh) {
+                        applyTextureToWallPlane(targetMesh, slicedBase64, CELL_SIZE, isTopLayer ? 1.5 : FRAME_HEIGHT);
                     }
 
-                    let segId = mesh.userData.segmentId;
+                    let segId = group.userData.segmentId;
                     if (segId) {
                         if (!elevatedWallSegments[segId]) elevatedWallSegments[segId] = { hasTop: true, img: null, baseImg: null };
                         if (isTopLayer) {
-                            elevatedWallSegments[segId].img = subCanvas.toDataURL('image/jpeg', 0.8);
+                            elevatedWallSegments[segId].img = slicedBase64;
                         } else {
-                            elevatedWallSegments[segId].baseImg = subCanvas.toDataURL('image/jpeg', 0.8);
+                            elevatedWallSegments[segId].baseImg = slicedBase64;
                         }
                     }
                 });
@@ -1939,93 +1940,55 @@
             img.src = base64Data;
         }
 
-        function getWallInnerFaceIndex(mesh) {
-            let segId = mesh.userData.segmentId || '';
-            // 修正左右牆面對應的材質索引：左牆內部對應面通常為 index 1，右牆為 index 0
-            if (segId.endsWith('-left')) return 1;
-            if (segId.endsWith('-right')) return 0;
-            if (segId.endsWith('-front')) return 5;
-            return 4; // 後牆
-        }
-
-        function applyTextureToWallBase(mesh, base64Data) {
+        function applyTextureToWallPlane(mesh, base64Data, width, height) {
             let img = new Image();
             img.onload = function() {
                 let canvas = document.createElement('canvas');
                 let ctx = canvas.getContext('2d');
-                canvas.width = 1024;
-                canvas.height = 1024; 
+                let canvasWidth = 1024;
+                let canvasHeight = Math.min(4096, Math.max(128, Math.round(canvasWidth * (height / width))));
+                canvas.width = canvasWidth;
+                canvas.height = canvasHeight;
 
                 ctx.fillStyle = '#545454';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+                ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
 
                 let texture = new THREE.CanvasTexture(canvas);
                 texture.encoding = THREE.sRGBEncoding;
 
-                if (Array.isArray(mesh.material)) {
-                    let faceIdx = getWallInnerFaceIndex(mesh);
-                    mesh.material[faceIdx].map = texture;
-                    mesh.material[faceIdx].color.setHex(0xffffff);
-                    mesh.material[faceIdx].needsUpdate = true;
-                }
+                mesh.material.map = texture;
+                mesh.material.color.setHex(0xffffff);
+                mesh.material.needsUpdate = true;
             };
             img.src = base64Data;
         }
 
-        function applyTextureToWallTop(mesh, base64Data) {
-            let img = new Image();
-            img.onload = function() {
-                let canvas = document.createElement('canvas');
-                let ctx = canvas.getContext('2d');
-                canvas.width = 1024;
-                canvas.height = 512; 
+        function applyTextureToWallBaseGroup(groupObj, base64Data) {
+            let innerMesh = groupObj.getObjectByName('wallInnerFace');
+            if (innerMesh) {
+                applyTextureToWallPlane(innerMesh, base64Data, CELL_SIZE, FRAME_HEIGHT);
+            }
+        }
 
-                ctx.fillStyle = '#545454';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-                let texture = new THREE.CanvasTexture(canvas);
-                texture.encoding = THREE.sRGBEncoding;
-
-                if (Array.isArray(mesh.material)) {
-                    mesh.material[4].map = texture; 
-                    mesh.material[4].color.setHex(0xffffff);
-                    mesh.material[4].needsUpdate = true;
-                }
-            };
-            img.src = base64Data;
+        function applyTextureToWallTopGroup(groupObj, base64Data) {
+            let topMesh = groupObj.getObjectByName('wallTopBannerMesh');
+            if (topMesh) {
+                applyTextureToWallPlane(topMesh, base64Data, CELL_SIZE, 1.5);
+            }
         }
 
         function getWallInnerFaceIndexAndDimensions(mesh) {
-            let type = mesh.userData.type;
             let faceWidth = mesh.userData.customW || 1.0;
             let faceHeight = mesh.userData.customH || 2.5;
             let faceIndex = 4; 
 
-            if (type === 'booth_wall') {
-                let segId = mesh.userData.segmentId || '';
-                let params = mesh.geometry.parameters;
-                faceWidth = params.width;
-                faceHeight = params.height;
-
-                if (segId.endsWith('-left')) {
-                    faceIndex = 1; faceWidth = params.depth;
-                } else if (segId.endsWith('-right')) {
-                    faceIndex = 0; faceWidth = params.depth;
-                } else if (segId.endsWith('-front')) {
-                    faceIndex = 5; faceWidth = params.width;
-                } else {
-                    faceIndex = 4; faceWidth = params.width;
-                }
-            } else {
-                if (currentTargetUploadFace === 'left') {
-                    faceIndex = 1;
-                    faceWidth = mesh.userData.customD || 1.0;
-                } else if (currentTargetUploadFace === 'right') {
-                    faceIndex = 0;
-                    faceWidth = mesh.userData.customD || 1.0;
-                }
+            if (currentTargetUploadFace === 'left') {
+                faceIndex = 1;
+                faceWidth = mesh.userData.customD || 1.0;
+            } else if (currentTargetUploadFace === 'right') {
+                faceIndex = 0;
+                faceWidth = mesh.userData.customD || 1.0;
             }
 
             return { faceIndex, faceWidth, faceHeight };
@@ -2081,20 +2044,21 @@
             if (selectedObject.userData.type === 'booth_wall') {
                 let segId = selectedObject.userData.segmentId;
                 if (segId && elevatedWallSegments[segId]) elevatedWallSegments[segId].baseImg = null;
-                let faceIdx = getWallInnerFaceIndex(selectedObject);
-                if (Array.isArray(selectedObject.material)) {
-                    selectedObject.material[faceIdx].map = null;
-                    selectedObject.material[faceIdx].color.setHex(FIXED_WALL_COLOR_HEX);
-                    selectedObject.material[faceIdx].needsUpdate = true;
+                let innerMesh = selectedObject.getObjectByName('wallInnerFace');
+                if (innerMesh) {
+                    innerMesh.material.map = null;
+                    innerMesh.material.color.setHex(FIXED_WALL_COLOR_HEX);
+                    innerMesh.material.needsUpdate = true;
                 }
             } else if (selectedObject.userData.type === 'booth_wall_top') {
                 let segId = selectedObject.userData.segmentId;
                 if (segId && elevatedWallSegments[segId]) elevatedWallSegments[segId].img = null;
                 let topObj = wallObjects.find(w => w.userData.type === 'booth_wall_top' && w.userData.segmentId === segId);
-                if (topObj && Array.isArray(topObj.material)) {
-                    topObj.material[4].map = null;
-                    topObj.material[4].color.setHex(FIXED_WALL_COLOR_HEX);
-                    topObj.material[4].needsUpdate = true;
+                let topMesh = topObj ? topObj.getObjectByName('wallTopBannerMesh') : null;
+                if (topMesh) {
+                    topMesh.material.map = null;
+                    topMesh.material.color.setHex(FIXED_WALL_COLOR_HEX);
+                    topMesh.material.needsUpdate = true;
                 }
             } else {
                 if (selectedObject.userData.images) selectedObject.userData.images[face] = null;
@@ -2170,9 +2134,15 @@
                 return;
             }
 
-            if (type === 'booth_wall' || type === 'booth_wall_top') {
-                for(let i=0; i<6; i++) {
-                    obj.material[i].color.setHex(FIXED_WALL_COLOR_HEX);
+            if (type === 'booth_wall') {
+                let inner = obj.getObjectByName('wallInnerFace');
+                if (inner && !elevatedWallSegments[obj.userData.segmentId]?.baseImg) {
+                    inner.material.color.setHex(FIXED_WALL_COLOR_HEX);
+                }
+            } else if (type === 'booth_wall_top') {
+                let top = obj.getObjectByName('wallTopBannerMesh');
+                if (top && !elevatedWallSegments[obj.userData.segmentId]?.img) {
+                    top.material.color.setHex(FIXED_WALL_COLOR_HEX);
                 }
             } else if (Array.isArray(obj.material)) {
                 let baseColor = (type === 'backdrop') ? FIXED_WALL_COLOR_HEX : (OBJECT_TYPES[type]?.color || 0x0084ff);
@@ -2198,8 +2168,12 @@
             let rightPanel = document.getElementById('ui-panel-right');
 
             if (selectedObject) {
-                if (selectedObject.userData.type === 'booth_wall' || selectedObject.userData.type === 'booth_wall_top') {
-                    for(let i=0; i<6; i++) selectedObject.material[i].color.setHex(0xff9f0a); 
+                if (selectedObject.userData.type === 'booth_wall') {
+                    let inner = selectedObject.getObjectByName('wallInnerFace');
+                    if(inner) inner.material.color.setHex(0xff9f0a);
+                } else if (selectedObject.userData.type === 'booth_wall_top') {
+                    let top = selectedObject.getObjectByName('wallTopBannerMesh');
+                    if(top) top.material.color.setHex(0xff9f0a);
                 } else if (selectedObject.userData.type === 'fitting_room') {
                     selectedObject.traverse(child => {
                         if (child.isMesh && child.name !== 'curtainMesh') {

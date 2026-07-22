@@ -549,7 +549,7 @@
             <div class="help-item">🖱️ <span class="help-key">右鍵</span> 旋轉視角</div>
             <div class="help-item">⌨️ <span class="help-key">Q</span> / <span class="help-key">E</span> 微轉 15°</div>
             <div class="help-item">🖱️ <span class="help-key">左鍵</span> 選擇/拖拉</div>
-            <div class="help-item">⌨️ <span class="help-key">R</span> 大轉 90°</div>
+            <div class="help-item">⌨️ <span class="help-key">R</span> 旋轉 90°</div>
             <div class="help-item">🖱️ <span class="help-key">滾輪</span> 縮放畫面</div>
             <div class="help-item">⌨️ <span class="help-key">C</span> 快速複製</div>
             <div class="help-item" style="grid-column: span 2;">⌨️ <span class="help-key">Space</span> + <span class="help-key">左鍵</span> 平移畫面</div>
@@ -575,13 +575,13 @@
                 
                 <!-- 自選相鄰牆面跨圖區塊 -->
                 <div style="background: rgba(0, 132, 255, 0.12); padding: 8px; border-radius: 6px; border: 1px solid rgba(0, 132, 255, 0.3); margin-top: 8px;">
-                    <div id="wall-group-title" style="font-size:11px; color:#4da6ff; font-weight:600; margin-bottom:6px;">🔗 自選相鄰牆面跨圖大圖</div>
+                    <div id="wall-group-title" style="font-size:11px; color:#4da6ff; font-weight:600; margin-bottom:6px;">🔗 自選相鄰牆面跨圖輸出</div>
                     <div id="wall-multiselect-container" style="display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto; margin-bottom: 6px; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 4px;">
                     </div>
                     <button class="upload-face-btn" onclick="triggerCustomGroupUpload()" style="background-color: rgba(0, 132, 255, 0.25); border:1px solid rgba(0, 132, 255, 0.6); color:#fff; font-weight:600; margin-bottom:0;">✨ 上傳勾選牆面「跨圖大圖」</button>
                 </div>
 
-                <button id="rm-wall-front" class="remove-face-btn" onclick="clearFaceTexture('front')" style="display:none; margin-top:8px;">❌ 移除牆面貼圖</button>
+                <button id="rm-wall-front" class="remove-face-btn" onclick="clearFaceTexture('front')" style="display:none; margin-top:8px;">❌ 移除牆面輸出</button>
             </div>
 
             <button onclick="removeSelectedWallSegment()" style="background-color: rgba(255, 69, 58, 0.15); color: #ff6961; border: 1px solid rgba(255, 69, 58, 0.3); margin-top: 10px; margin-bottom: 0;">🗑️ 隱藏／移除此段隔牆 (Del)</button>
@@ -641,15 +641,15 @@
                     <button class="upload-face-btn" onclick="triggerGroupCabinetUpload()" style="background-color: rgba(0, 132, 255, 0.25); border:1px solid rgba(0, 132, 255, 0.6); color:#fff; font-weight:600; margin-bottom:0;">✨ 上傳勾選展櫃「跨圖大圖」</button>
                 </div>
 
-                <button id="rm-front" class="remove-face-btn" onclick="clearFaceTexture('front')" style="display:none; margin-top:8px;">❌ 移除正面貼圖</button>
+                <button id="rm-front" class="remove-face-btn" onclick="clearFaceTexture('front')" style="display:none; margin-top:8px;">❌ 移除正面輸出</button>
 
                 <label style="margin-top: 14px;">▶ 左側邊輸出</label>
                 <button class="upload-face-btn" onclick="triggerFaceUpload('left')">🖼️ 上傳左側圖片</button>
-                <button id="rm-left" class="remove-face-btn" onclick="clearFaceTexture('left')" style="display:none;">❌ 移除左側貼圖</button>
+                <button id="rm-left" class="remove-face-btn" onclick="clearFaceTexture('left')" style="display:none;">❌ 移除左側輸出</button>
 
                 <label style="margin-top: 14px;">▶ 右側邊輸出</label>
                 <button class="upload-face-btn" onclick="triggerFaceUpload('right')">🖼️ 上傳右側圖片</button>
-                <button id="rm-right" class="remove-face-btn" onclick="clearFaceTexture('right')" style="display:none;">❌ 移除右側貼圖</button>
+                <button id="rm-right" class="remove-face-btn" onclick="clearFaceTexture('right')" style="display:none;">❌ 移除右側輸出</button>
             </div>
 
             <div class="section" style="border-top: none; padding-top: 0;">
@@ -658,7 +658,7 @@
                     <button onclick="onKeyDown({key:'q'})">🔄 逆旋 15° (Q)</button>
                     <button onclick="onKeyDown({key:'e'})">🔄 順旋 15° (E)</button>
                 </div>
-                <button onclick="onKeyDown({key:'r'})" style="background-color:rgba(255,255,255,0.04);">📐 大轉 90° (R)</button>
+                <button onclick="onKeyDown({key:'r'})" style="background-color:rgba(255,255,255,0.04);">📐 旋轉 90° (R)</button>
                 <button onclick="onKeyDown({key:'c'})" style="background-color:rgba(255,255,255,0.04);">📋 快速複製 (C)</button>
                 <button onclick="onKeyDown({key:'Delete'})" style="background-color:rgba(255, 69, 58, 0.15); color: #ff6961; border: 1px solid rgba(255, 69, 58, 0.3);">🗑️ 刪除此物件 (Del)</button>
             </div>

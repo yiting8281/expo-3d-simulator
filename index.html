@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EXPO 展場配置模擬器 - 最終完美修正版</title>
+    <title>EXPO 展場配置模擬器 </title>
     <style>
         :root {
             --bg-glass: rgba(22, 22, 25, 0.82);
@@ -108,6 +108,57 @@
             border-radius: var(--radius-sm);
             border: 1px solid var(--border-glass);
             box-shadow: var(--shadow-subtle);
+        }
+
+        /* 左下角操作說明面板 */
+        #ui-panel-controls-help {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 10;
+            width: 330px;
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 12px 14px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-glass);
+            box-shadow: var(--shadow-subtle);
+            color: var(--text-main);
+        }
+
+        .help-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .help-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px 10px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .help-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .help-key {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            padding: 1px 5px;
+            font-size: 10px;
+            color: #fff;
+            font-weight: 500;
         }
 
         #expo-title-input {
@@ -469,7 +520,6 @@
 
         <div class="section">
             <h3>2. 展具物件庫</h3>
-            <!-- 新增比例模特兒按鈕 -->
             <button class="action-btn" onclick="createObject('human')" style="background-color: rgba(255, 112, 67, 0.15); border-color: rgba(255, 112, 67, 0.4); color: #ff8a65;">🧍 新增比例模特兒 (170cm)</button>
             <button class="action-btn" onclick="createObject('table')">🪑 新增收銀桌 (100x70x100)</button>
             <button class="action-btn" onclick="createObject('cabinet')">📦 新增中島 (150x60x160)</button>
@@ -488,6 +538,21 @@
             <button class="load-btn" onclick="document.getElementById('import-input').click()">📂 載入配置</button>
             <button class="save-btn" onclick="exportJSON()">💾 儲存／匯出 JSON</button>
             <button class="img-btn" onclick="exportImage()">🖼️ 匯出 PNG 圖檔</button>
+        </div>
+    </div>
+
+    <!-- 左下角：操作說明與快捷鍵浮動面板 -->
+    <div id="ui-panel-controls-help">
+        <div class="help-title">💡 3D 視角與物件操作說明</div>
+        <div class="help-grid">
+            <div class="help-item">🖱️ <span class="help-key">右鍵</span> 旋轉視角</div>
+            <div class="help-item">⌨️ <span class="help-key">Q</span> / <span class="help-key">E</span> 微轉 15°</div>
+            <div class="help-item">🖱️ <span class="help-key">左鍵</span> 選擇/拖拉</div>
+            <div class="help-item">⌨️ <span class="help-key">R</span> 大轉 90°</div>
+            <div class="help-item">🖱️ <span class="help-key">滾輪</span> 縮放畫面</div>
+            <div class="help-item">⌨️ <span class="help-key">C</span> 快速複製</div>
+            <div class="help-item" style="grid-column: span 2;">⌨️ <span class="help-key">Space</span> + <span class="help-key">左鍵</span> 平移畫面</div>
+            <div class="help-item" style="grid-column: span 2;">⌨️ <span class="help-key">Delete</span> 刪除點選物件</div>
         </div>
     </div>
 
@@ -592,7 +657,7 @@
                     <button onclick="onKeyDown({key:'q'})">🔄 逆旋 15° (Q)</button>
                     <button onclick="onKeyDown({key:'e'})">🔄 順旋 15° (E)</button>
                 </div>
-                <button onclick="onKeyDown({key:'r'})" style="background-color:rgba(255,255,255,0.04);">📐 旋轉 90° (R)</button>
+                <button onclick="onKeyDown({key:'r'})" style="background-color:rgba(255,255,255,0.04);">📐 大轉 90° (R)</button>
                 <button onclick="onKeyDown({key:'c'})" style="background-color:rgba(255,255,255,0.04);">📋 快速複製 (C)</button>
                 <button onclick="onKeyDown({key:'Delete'})" style="background-color:rgba(255, 69, 58, 0.15); color: #ff6961; border: 1px solid rgba(255, 69, 58, 0.3);">🗑️ 刪除此物件 (Del)</button>
             </div>
@@ -636,7 +701,7 @@
         let FIXED_WALL_COLOR_HEX = 0x545454;
 
         let OBJECT_TYPES = {
-            human:         { name: '比例模特兒', w: 0.4,  d: 0.3, h: 1.7,  color: 0xff7043 }, // 新增 170cm 比例模特兒
+            human:         { name: '比例模特兒', w: 0.4,  d: 0.3, h: 1.7,  color: 0xff7043 },
             table:         { name: '收銀桌',     w: 1.0,  d: 0.70, h: 1.0, color: 0x32ade6 },
             cabinet:       { name: '中島',       w: 1.5,  d: 0.6, h: 1.6,  color: 0x0084ff },
             folding_table: { name: '摺疊桌',     w: 1.2,  d: 0.6, h: 0.6,  color: 0x0084ff },
@@ -1245,24 +1310,20 @@
             return group;
         }
 
-        // =================【全新：立體 170cm 比例模特兒】=================
         function createHumanGeometry(finalW, finalD, finalH) {
             let group = new THREE.Group();
-            let skinMat = new THREE.MeshStandardMaterial({ color: 0xff7043, roughness: 0.5 }); // 亮橙橘色
+            let skinMat = new THREE.MeshStandardMaterial({ color: 0xff7043, roughness: 0.5 }); 
 
-            // 1. 頭部 (約 22cm)
             let headGeo = new THREE.SphereGeometry(0.11, 16, 16);
             let head = new THREE.Mesh(headGeo, skinMat);
             head.position.set(0, finalH / 2 - 0.11, 0);
             group.add(head);
 
-            // 2. 身體/軀幹 (約 65cm)
             let torsoGeo = new THREE.BoxGeometry(0.32, 0.65, 0.18);
             let torso = new THREE.Mesh(torsoGeo, skinMat);
             torso.position.set(0, finalH / 2 - 0.22 - 0.325, 0);
             group.add(torso);
 
-            // 3. 雙腿 (約 83cm)
             let legGeo = new THREE.BoxGeometry(0.12, 0.83, 0.15);
             let leftLeg = new THREE.Mesh(legGeo, skinMat);
             leftLeg.position.set(-0.08, -finalH / 2 + 0.415, 0);
@@ -2242,7 +2303,6 @@
                 document.getElementById('dim-d').value = Math.round(curD * 100);
                 document.getElementById('dim-h').value = Math.round(curH * 100);
 
-                // 控制【圖片上傳區塊】的顯示與隱藏（衣架類、摺疊桌、比例模特兒隱藏）
                 let noImageTypes = ['straight_rack', 'round_rack', 'folding_table', 'human'];
                 if (noImageTypes.includes(type)) {
                     if (imageSection) imageSection.style.display = 'none';

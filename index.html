@@ -500,7 +500,6 @@
     <!-- 右上角快速視角切換面板 -->
     <div id="ui-panel-view-presets">
         <button class="reset-view-btn" onclick="switchView('reset')">🏠 預設</button>
-        <button onclick="switchView('perspective')">📐 透視</button>
         <button onclick="switchView('top')">🗺️ 俯瞰</button>
         <button onclick="switchView('front')">⏹️ 正面</button>
         <button onclick="switchView('left')">⬅️ 左側</button>
@@ -946,7 +945,6 @@
             targetControlsTarget = new THREE.Vector3(0, 0, 0);
             switch (viewType) {
                 case 'reset': targetCameraPosition = new THREE.Vector3(0, 12, 15); break;
-                case 'perspective': targetCameraPosition = new THREE.Vector3(0, 12, 15); break;
                 case 'top': targetCameraPosition = new THREE.Vector3(0, 18, 0.001); break;
                 case 'front': targetCameraPosition = new THREE.Vector3(0, 1.25, 15); break; 
                 case 'left': targetCameraPosition = new THREE.Vector3(-15, 1.25, 0); break;

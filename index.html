@@ -728,7 +728,7 @@
             fitting_room:  { name: '更衣室/試衣間', w: 1.0,  d: 1.00, h: 2.5,  color: FIXED_WALL_COLOR_HEX }, 
             backdrop:      { name: '背板',        w: 3.0,  d: 0.30, h: 2.5,  color: FIXED_WALL_COLOR_HEX }, 
             wall_shelf:    { name: '牆面層架',    w: 1.0,  d: 0.35, h: 1.8,  color: 0x34c759 }, 
-            storage:       { name: '倉儲區',      w: 1.5,  d: 1.50, h: 2.0,  color: 0x485460 }
+            storage:       { name: '🏪 倉儲區',   w: 1.5,  d: 1.50, h: 2.0,  color: 0x485460 }
         };
 
         let FACE_INDEX_MAP = { right: 0, left: 1, front: 4 };
@@ -773,7 +773,7 @@
                         images: obj.userData.images || { front: null, left: null, right: null }
                     }))
                 };
-                localStorage.setItem('expo_simulator_autosave_v50', JSON.stringify(currentLayout));
+                localStorage.setItem('expo_simulator_autosave_v51', JSON.stringify(currentLayout));
             } catch (e) {
                 console.warn("自動暫存失敗：", e);
             }
@@ -781,7 +781,7 @@
 
         function loadFromLocalStorage() {
             try {
-                let savedDataStr = localStorage.getItem('expo_simulator_autosave_v50');
+                let savedDataStr = localStorage.getItem('expo_simulator_autosave_v51');
                 if (!savedDataStr) {
                     toggleGridCell(2, 2);
                     toggleGridCell(2, 3);
@@ -826,7 +826,7 @@
                 selectObject(null);
             } catch (e) {
                 console.error("讀取存檔失敗：", e);
-                localStorage.removeItem('expo_simulator_autosave_v50');
+                localStorage.removeItem('expo_simulator_autosave_v51');
             }
         }
 
@@ -1072,12 +1072,13 @@
                 wallGroup.position.set(px, 0, pz);
                 wallGroup.rotation.y = rotY;
 
-                // 基底牆面 (250cm 高)
+                // 基底牆面 (250cm 高)，朝向內側
                 let baseGeo = new THREE.PlaneGeometry(CELL_SIZE, FRAME_HEIGHT);
                 let baseMat = new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX, roughness: 0.6, side: THREE.DoubleSide });
                 let baseMesh = new THREE.Mesh(baseGeo, baseMat);
                 baseMesh.name = 'wallInnerFace';
                 baseMesh.position.set(0, FRAME_HEIGHT / 2, 0);
+                baseMesh.rotation.y = Math.PI; // 確保正面朝向攤位內側
                 wallGroup.add(baseMesh);
 
                 wallGroup.userData = {
@@ -1109,6 +1110,7 @@
                     let topMesh = new THREE.Mesh(topGeo, topMat);
                     topMesh.name = 'wallTopBannerMesh';
                     topMesh.position.set(0, FRAME_HEIGHT + topH / 2, 0);
+                    topMesh.rotation.y = Math.PI; // 確保正面朝向攤位內側
                     topGroup.add(topMesh);
 
                     topGroup.userData = {
@@ -1141,24 +1143,28 @@
                     let minZ = posZ - CELL_SIZE / 2;
                     let maxZ = posZ + CELL_SIZE / 2;
 
+                    // 後牆：靠網格頂端 (minZ)，朝向 +Z (旋轉 0 度)
                     if (r === 0 || !gridMap[r - 1][c]) {
                         let segId = `${r}-${c}-back`;
                         if (checkBack) createWallSegment(CELL_SIZE, wallThick, posX, minZ, segId, '後牆', 0);
                         if (showFrame) { addFrameLine(minX, minZ, maxX, minZ, 0, FRAME_HEIGHT); addVerticalPost(minX, minZ); addVerticalPost(maxX, minZ); }
                     }
+                    // 前牆：靠網格底端 (maxZ)，朝向 -Z (旋轉 180 度)
                     if (r === GRID_MAP_SIZE - 1 || !gridMap[r + 1][c]) {
                         let segId = `${r}-${c}-front`;
                         if (checkFront) createWallSegment(CELL_SIZE, wallThick, posX, maxZ, segId, '前牆', Math.PI);
                         if (showFrame) { addFrameLine(minX, maxZ, maxX, maxZ, 0, FRAME_HEIGHT); addVerticalPost(minX, maxZ); addVerticalPost(maxX, maxZ); }
                     }
+                    // 左牆：靠網格左側 (minX)，朝向 +X (旋轉 -90 度 / -Math.PI/2)
                     if (c === 0 || !gridMap[r][c - 1]) {
                         let segId = `${r}-${c}-left`;
-                        if (checkLeft) createWallSegment(wallThick, CELL_SIZE, minX, posZ, segId, '左牆', Math.PI / 2);
+                        if (checkLeft) createWallSegment(wallThick, CELL_SIZE, minX, posZ, segId, '左牆', -Math.PI / 2);
                         if (showFrame) { addFrameLine(minX, minZ, minX, maxZ, 0, FRAME_HEIGHT); addVerticalPost(minX, minZ); addVerticalPost(minX, maxZ); }
                     }
+                    // 右牆：靠網格右側 (maxX)，朝向 -X (旋轉 90 度 / Math.PI/2)
                     if (c === GRID_MAP_SIZE - 1 || !gridMap[r][c + 1]) {
                         let segId = `${r}-${c}-right`;
-                        if (checkRight) createWallSegment(wallThick, CELL_SIZE, maxX, posZ, segId, '右牆', -Math.PI / 2);
+                        if (checkRight) createWallSegment(wallThick, CELL_SIZE, maxX, posZ, segId, '右牆', Math.PI / 2);
                         if (showFrame) { addFrameLine(maxX, minZ, maxX, maxZ, 0, FRAME_HEIGHT); addVerticalPost(maxX, minZ); addVerticalPost(maxX, maxZ); }
                     }
                 }
@@ -1599,7 +1605,6 @@
             if (intersects.length > 0) {
                 let hitObject = intersects[0].object;
                 
-                // 如果點到的是牆面的群組內的子網格，往上尋找帶有 userData.type 的根群組或網格
                 while (hitObject.parent && hitObject.parent !== scene && !hitObject.userData.type) {
                     hitObject = hitObject.parent;
                 }

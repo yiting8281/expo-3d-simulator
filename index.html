@@ -1956,9 +1956,11 @@
                 texture.encoding = THREE.sRGBEncoding;
 
                 if (Array.isArray(mesh.material)) {
-                    mesh.material[4].map = texture; 
-                    mesh.material[4].color.setHex(0xffffff);
-                    mesh.material[4].needsUpdate = true;
+                    // 修正：依據牆面方向對應正確的材質面 (後牆、前牆、左牆、右牆)
+                    let faceIdx = getWallInnerFaceIndex(mesh);
+                    mesh.material[faceIdx].map = texture; 
+                    mesh.material[faceIdx].color.setHex(0xffffff);
+                    mesh.material[faceIdx].needsUpdate = true;
                 }
             };
             img.src = base64Data;
@@ -1986,10 +1988,20 @@
                     faceIndex = 4; faceWidth = params.width;
                 }
             } else if (type === 'booth_wall_top') {
+                let segId = mesh.userData.segmentId || '';
                 let params = mesh.geometry.parameters;
-                faceIndex = 4;
                 faceWidth = params.width;
                 faceHeight = params.height;
+
+                if (segId.endsWith('-left')) {
+                    faceIndex = 0; faceWidth = params.depth;
+                } else if (segId.endsWith('-right')) {
+                    faceIndex = 1; faceWidth = params.depth;
+                } else if (segId.endsWith('-front')) {
+                    faceIndex = 5; faceWidth = params.width;
+                } else {
+                    faceIndex = 4; faceWidth = params.width;
+                }
             } else {
                 if (currentTargetUploadFace === 'left') {
                     faceIndex = 1;
@@ -2063,10 +2075,11 @@
                 let segId = selectedObject.userData.segmentId;
                 if (segId && elevatedWallSegments[segId]) elevatedWallSegments[segId].img = null;
                 let topObj = wallObjects.find(w => w.userData.type === 'booth_wall_top' && w.userData.segmentId === segId);
+                let faceIdx = getWallInnerFaceIndex(topObj);
                 if (topObj && Array.isArray(topObj.material)) {
-                    topObj.material[4].map = null;
-                    topObj.material[4].color.setHex(FIXED_WALL_COLOR_HEX);
-                    topObj.material[4].needsUpdate = true;
+                    topObj.material[faceIdx].map = null;
+                    topObj.material[faceIdx].color.setHex(FIXED_WALL_COLOR_HEX);
+                    topObj.material[faceIdx].needsUpdate = true;
                 }
             } else {
                 if (selectedObject.userData.images) selectedObject.userData.images[face] = null;

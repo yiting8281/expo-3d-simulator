@@ -82,7 +82,6 @@
             display: none;
         }
 
-        /* 浮動面板收合狀態 Class */
         .panel-collapsed-left {
             transform: translateX(-360px) !important;
             opacity: 0 !important;
@@ -95,7 +94,6 @@
             pointer-events: none !important;
         }
 
-        /* 專屬收合開關按鈕 */
         .toggle-panel-btn {
             position: absolute;
             top: 15px;
@@ -226,21 +224,18 @@
 </head>
 <body>
 
-    <!-- 浮動面板展開/收合開關 -->
     <button id="btn-toggle-left" class="toggle-panel-btn" onclick="togglePanel('left')">☰ 展位選單</button>
     <button id="btn-toggle-right" class="toggle-panel-btn" onclick="togglePanel('right')">⚙️ 展具屬性</button>
 
-    <!-- 右上角快速視角切換面板 -->
+    <!-- 右上角快速視角切換面板 (已移除透視按鈕) -->
     <div id="ui-panel-view-presets">
         <button class="reset-view-btn" onclick="switchView('reset')">🏠 預設</button>
-        <button onclick="switchView('perspective')">📐 透視</button>
         <button onclick="switchView('top')">🗺️ 俯瞰</button>
         <button onclick="switchView('front')">⏹️ 正面</button>
         <button onclick="switchView('left')">⬅️ 左側</button>
         <button onclick="switchView('right')">➡️ 右側</button>
     </div>
 
-    <!-- 左側面板 -->
     <div id="ui-panel-left" class="glass-panel">
         <div class="section">
             <h3>📝 活動場次備註</h3>
@@ -294,7 +289,7 @@
             <button class="action-btn" onclick="createObject('cabinet')">📦 新增中島 (150x60x160)</button>
             <button class="action-btn" onclick="createObject('folding_table')">🏷️ 新增摺疊桌 (120x60x60)</button>
             <button class="action-btn" onclick="createObject('straight_rack')">👗 新增直桿吊衣架 (100x40x160)</button>
-            <button class="action-btn" onclick="createObject('round_rack')">⭕ 新增圓盤環形衣架 (80x80x160)</button>
+            <button class="action-btn" onclick="createObject('round_rack')">⭕ 新盤環形衣架 (80x80x160)</button>
             <button class="action-btn" onclick="createObject('fitting_room')">🚪 新增更衣室/試衣間 (100x100x250)</button>
             <button class="action-btn" onclick="createObject('backdrop')">🧱 新增背板 (300x30x250)</button>
             <button class="action-btn" onclick="createObject('wall_shelf')">🪜 新增牆面層架 (100x35x180)</button>
@@ -310,7 +305,6 @@
         </div>
     </div>
 
-    <!-- 左下角：固定操作說明面板 -->
     <div id="ui-panel-controls-help">
         <div class="help-title">💡 3D 視角與物件操作說明</div>
         <div class="help-grid">
@@ -325,7 +319,6 @@
         </div>
     </div>
 
-    <!-- 右側面板：單一展具屬性面板 -->
     <div id="ui-panel-right" class="glass-panel">
         <h3 style="color:var(--accent);">⚙️ 展具屬性與輸出面板</h3>
         <div id="right-obj-title">目前選取：無</div>
@@ -474,7 +467,6 @@
 
         let FACE_INDEX_MAP = { right: 0, left: 1, front: 4 };
 
-        // 開啟/收合左右面板邏輯
         function togglePanel(panelSide) {
             if (panelSide === 'left') {
                 let p = document.getElementById('ui-panel-left');
@@ -677,7 +669,6 @@
             targetControlsTarget = new THREE.Vector3(0, 0, 0);
             switch (viewType) {
                 case 'reset': targetCameraPosition = new THREE.Vector3(0, 12, 15); break;
-                case 'perspective': targetCameraPosition = new THREE.Vector3(0, 12, 15); break;
                 case 'top': targetCameraPosition = new THREE.Vector3(0, 18, 0.001); break;
                 case 'front': targetCameraPosition = new THREE.Vector3(0, 1.25, 15); break; 
                 case 'left': targetCameraPosition = new THREE.Vector3(-15, 1.25, 0); break;
@@ -1326,9 +1317,10 @@
             createObject(type, pos, rot, true, imgs, newState, shelfLayers, dims);
         }
 
-        // 核心修復：開始移動物件時，徹底停用軌道鏡頭控制，防止視角一起旋轉！
         function onPointerDown(event) {
-            if (event.clientX < 300 || event.clientX > window.innerWidth - 300 || event.clientY < 70) return;
+            if (event.target.closest('.glass-panel') || event.target.closest('.toggle-panel-btn') || event.target.closest('#ui-panel-view-presets') || event.target.closest('#ui-panel-controls-help')) {
+                return;
+            }
             if (isSpacePressed) return; 
 
             let raycaster = new THREE.Raycaster();
@@ -1352,7 +1344,7 @@
 
                 if (hitObject.userData.type !== 'booth_wall' && hitObject.userData.type !== 'booth_wall_top') {
                     isDragging = true;
-                    orbitControls.enabled = false; // 關鍵：暫停視角旋轉與縮放！
+                    orbitControls.enabled = false; 
                     previousPosition.copy(hitObject.position);
                     previousRotation.copy(hitObject.rotation);
                     let intersectionPoint = new THREE.Vector3();
@@ -1382,7 +1374,7 @@
         }
 
         function onPointerUp() {
-            orbitControls.enabled = true; // 恢復鏡頭視角控制
+            orbitControls.enabled = true; 
             if (isSpacePressed) return; 
             if (!isDragging) return;
             isDragging = false; 

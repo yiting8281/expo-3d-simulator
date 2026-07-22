@@ -77,7 +77,6 @@
             overflow-y: auto;
         }
 
-        /* 左側控制面板：高度限制在操作說明面板上方，確保內容能完全捲出點擊 */
         #ui-panel-left {
             top: 20px;
             left: 20px;
@@ -85,7 +84,6 @@
             max-height: calc(100vh - 180px);
         }
 
-        /* 右側專屬物件屬性面板 */
         #ui-panel-right {
             top: 20px;
             right: 20px;
@@ -94,7 +92,6 @@
             display: none;
         }
 
-        /* 右上角視角切換面板 */
         #ui-panel-view-presets {
             position: absolute;
             top: 20px;
@@ -111,7 +108,6 @@
             box-shadow: var(--shadow-subtle);
         }
 
-        /* 左下角固定操作說明面板 */
         #ui-panel-controls-help {
             position: absolute;
             bottom: 20px;
@@ -455,7 +451,6 @@
             border-color: var(--accent);
         }
 
-        /* ================= 手機/平板響應式優化 (Media Queries) ================= */
         @media (max-width: 768px) {
             .glass-panel {
                 width: 280px !important;
@@ -488,7 +483,7 @@
             }
 
             #ui-panel-controls-help {
-                display: none !important; /* 手機上預設隱藏說明面板，避免干擾畫面 */
+                display: none !important;
             }
         }
     </style>
@@ -497,7 +492,6 @@
 </head>
 <body>
 
- <!-- 右上角快速視角切換面板 -->
     <div id="ui-panel-view-presets">
         <button class="reset-view-btn" onclick="switchView('reset'); this.blur();">🏠 預設</button>
         <button onclick="switchView('top'); this.blur();">🗺️ 俯瞰</button>
@@ -506,7 +500,6 @@
         <button onclick="switchView('right'); this.blur();">➡️ 右側</button>
     </div>
 
-    <!-- 左側面板 -->
     <div id="ui-panel-left" class="glass-panel">
         <div class="section">
             <h3>📝 活動場次備註</h3>
@@ -519,7 +512,6 @@
             <button onclick="clearAllFloors()" style="background-color: rgba(255,255,255,0.04); font-size: 11px; padding: 5px; color: var(--text-secondary);">重設所有格子</button>
 
             <div class="struct-box">
-                <!-- 地板顏色選擇 -->
                 <div class="color-picker-row">
                     <span style="font-size:11px; color:var(--text-main); font-weight:500;">🎨 展位地板顏色</span>
                     <div style="display:flex; align-items:center; gap:8px;">
@@ -533,7 +525,6 @@
                     </div>
                 </div>
 
-                <!-- 地板網格線控制開關 -->
                 <div class="wall-checkboxes" style="margin-top:8px;">
                     <label><input type="checkbox" id="show-main-grid-check" checked onchange="updateStructureUI()"> 3m 主紅框線</label>
                     <label><input type="checkbox" id="show-sub-grid-check" checked onchange="updateStructureUI()"> 1m 網格細線</label>
@@ -548,7 +539,7 @@
                 <div class="wall-checkboxes">
                     <label><input type="checkbox" id="wall-back-check" checked onchange="updateStructureUI()"> 後方牆 (Back)</label>
                     <label><input type="checkbox" id="wall-left-check" checked onchange="updateStructureUI()"> 左側牆 (Left)</label>
-                    <label><input type="checkbox" id="wall-right-check" onchange="updateStructureUI()"> 右側牆 (Right)</label>
+                    <label><input type="checkbox" id="wall-right-check" checked onchange="updateStructureUI()"> 右側牆 (Right)</label>
                     <label><input type="checkbox" id="wall-front-check" onchange="updateStructureUI()"> 前方牆 (Front)</label>
                 </div>
                 <button onclick="resetDisabledWalls()" style="background-color: rgba(255,255,255,0.04); font-size: 11px; padding: 5px; margin-top: 8px; color: var(--text-secondary);">🔄 還原隱藏牆面</button>
@@ -578,7 +569,6 @@
         </div>
     </div>
 
-    <!-- 左下角：固定操作說明面板 -->
     <div id="ui-panel-controls-help">
         <div class="help-title">💡 3D 視角與物件操作說明</div>
         <div class="help-grid">
@@ -593,14 +583,12 @@
         </div>
     </div>
 
-    <!-- 右側面板：單一展具屬性面板 -->
     <div id="ui-panel-right" class="glass-panel">
         <h3 style="color:var(--accent);">⚙️ 展具屬性與輸出面板</h3>
         <div id="right-obj-title">目前選取：無</div>
         
         <input type="file" id="face-image-upload" accept="image/*" style="display:none;" onchange="handleFaceUpload(event)">
 
-        <!-- 單段牆面專屬控制區 -->
         <div id="wall-segment-control" class="section" style="background: rgba(0, 132, 255, 0.08); padding: 12px; border-radius: var(--radius-sm); border: 1px solid rgba(0, 132, 255, 0.2); display: none;">
             <h4 style="font-size:12px; color:var(--accent); margin-bottom:8px; font-weight:600;">🧱 獨立單段隔牆控制</h4>
             <button id="toggle-wall-height-btn" onclick="toggleWallSegmentHeight()" style="background-color: var(--accent); color: #111; border: none; margin-bottom: 8px; font-weight:600;">➕ 雙層加高：追加 150cm 頂層看板</button>
@@ -609,7 +597,6 @@
                 <label style="color:#fff; font-weight:500;">🖼️ 牆面看板輸出設定</label>
                 <button class="upload-face-btn" onclick="triggerFaceUpload('front')" style="margin-top:4px;">🖼️ 上傳單片牆面圖片</button>
                 
-                <!-- 自選相鄰牆面跨圖區塊 -->
                 <div style="background: rgba(0, 132, 255, 0.12); padding: 8px; border-radius: 6px; border: 1px solid rgba(0, 132, 255, 0.3); margin-top: 8px;">
                     <div id="wall-group-title" style="font-size:11px; color:#4da6ff; font-weight:600; margin-bottom:6px;">🔗 自選相鄰牆面跨圖輸出</div>
                     <div id="wall-multiselect-container" style="display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto; margin-bottom: 6px; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 4px;">
@@ -623,14 +610,12 @@
             <button onclick="removeSelectedWallSegment()" style="background-color: rgba(255, 69, 58, 0.15); color: #ff6961; border: 1px solid rgba(255, 69, 58, 0.3); margin-top: 10px; margin-bottom: 0;">🗑️ 隱藏／移除此段隔牆 (Del)</button>
         </div>
 
-        <!-- 雙層背板/招牌控制區 -->
         <div id="backdrop-layer-control" class="section" style="background: rgba(0, 132, 255, 0.06); padding: 12px; border-radius: var(--radius-sm); border: 1px solid rgba(0, 132, 255, 0.2); display: none;">
             <h4 style="font-size:12px; color:#fff; margin-bottom:4px; font-weight:600;">🧱 雙層背板/招牌結構控制</h4>
             <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;">基底結構固定 250cm</div>
             <button id="toggle-layer-btn" onclick="toggleBackdropLayer()" style="background-color: var(--accent); color: #111; border: none; margin-bottom: 0; font-weight:600;">➕ 追加 150cm 頂層獨立招牌</button>
         </div>
 
-        <!-- 牆面層架控制區 -->
         <div id="shelf-layer-control" class="section" style="background: rgba(52, 199, 89, 0.08); padding: 12px; border-radius: var(--radius-sm); border: 1px solid rgba(52, 199, 89, 0.2); display: none;">
             <h4 style="font-size:12px; color:var(--success); margin-bottom:6px; font-weight:600;">🪜 牆面層板層數自由設定</h4>
             <div id="shelf-count-display" style="font-size: 12px; color: #fff; font-weight: 600; margin-bottom: 8px;">目前層數：3 層板</div>
@@ -640,9 +625,7 @@
             </div>
         </div>
 
-        <!-- 普通道具控制項 -->
         <div id="normal-object-controls">
-            <!-- 自訂展具長寬高控制區 -->
             <div id="dimension-control-section" class="section" style="background: rgba(255, 159, 10, 0.06); padding:10px; border-radius:var(--radius-sm); border:1px solid rgba(255, 159, 10, 0.2);">
                 <h4 style="font-size:12px; color:var(--accent); margin-bottom:6px; font-weight:600;">📐 展具自訂尺寸 (cm)</h4>
                 <div class="dim-input-group">
@@ -661,7 +644,6 @@
                 </div>
             </div>
 
-            <!-- 可隱藏的圖片管理區塊 -->
             <div class="section" id="image-management-section">
                 <h4 id="output-section-title" style="font-size:12px; color:var(--text-secondary); margin-bottom:8px;">📋 各面輸出示意圖管理</h4>
                 
@@ -669,7 +651,6 @@
                 <button class="upload-face-btn" onclick="triggerFaceUpload('front')">🖼️ 上傳單個正面圖片</button>
                 <button id="btn-group-fitting" class="upload-face-btn" onclick="triggerGroupFittingUpload()" style="display:none; margin-top:6px; background-color: rgba(0, 132, 255, 0.15); border:1px solid rgba(0, 132, 255, 0.4); color:#4da6ff;">✨ 上傳多間更衣室「招牌跨圖大圖」</button>
                 
-                <!-- 展櫃類自選跨圖區塊 -->
                 <div id="cabinet-group-box" style="display:none; background: rgba(0, 132, 255, 0.12); padding: 8px; border-radius: 6px; border: 1px solid rgba(0, 132, 255, 0.3); margin-top: 8px;">
                     <div style="font-size:11px; color:#4da6ff; font-weight:600; margin-bottom:6px;">🔗 自選相鄰展櫃/中島正面跨圖</div>
                     <div id="cabinet-multiselect-container" style="display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto; margin-bottom: 6px; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 4px;">
@@ -738,16 +719,16 @@
         let FIXED_WALL_COLOR_HEX = 0x545454;
 
         let OBJECT_TYPES = {
-            human:         { name: '比例模特兒', w: 0.4,  d: 0.3, h: 1.7,  color: 0xff7043 },
-            table:         { name: '收銀桌',     w: 1.0,  d: 0.70, h: 1.0, color: 0x32ade6 },
-            cabinet:       { name: '中島',       w: 1.5,  d: 0.6, h: 1.6,  color: 0x0084ff },
+            human:          { name: '比例模特兒', w: 0.4,  d: 0.3, h: 1.7,  color: 0xff7043 },
+            table:          { name: '收銀桌',     w: 1.0,  d: 0.70, h: 1.0, color: 0x32ade6 },
+            cabinet:        { name: '中島',        w: 1.5,  d: 0.6, h: 1.6,  color: 0x0084ff },
             folding_table: { name: '摺疊桌',     w: 1.2,  d: 0.6, h: 0.6,  color: 0x0084ff },
             straight_rack: { name: '直桿吊衣架', w: 1.0,  d: 0.40, h: 1.6,  color: 0xaf52de }, 
             round_rack:    { name: '圓盤環形衣架', w: 0.8,  d: 0.80, h: 1.6,  color: 0xaf52de }, 
             fitting_room:  { name: '更衣室/試衣間', w: 1.0,  d: 1.00, h: 2.5,  color: FIXED_WALL_COLOR_HEX }, 
-            backdrop:      { name: '背板',       w: 3.0,  d: 0.30, h: 2.5,  color: FIXED_WALL_COLOR_HEX }, 
-            wall_shelf:    { name: '牆面層架',   w: 1.0,  d: 0.35, h: 1.8,  color: 0x34c759 }, 
-            storage:       { name: '倉儲區',     w: 1.5,  d: 1.50, h: 2.0,  color: 0x485460 }
+            backdrop:      { name: '背板',        w: 3.0,  d: 0.30, h: 2.5,  color: FIXED_WALL_COLOR_HEX }, 
+            wall_shelf:    { name: '牆面層架',    w: 1.0,  d: 0.35, h: 1.8,  color: 0x34c759 }, 
+            storage:       { name: '倉儲區',      w: 1.5,  d: 1.50, h: 2.0,  color: 0x485460 }
         };
 
         let FACE_INDEX_MAP = { right: 0, left: 1, front: 4 };
@@ -758,8 +739,8 @@
                 for (let key in elevatedWallSegments) {
                     cleanElevatedWalls[key] = {
                         hasTop: elevatedWallSegments[key].hasTop,
-                        img: null,      
-                        baseImg: null   
+                        img: elevatedWallSegments[key].img || null,      
+                        baseImg: elevatedWallSegments[key].baseImg || null   
                     };
                 }
 
@@ -789,18 +770,18 @@
                         },
                         hasTopLayer: obj.userData.hasTopLayer || false, 
                         shelfLayers: obj.userData.shelfLayers || 3,
-                        images: { front: null, left: null, right: null }
+                        images: obj.userData.images || { front: null, left: null, right: null }
                     }))
                 };
-                localStorage.setItem('expo_simulator_autosave_v47', JSON.stringify(currentLayout));
+                localStorage.setItem('expo_simulator_autosave_v49', JSON.stringify(currentLayout));
             } catch (e) {
-                console.warn("自動暫存失敗，可能遇到極端儲存限制：", e);
+                console.warn("自動暫存失敗：", e);
             }
         }
 
         function loadFromLocalStorage() {
             try {
-                let savedDataStr = localStorage.getItem('expo_simulator_autosave_v47');
+                let savedDataStr = localStorage.getItem('expo_simulator_autosave_v49');
                 if (!savedDataStr) {
                     toggleGridCell(2, 2);
                     toggleGridCell(2, 3);
@@ -844,8 +825,8 @@
                 }
                 selectObject(null);
             } catch (e) {
-                console.error("讀取存檔失敗，檔案可能已損壞：", e);
-                localStorage.removeItem('expo_simulator_autosave_v47');
+                console.error("讀取存檔失敗：", e);
+                localStorage.removeItem('expo_simulator_autosave_v49');
             }
         }
 
@@ -871,7 +852,6 @@
             orbitControls.enableDamping = true;
             orbitControls.dampingFactor = 0.05;
             
-            // 設定手機與平版的觸控手勢（單指旋轉，雙指縮放與平移）
             orbitControls.touches = {
                 ONE: THREE.TOUCH.ROTATE,
                 TWO: THREE.TOUCH.DOLLY_PAN
@@ -933,7 +913,7 @@
                     };
                 } else {
                     orbitControls.mouseButtons = {
-                        LEFT: THREE.MOUSE.NONE,     
+                        LEFT: THREE.MOUSE.NONE,      
                         MIDDLE: THREE.MOUSE.PAN,
                         RIGHT: THREE.MOUSE.ROTATE
                     };
@@ -951,7 +931,6 @@
                 case 'right': targetCameraPosition = new THREE.Vector3(15, 1.25, 0); break;
             }
             
-            // 強制讓目前的作用中元素失焦，並把焦點還給視窗，確保 OrbitControls 正常接收滑鼠事件
             if (document.activeElement) {
                 document.activeElement.blur();
             }
@@ -1893,7 +1872,7 @@
                     texture.encoding = THREE.sRGBEncoding;
 
                     if (Array.isArray(mesh.material)) {
-                        let faceIdx = getWallInnerFaceIndex(mesh);
+                        let faceIdx = isTopLayer ? 4 : getWallInnerFaceIndex(mesh);
                         mesh.material[faceIdx].map = texture;
                         mesh.material[faceIdx].color.setHex(0xffffff);
                         mesh.material[faceIdx].needsUpdate = true;
@@ -1950,7 +1929,7 @@
                         
                         scene.remove(mesh);
                         draggableObjects = draggableObjects.filter(o => o !== mesh);
-                        createObject('fitting_room', pos, rot, false, mesh.userData.images, true, shelfLayers, dims);
+                        createObject('fitting_room', pos, rot, true, mesh.userData.images, true, shelfLayers, dims);
                     } else {
                         applyTextureToFace(mesh, 'front', slicedBase64);
                     }
@@ -1962,10 +1941,11 @@
 
         function getWallInnerFaceIndex(mesh) {
             let segId = mesh.userData.segmentId || '';
-            if (segId.endsWith('-left')) return 0;
-            if (segId.endsWith('-right')) return 1;
+            // 修正左右牆面對應的材質索引：左牆內部對應面通常為 index 1，右牆為 index 0
+            if (segId.endsWith('-left')) return 1;
+            if (segId.endsWith('-right')) return 0;
             if (segId.endsWith('-front')) return 5;
-            return 4;
+            return 4; // 後牆
         }
 
         function applyTextureToWallBase(mesh, base64Data) {
@@ -2030,9 +2010,9 @@
                 faceHeight = params.height;
 
                 if (segId.endsWith('-left')) {
-                    faceIndex = 0; faceWidth = params.depth;
-                } else if (segId.endsWith('-right')) {
                     faceIndex = 1; faceWidth = params.depth;
+                } else if (segId.endsWith('-right')) {
+                    faceIndex = 0; faceWidth = params.depth;
                 } else if (segId.endsWith('-front')) {
                     faceIndex = 5; faceWidth = params.width;
                 } else {

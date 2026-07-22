@@ -497,13 +497,13 @@
 </head>
 <body>
 
-    <!-- 右上角快速視角切換面板 -->
+ <!-- 右上角快速視角切換面板 -->
     <div id="ui-panel-view-presets">
-        <button class="reset-view-btn" onclick="switchView('reset')">🏠 預設</button>
-        <button onclick="switchView('top')">🗺️ 俯瞰</button>
-        <button onclick="switchView('front')">⏹️ 正面</button>
-        <button onclick="switchView('left')">⬅️ 左側</button>
-        <button onclick="switchView('right')">➡️ 右側</button>
+        <button class="reset-view-btn" onclick="switchView('reset'); this.blur();">🏠 預設</button>
+        <button onclick="switchView('top'); this.blur();">🗺️ 俯瞰</button>
+        <button onclick="switchView('front'); this.blur();">⏹️ 正面</button>
+        <button onclick="switchView('left'); this.blur();">⬅️ 左側</button>
+        <button onclick="switchView('right'); this.blur();">➡️ 右側</button>
     </div>
 
     <!-- 左側面板 -->

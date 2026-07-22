@@ -4036,71 +4036,54 @@
 
 
 
-        function getWallInnerFaceIndexAndDimensions(mesh) {
+function getWallInnerFaceIndexAndDimensions(mesh) {
+    let type = mesh.userData.type;
+    let faceWidth = mesh.userData.customW || 1.0;
+    let faceHeight = mesh.userData.customH || 2.5;
+    let faceIndex = 4; // 預設正面
 
-            let type = mesh.userData.type;
-
-            let faceWidth = mesh.userData.customW || 1.0;
-
-            let faceHeight = mesh.userData.customH || 2.5;
-
-            let faceIndex = 4; 
-
-
-
-            if (type === 'booth_wall') {
-
-                let segId = mesh.userData.segmentId || '';
-
-                let params = mesh.geometry.parameters;
-
-                faceWidth = params.width;
-
-                faceHeight = params.height;
-
-
-
-                if (segId.endsWith('-left')) {
-
-                    faceIndex = 0; faceWidth = params.depth;
-
-                } else if (segId.endsWith('-right')) {
-
-                    faceIndex = 1; faceWidth = params.depth;
-
-                } else if (segId.endsWith('-front')) {
-
-                    faceIndex = 5; faceWidth = params.width;
-
-                } else {
-
-                    faceIndex = 4; faceWidth = params.width;
-
-                }
-
-            } else {
-
-                if (currentTargetUploadFace === 'left') {
-
-                    faceIndex = 1;
-
-                    faceWidth = mesh.userData.customD || 1.0;
-
-                } else if (currentTargetUploadFace === 'right') {
-
-                    faceIndex = 0;
-
-                    faceWidth = mesh.userData.customD || 1.0;
-
-                }
-
-            }
-
-
-
-            return { faceIndex, faceWidth, faceHeight };
-
+    if (type === 'booth_wall') {
+        let segId = mesh.userData.segmentId || '';
+        let params = mesh.geometry.parameters;
+        
+        // 根據牆面方向正確對應 BoxGeometry 的六個面與尺寸
+        if (segId.endsWith('-left')) {
+            faceIndex = 0; // BoxGeometry 的右側面向內（或根據旋轉調整）
+            faceWidth = params.depth;
+            faceHeight = params.height;
+        } else if (segId.endsWith('-right')) {
+            faceIndex = 1; // BoxGeometry 的左側面向內
+            faceWidth = params.depth;
+            faceHeight = params.height;
+        } else if (segId.endsWith('-front')) {
+            faceIndex = 5; // BoxGeometry 的背面/內側
+            faceWidth = params.width;
+            faceHeight = params.height;
+        } else {
+            faceIndex = 4; // 正面
+            faceWidth = params.width;
+            faceHeight = params.height;
         }
+    } else {
+        // 一般展具物件的左右面處理
+        let params = mesh.geometry.parameters;
+        if (currentTargetUploadFace === 'left') {
+            faceIndex = 0; // BoxGeometry 左側面
+            faceWidth = mesh.userData.customD || params.depth || 1.0;
+            faceHeight = mesh.userData.customH || params.height || 2.5;
+        } else if (currentTargetUploadFace === 'right') {
+            faceIndex = 1; // BoxGeometry 右側面
+            faceWidth = mesh.userData.customD || params.depth || 1.0;
+            faceHeight = mesh.userData.customH || params.height || 2.5;
+        } else {
+            faceIndex = 4; // 正面
+            faceWidth = mesh.userData.customW || params.width || 1.0;
+            faceHeight = mesh.userData.customH || params.height || 2.5;
+        }
+    }
+
+    return { faceIndex, faceWidth, faceHeight };
+}
 
 
 

@@ -227,7 +227,6 @@
     <button id="btn-toggle-left" class="toggle-panel-btn" onclick="togglePanel('left')">☰ 展位選單</button>
     <button id="btn-toggle-right" class="toggle-panel-btn" onclick="togglePanel('right')">⚙️ 展具屬性</button>
 
-    <!-- 右上角快速視角切換面板 (已移除透視按鈕) -->
     <div id="ui-panel-view-presets">
         <button class="reset-view-btn" onclick="switchView('reset')">🏠 預設</button>
         <button onclick="switchView('top')">🗺️ 俯瞰</button>
@@ -289,7 +288,7 @@
             <button class="action-btn" onclick="createObject('cabinet')">📦 新增中島 (150x60x160)</button>
             <button class="action-btn" onclick="createObject('folding_table')">🏷️ 新增摺疊桌 (120x60x60)</button>
             <button class="action-btn" onclick="createObject('straight_rack')">👗 新增直桿吊衣架 (100x40x160)</button>
-            <button class="action-btn" onclick="createObject('round_rack')">⭕ 新盤環形衣架 (80x80x160)</button>
+            <button class="action-btn" onclick="createObject('round_rack')">⭕ 新增圓盤環形衣架 (80x80x160)</button>
             <button class="action-btn" onclick="createObject('fitting_room')">🚪 新增更衣室/試衣間 (100x100x250)</button>
             <button class="action-btn" onclick="createObject('backdrop')">🧱 新增背板 (300x30x250)</button>
             <button class="action-btn" onclick="createObject('wall_shelf')">🪜 新增牆面層架 (100x35x180)</button>
@@ -308,13 +307,13 @@
     <div id="ui-panel-controls-help">
         <div class="help-title">💡 3D 視角與物件操作說明</div>
         <div class="help-grid">
-            <div class="help-item">🖱️ <span class="help-key">右鍵</span> 旋轉視角</div>
+            <div class="help-item">🖱️ <span class="help-key">右鍵/拖拉</span> 旋轉視角</div>
             <div class="help-item">⌨️ <span class="help-key">Q</span> / <span class="help-key">E</span> 微轉 15°</div>
-            <div class="help-item">🖱️ <span class="help-key">左鍵</span> 選擇/拖拉</div>
+            <div class="help-item">🖱️ <span class="help-key">左鍵</span> 選擇與移動物件</div>
             <div class="help-item">⌨️ <span class="help-key">R</span> 旋轉 90°</div>
             <div class="help-item">🖱️ <span class="help-key">滾輪</span> 縮放畫面</div>
             <div class="help-item">⌨️ <span class="help-key">C</span> 快速複製</div>
-            <div class="help-item" style="grid-column: span 2;">⌨️ <span class="help-key">Space</span> + <span class="help-key">左鍵</span> 平移畫面</div>
+            <div class="help-item" style="grid-column: span 2;">🖱️ <span class="help-key">右鍵拖拉</span> 平移畫面</div>
             <div class="help-item" style="grid-column: span 2;">⌨️ <span class="help-key">Delete</span> 刪除點選物件</div>
         </div>
     </div>
@@ -429,7 +428,6 @@
         let currentFloorColorHex = '#2d2d2d'; 
 
         let isDragging = false;
-        let isSpacePressed = false; 
         let planeHelper; 
         let dragOffset = new THREE.Vector3();
         let previousPosition = new THREE.Vector3();
@@ -596,12 +594,18 @@
             orbitControls.enableDamping = true;
             orbitControls.dampingFactor = 0.05;
             
+            // 完美優化操作邏輯：左鍵點選與拖拉物件，右鍵旋轉視角與平移
+            orbitControls.mouseButtons = {
+                LEFT: THREE.MOUSE.NONE, // 釋放左鍵給物件拖拉使用
+                MIDDLE: THREE.MOUSE.DOLLY,
+                RIGHT: THREE.MOUSE.ROTATE
+            };
+
+            // 手機觸控：單指旋轉，雙指縮放與平移
             orbitControls.touches = {
                 ONE: THREE.TOUCH.ROTATE,
                 TWO: THREE.TOUCH.DOLLY_PAN
             };
-
-            setOrbitControlsMode(false);
 
             let ambientLight = new THREE.AmbientLight(0xffffff, 0.6); 
             scene.add(ambientLight);
@@ -630,39 +634,12 @@
             window.addEventListener('dblclick', function() { selectObject(null); });
             
             window.addEventListener('keydown', onGlobalKeyDown);
-            window.addEventListener('keyup', onGlobalKeyUp);
             window.addEventListener('resize', onWindowResize);
 
             render3DFloor();
             loadFromLocalStorage();
 
             animate();
-        }
-
-        function setOrbitControlsMode(spacePressed) {
-            let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-            if (isMobile) {
-                orbitControls.mouseButtons = {
-                    LEFT: THREE.MOUSE.ROTATE,
-                    MIDDLE: THREE.MOUSE.DOLLY,
-                    RIGHT: THREE.MOUSE.PAN
-                };
-            } else {
-                if (spacePressed) {
-                    orbitControls.mouseButtons = {
-                        LEFT: THREE.MOUSE.PAN,      
-                        MIDDLE: THREE.MOUSE.PAN,
-                        RIGHT: THREE.MOUSE.ROTATE
-                    };
-                } else {
-                    orbitControls.mouseButtons = {
-                        LEFT: THREE.MOUSE.NONE,     
-                        MIDDLE: THREE.MOUSE.PAN,
-                        RIGHT: THREE.MOUSE.ROTATE
-                    };
-                }
-            }
         }
 
         function switchView(viewType) {
@@ -1321,7 +1298,6 @@
             if (event.target.closest('.glass-panel') || event.target.closest('.toggle-panel-btn') || event.target.closest('#ui-panel-view-presets') || event.target.closest('#ui-panel-controls-help')) {
                 return;
             }
-            if (isSpacePressed) return; 
 
             let raycaster = new THREE.Raycaster();
             let mouse = new THREE.Vector2(
@@ -1357,7 +1333,6 @@
         }
 
         function onPointerMove(event) {
-            if (isSpacePressed) return;
             if (!isDragging || !selectedObject || selectedObject.userData.type === 'booth_wall' || selectedObject.userData.type === 'booth_wall_top') return;
 
             let raycaster = new THREE.Raycaster();
@@ -1375,7 +1350,6 @@
 
         function onPointerUp() {
             orbitControls.enabled = true; 
-            if (isSpacePressed) return; 
             if (!isDragging) return;
             isDragging = false; 
 
@@ -2174,24 +2148,7 @@
 
         function onGlobalKeyDown(event) {
             if (document.activeElement.tagName === 'INPUT') return;
-            if (event.key === " " || event.keyCode === 32) {
-                if (!isSpacePressed) {
-                    isSpacePressed = true;
-                    setOrbitControlsMode(true); 
-                }
-                event.preventDefault(); 
-            } else {
-                onKeyDown(event);
-            }
-        }
-
-        function onGlobalKeyUp(event) {
-            if (document.activeElement.tagName === 'INPUT') return;
-            if (event.key === " " || event.keyCode === 32) {
-                isSpacePressed = false;
-                setOrbitControlsMode(false); 
-                event.preventDefault();
-            }
+            onKeyDown(event);
         }
 
         function onKeyDown(event) {

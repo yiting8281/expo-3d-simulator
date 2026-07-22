@@ -1,0 +1,78 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+body, html {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #1a1a1a;
+}
+
+#canvas-container {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+/* UI 面板樣式 */
+#ui-panel {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(30, 30, 30, 0.85);
+    padding: 20px;
+    border-radius: 8px;
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    z-index: 10;
+    width: 280px;
+    border: 1px solid #444;
+    pointer-events: auto; /* 確保 UI 可以被點擊 */
+}
+
+#ui-panel h3 {
+    margin-bottom: 15px;
+    font-size: 16px;
+    border-bottom: 1px solid #555;
+    padding-bottom: 5px;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    background-color: #007acc;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s;
+    margin-bottom: 15px;
+}
+
+button:hover {
+    background-color: #005999;
+}
+
+.tip-box {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #ccc;
+    margin-bottom: 10px;
+}
+
+#status {
+    font-size: 13px;
+    color: #00ff00;
+    font-weight: bold;
+}

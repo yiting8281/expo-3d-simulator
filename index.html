@@ -2,16 +2,15 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EXPO 展場配置模擬器 </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>EXPO 展場配置模擬器</title>
     <style>
         :root {
-            --bg-glass: rgba(22, 22, 25, 0.88);
-            --bg-glass-card: rgba(35, 35, 40, 0.6);
+            --bg-glass: rgba(22, 22, 25, 0.92);
+            --bg-glass-card: rgba(35, 35, 40, 0.7);
             --border-glass: rgba(255, 255, 255, 0.12);
             --border-glass-focus: rgba(0, 149, 255, 0.5);
             --primary: #0084ff;
-            --primary-hover: #006cc7;
             --accent: #ff9f0a;
             --success: #34c759;
             --danger: #ff453a;
@@ -19,7 +18,7 @@
             --text-secondary: #98989d;
             --radius-sm: 8px;
             --radius-md: 12px;
-            --shadow-subtle: 0 10px 30px rgba(0, 0, 0, 0.4);
+            --shadow-subtle: 0 10px 30px rgba(0, 0, 0, 0.5);
         }
 
         * {
@@ -28,6 +27,7 @@
             box-sizing: border-box;
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
             -webkit-font-smoothing: antialiased;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body, html {
@@ -46,176 +46,160 @@
             z-index: 1;
         }
 
-        ::-webkit-scrollbar { width: 6px; }
+        /* 捲軸美化 */
+        ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
 
+        /* 通用玻璃面板 */
         .glass-panel {
             position: absolute;
             background: var(--bg-glass);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
             padding: 16px;
             border-radius: var(--radius-md);
             color: var(--text-main);
             box-shadow: var(--shadow-subtle);
             z-index: 10;
             border: 1px solid var(--border-glass);
-            max-height: 94vh;
+            max-height: 85vh;
             overflow-y: auto;
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
         }
 
-        #ui-panel-left {
-            top: 60px;
-            left: 20px;
-            width: 320px;
-            max-height: calc(100vh - 220px);
-        }
+        /* 電腦版定位 */
+        #ui-panel-left { top: 65px; left: 20px; width: 320px; max-height: calc(100vh - 150px); }
+        #ui-panel-right { top: 65px; right: 20px; width: 320px; display: none; }
 
-        #ui-panel-right {
-            top: 60px;
-            right: 20px;
-            width: 320px;
-            border: 1px solid rgba(0, 132, 255, 0.3);
-            display: none;
-        }
+        /* 手機版收合狀態 */
+        .panel-collapsed-left { transform: translateX(-110%) !important; opacity: 0 !important; pointer-events: none !important; }
+        .panel-collapsed-right { transform: translateX(110%) !important; opacity: 0 !important; pointer-events: none !important; }
 
-        .panel-collapsed-left {
-            transform: translateX(-360px) !important;
-            opacity: 0 !important;
-            pointer-events: none !important;
-        }
-
-        .panel-collapsed-right {
-            transform: translateX(360px) !important;
-            opacity: 0 !important;
-            pointer-events: none !important;
-        }
-
-        .toggle-panel-btn {
+        /* 頂端導覽列/控制按鈕 */
+        .top-nav-bar {
             position: absolute;
-            top: 15px;
+            top: 12px;
+            left: 12px;
+            right: 12px;
             z-index: 20;
-            width: auto !important;
-            padding: 8px 12px !important;
-            background: rgba(35, 35, 40, 0.85) !important;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: none; /* 讓點擊能穿透到畫布，按鈕本身恢復 pointer-events */
+        }
+
+        .top-nav-bar > * {
+            pointer-events: auto;
+        }
+
+        .nav-btn {
+            background: rgba(30, 30, 35, 0.85);
             backdrop-filter: blur(15px);
-            border: 1px solid var(--border-glass) !important;
+            border: 1px solid var(--border-glass);
+            color: #fff;
+            padding: 10px 14px;
             border-radius: var(--radius-sm);
-            color: #fff !important;
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
             box-shadow: var(--shadow-subtle);
-            margin: 0 !important;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
-
-        #btn-toggle-left { left: 15px; }
-        #btn-toggle-right { right: 15px; display: none; }
+        .nav-btn:active { transform: scale(0.96); }
 
         #ui-panel-view-presets {
-            position: absolute;
-            top: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 10;
             display: flex;
-            gap: 4px;
-            background: var(--bg-glass);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            padding: 4px 6px;
+            gap: 3px;
+            background: rgba(30, 30, 35, 0.85);
+            backdrop-filter: blur(15px);
+            padding: 4px;
             border-radius: var(--radius-sm);
             border: 1px solid var(--border-glass);
             box-shadow: var(--shadow-subtle);
         }
-
-        #ui-panel-controls-help {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            z-index: 10;
-            width: 320px;
-            background: var(--bg-glass);
-            backdrop-filter: blur(20px);
-            padding: 12px 14px;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--border-glass);
-            color: var(--text-main);
+        #ui-panel-view-presets button {
+            width: auto; margin: 0; padding: 6px 10px; font-size: 11px;
+            background: transparent; border: none; color: var(--text-secondary); cursor: pointer;
+            border-radius: 4px;
         }
+        #ui-panel-view-presets button:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        #ui-panel-view-presets button.reset-view-btn { color: var(--accent); font-weight: 600; }
 
-        .help-title { font-size: 12px; font-weight: 600; color: var(--accent); margin-bottom: 6px; }
-        .help-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; font-size: 11px; color: var(--text-secondary); }
-        .help-item { display: flex; align-items: center; gap: 4px; }
-        .help-key { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 4px; padding: 1px 5px; font-size: 10px; color: #fff; }
+        /* 操作說明在手機上精簡隱藏或縮小 */
+        #ui-panel-controls-help {
+            position: absolute; bottom: 15px; left: 15px; z-index: 10; width: 300px;
+            background: var(--bg-glass); backdrop-filter: blur(20px); padding: 10px 12px;
+            border-radius: var(--radius-md); border: 1px solid var(--border-glass); color: var(--text-main);
+        }
+        .help-title { font-size: 11px; font-weight: 600; color: var(--accent); margin-bottom: 4px; }
+        .help-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 8px; font-size: 10px; color: var(--text-secondary); }
+        .help-key { background: rgba(255, 255, 255, 0.1); border-radius: 3px; padding: 1px 4px; color: #fff; }
 
         #expo-title-input {
-            width: 100%;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px dashed var(--border-glass-focus);
-            border-radius: var(--radius-sm);
-            color: var(--text-main);
-            font-size: 13px;
-            padding: 8px 10px;
-            outline: none;
-            margin-bottom: 2px;
+            width: 100%; background: rgba(0, 0, 0, 0.3); border: 1px dashed var(--border-glass-focus);
+            border-radius: var(--radius-sm); color: var(--text-main); font-size: 13px; padding: 10px; outline: none; margin-bottom: 2px;
         }
 
-        h3 { margin-bottom: 10px; font-size: 12px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-secondary); }
+        h3 { margin-bottom: 10px; font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); }
         .section { margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
         .section:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
         label { display: block; font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; margin-top: 8px; }
 
         button {
-            width: 100%; padding: 8px 10px; background-color: rgba(255, 255, 255, 0.06); color: var(--text-main);
+            width: 100%; padding: 10px 12px; background-color: rgba(255, 255, 255, 0.06); color: var(--text-main);
             border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-sm); cursor: pointer;
-            font-weight: 500; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px;
+            font-weight: 500; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px;
         }
-        button:hover { background-color: rgba(255, 255, 255, 0.12); }
+        button:active { transform: scale(0.98); }
 
-        button.action-btn { background-color: rgba(0, 132, 255, 0.12); border-color: rgba(0, 132, 255, 0.3); color: #4da6ff; }
-        button.load-btn { background-color: rgba(0, 132, 255, 0.08); border-color: rgba(0, 132, 255, 0.2); color: #4da6ff; }
-        button.save-btn { background-color: rgba(52, 199, 89, 0.12); border-color: rgba(52, 199, 89, 0.3); color: #30d158; }
-        button.img-btn { background-color: rgba(90, 200, 250, 0.12); border-color: rgba(90, 200, 250, 0.3); color: #64d2ff; }
+        button.action-btn { background-color: rgba(0, 132, 255, 0.15); border-color: rgba(0, 132, 255, 0.3); color: #4da6ff; font-weight: 600; padding: 11px; }
+        button.load-btn { background-color: rgba(0, 132, 255, 0.08); color: #4da6ff; }
+        button.save-btn { background-color: rgba(52, 199, 89, 0.12); color: #30d158; }
+        button.img-btn { background-color: rgba(90, 200, 250, 0.12); color: #64d2ff; }
 
-        #ui-panel-view-presets button { width: auto; margin-bottom: 0; padding: 4px 8px; font-size: 10px; background: transparent; border: none; color: var(--text-secondary); }
-        #ui-panel-view-presets button.reset-view-btn { color: var(--accent); }
-
-        button.upload-face-btn { background-color: rgba(255, 159, 10, 0.08); border: 1px dashed rgba(255, 159, 10, 0.4); color: var(--accent); }
-        button.remove-face-btn { background-color: rgba(255, 69, 58, 0.1); border: 1px solid rgba(255, 69, 58, 0.2); color: #ff6961; padding: 5px; }
+        button.upload-face-btn { background-color: rgba(255, 159, 10, 0.1); border: 1px dashed rgba(255, 159, 10, 0.4); color: var(--accent); padding: 11px; }
+        button.remove-face-btn { background-color: rgba(255, 69, 58, 0.15); border: 1px solid rgba(255, 69, 58, 0.3); color: #ff6961; padding: 8px; }
 
         .grid-map { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; background: rgba(0, 0, 0, 0.3); padding: 6px; border-radius: var(--radius-sm); margin-bottom: 8px; }
-        .grid-cell { aspect-ratio: 1; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--text-secondary); }
+        .grid-cell { aspect-ratio: 1; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-secondary); }
         .grid-cell.active { background: var(--success); color: white; font-weight: 600; }
 
-        #right-obj-title { font-size: 12px; color: var(--accent); font-weight: 600; margin-bottom: 10px; text-align: center; background: rgba(255, 159, 10, 0.08); padding: 6px; border-radius: var(--radius-sm); }
+        #right-obj-title { font-size: 13px; color: var(--accent); font-weight: 600; margin-bottom: 12px; text-align: center; background: rgba(255, 159, 10, 0.08); padding: 8px; border-radius: var(--radius-sm); }
         .two-btn-group { display: flex; gap: 6px; }
-        .two-btn-group button { font-size: 11px; padding: 6px; }
+        .two-btn-group button { font-size: 11px; padding: 8px; }
 
-        .struct-box { background: var(--bg-glass-card); padding: 8px 10px; border-radius: var(--radius-sm); margin-top: 6px; }
-        .struct-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; font-size: 11px; }
+        .struct-box { background: var(--bg-glass-card); padding: 10px; border-radius: var(--radius-sm); margin-top: 6px; }
+        .struct-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; font-size: 12px; }
         .wall-checkboxes { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; padding-top: 6px; border-top: 1px dashed rgba(255, 255, 255, 0.08); }
-        .wall-checkboxes label { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--text-secondary); margin: 0; }
-        input[type="checkbox"] { accent-color: var(--primary); width: 14px; height: 14px; }
+        .wall-checkboxes label { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-secondary); margin: 0; }
+        input[type="checkbox"] { accent-color: var(--primary); width: 16px; height: 16px; }
 
         .color-picker-row { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
-        .color-picker-row input[type="color"] { border: none; width: 24px; height: 20px; border-radius: 4px; cursor: pointer; background: transparent; }
+        .color-picker-row input[type="color"] { border: none; width: 30px; height: 24px; border-radius: 4px; cursor: pointer; background: transparent; }
         .quick-colors { display: flex; gap: 6px; }
-        .color-dot { width: 14px; height: 14px; border-radius: 50%; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.2); }
+        .color-dot { width: 16px; height: 16px; border-radius: 50%; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.2); }
 
         .dim-input-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 8px; }
-        .dim-input-box { background: rgba(0, 0, 0, 0.25); padding: 4px; border-radius: 6px; text-align: center; }
-        .dim-input-box label { font-size: 9px; color: var(--accent); margin: 0 0 2px 0; }
-        .dim-input-box input { width: 100%; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); color: #fff; text-align: center; font-size: 11px; border-radius: 4px; padding: 2px; outline: none; }
+        .dim-input-box { background: rgba(0, 0, 0, 0.25); padding: 6px; border-radius: 6px; text-align: center; }
+        .dim-input-box label { font-size: 10px; color: var(--accent); margin: 0 0 2px 0; }
+        .dim-input-box input { width: 100%; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); color: #fff; text-align: center; font-size: 12px; border-radius: 4px; padding: 4px; outline: none; }
 
+        /* 手機強制全螢幕友善響應式 */
         @media (max-width: 768px) {
-            .glass-panel { width: 260px !important; padding: 12px !important; font-size: 11px !important; }
-            #ui-panel-left { top: 55px !important; left: 10px !important; max-height: calc(100vh - 70px) !important; }
-            #ui-panel-right { top: 55px !important; right: 10px !important; max-height: calc(100vh - 70px) !important; }
-            #ui-panel-view-presets { top: 15px !important; padding: 2px 4px !important; }
-            #ui-panel-view-presets button { padding: 3px 5px !important; font-size: 9px !important; }
+            .top-nav-bar { top: 10px; left: 10px; right: 10px; }
+            .nav-btn { padding: 8px 10px; font-size: 12px; }
+            #ui-panel-view-presets button { padding: 5px 7px; font-size: 10px; }
+
+            .glass-panel {
+                width: calc(100vw - 20px) !important;
+                left: 10px !important;
+                right: 10px !important;
+                top: 65px !important;
+                max-height: calc(100vh - 85px) !important;
+            }
             #ui-panel-controls-help { display: none !important; }
         }
     </style>
@@ -224,17 +208,22 @@
 </head>
 <body>
 
-    <button id="btn-toggle-left" class="toggle-panel-btn" onclick="togglePanel('left')">☰ 展位選單</button>
-    <button id="btn-toggle-right" class="toggle-panel-btn" onclick="togglePanel('right')">⚙️ 展具屬性</button>
+    <!-- 頂端控制列 (行動裝置與電腦皆適用) -->
+    <div class="top-nav-bar">
+        <button class="nav-btn" onclick="togglePanel('left')">☰ 展位與物件</button>
+        
+        <div id="ui-panel-view-presets">
+            <button class="reset-view-btn" onclick="switchView('reset')">🏠 預設</button>
+            <button onclick="switchView('top')">🗺️ 俯瞰</button>
+            <button onclick="switchView('front')">⏹️ 正面</button>
+            <button onclick="switchView('left')">⬅️ 左</button>
+            <button onclick="switchView('right')">➡️ 右</button>
+        </div>
 
-    <div id="ui-panel-view-presets">
-        <button class="reset-view-btn" onclick="switchView('reset')">🏠 預設</button>
-        <button onclick="switchView('top')">🗺️ 俯瞰</button>
-        <button onclick="switchView('front')">⏹️ 正面</button>
-        <button onclick="switchView('left')">⬅️ 左側</button>
-        <button onclick="switchView('right')">➡️ 右側</button>
+        <button id="btn-toggle-right" class="nav-btn" onclick="togglePanel('right')" style="display:none; background: rgba(255, 159, 10, 0.2); border-color: var(--accent); color: var(--accent);">⚙️ 屬性</button>
     </div>
 
+    <!-- 左側面板：展位與物件庫 -->
     <div id="ui-panel-left" class="glass-panel">
         <div class="section">
             <h3>📝 活動場次備註</h3>
@@ -244,7 +233,7 @@
         <div class="section">
             <h3>1. 展位範圍與架構</h3>
             <div class="grid-map" id="grid-map"></div>
-            <button onclick="clearAllFloors()" style="background-color: rgba(255,255,255,0.04); font-size: 11px; padding: 5px; color: var(--text-secondary);">重設所有格子</button>
+            <button onclick="clearAllFloors()" style="background-color: rgba(255,255,255,0.04); font-size: 11px; padding: 6px; color: var(--text-secondary);">重設所有格子</button>
 
             <div class="struct-box">
                 <div class="color-picker-row">
@@ -277,13 +266,13 @@
                     <label><input type="checkbox" id="wall-right-check" onchange="updateStructureUI()"> 右側牆 (Right)</label>
                     <label><input type="checkbox" id="wall-front-check" onchange="updateStructureUI()"> 前方牆 (Front)</label>
                 </div>
-                <button onclick="resetDisabledWalls()" style="background-color: rgba(255,255,255,0.04); font-size: 11px; padding: 5px; margin-top: 8px; color: var(--text-secondary);">🔄 還原隱藏牆面</button>
+                <button onclick="resetDisabledWalls()" style="background-color: rgba(255,255,255,0.04); font-size: 11px; padding: 6px; margin-top: 8px; color: var(--text-secondary);">🔄 還原隱藏牆面</button>
             </div>
         </div>
 
         <div class="section">
-            <h3>2. 展具物件庫</h3>
-            <button class="action-btn" onclick="createObject('human')" style="background-color: rgba(255, 112, 67, 0.15); border-color: rgba(255, 112, 67, 0.4); color: #ff8a65;">🧍 新增比例模特兒 (170cm)</button>
+            <h3>2. 展具物件庫 (點擊新增)</h3>
+            <button class="action-btn" onclick="createObject('human')">🧍 新增比例模特兒 (170cm)</button>
             <button class="action-btn" onclick="createObject('table')">🪑 新增收銀桌 (100x70x100)</button>
             <button class="action-btn" onclick="createObject('cabinet')">📦 新增中島 (150x60x160)</button>
             <button class="action-btn" onclick="createObject('folding_table')">🏷️ 新增摺疊桌 (120x60x60)</button>
@@ -304,20 +293,20 @@
         </div>
     </div>
 
+    <!-- 左下角操作說明 (僅電腦版顯示) -->
     <div id="ui-panel-controls-help">
-        <div class="help-title">💡 3D 視角與物件操作說明</div>
+        <div class="help-title">💡 快速操作說明</div>
         <div class="help-grid">
-            <div class="help-item">🖱️ <span class="help-key">右鍵/拖拉</span> 旋轉視角</div>
-            <div class="help-item">⌨️ <span class="help-key">Q</span> / <span class="help-key">E</span> 微轉 15°</div>
-            <div class="help-item">🖱️ <span class="help-key">左鍵</span> 選擇與移動物件</div>
-            <div class="help-item">⌨️ <span class="help-key">R</span> 旋轉 90°</div>
-            <div class="help-item">🖱️ <span class="help-key">滾輪</span> 縮放畫面</div>
-            <div class="help-item">⌨️ <span class="help-key">C</span> 快速複製</div>
-            <div class="help-item" style="grid-column: span 2;">🖱️ <span class="help-key">右鍵拖拉</span> 平移畫面</div>
-            <div class="help-item" style="grid-column: span 2;">⌨️ <span class="help-key">Delete</span> 刪除點選物件</div>
+            <div class="help-item"><span class="help-key">左鍵</span> 選擇與移動</div>
+            <div class="help-item"><span class="help-key">右鍵</span> 旋轉視角</div>
+            <div class="help-item"><span class="help-key">Q/E</span> 微轉 15°</div>
+            <div class="help-item"><span class="help-key">R</span> 旋轉 90°</div>
+            <div class="help-item"><span class="help-key">C</span> 複製物件</div>
+            <div class="help-item"><span class="help-key">Delete</span> 刪除物件</div>
         </div>
     </div>
 
+    <!-- 右側面板：單一展具屬性與圖片上傳 -->
     <div id="ui-panel-right" class="glass-panel">
         <h3 style="color:var(--accent);">⚙️ 展具屬性與輸出面板</h3>
         <div id="right-obj-title">目前選取：無</div>
@@ -330,18 +319,18 @@
 
             <div id="wall-upload-area" style="display:none; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 8px; margin-top: 8px;">
                 <label style="color:#fff; font-weight:500;">🖼️ 牆面看板輸出設定</label>
-                <button class="upload-face-btn" onclick="triggerFaceUpload('front')" style="margin-top:4px;">🖼️ 上傳單片牆面圖片</button>
+                <button class="upload-face-btn" onclick="triggerFaceUpload('front')">🖼️ 上傳單片牆面圖片</button>
                 
                 <div style="background: rgba(0, 132, 255, 0.12); padding: 8px; border-radius: 6px; border: 1px solid rgba(0, 132, 255, 0.3); margin-top: 8px;">
                     <div id="wall-group-title" style="font-size:11px; color:#4da6ff; font-weight:600; margin-bottom:6px;">🔗 自選相鄰牆面跨圖輸出</div>
                     <div id="wall-multiselect-container" style="display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto; margin-bottom: 6px; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 4px;"></div>
-                    <button class="upload-face-btn" onclick="triggerCustomGroupUpload()" style="background-color: rgba(0, 132, 255, 0.25); border:1px solid rgba(0, 132, 255, 0.6); color:#fff; font-weight:600; margin-bottom:0;">✨ 上傳勾選牆面「跨圖大圖」</button>
+                    <button class="upload-face-btn" onclick="triggerCustomGroupUpload()">✨ 上傳勾選牆面「跨圖大圖」</button>
                 </div>
 
                 <button id="rm-wall-front" class="remove-face-btn" onclick="clearFaceTexture('front')" style="display:none; margin-top:8px;">❌ 移除牆面輸出</button>
             </div>
 
-            <button onclick="removeSelectedWallSegment()" style="background-color: rgba(255, 69, 58, 0.15); color: #ff6961; border: 1px solid rgba(255, 69, 58, 0.3); margin-top: 10px; margin-bottom: 0;">🗑️ 隱藏／移除此段隔牆 (Del)</button>
+            <button onclick="removeSelectedWallSegment()" style="background-color: rgba(255, 69, 58, 0.15); color: #ff6961; border: 1px solid rgba(255, 69, 58, 0.3); margin-top: 10px; margin-bottom: 0;">🗑️ 隱藏／移除此段隔牆</button>
         </div>
 
         <div id="backdrop-layer-control" class="section" style="background: rgba(0, 132, 255, 0.06); padding: 12px; border-radius: var(--radius-sm); border: 1px solid rgba(0, 132, 255, 0.2); display: none;">
@@ -388,7 +377,7 @@
                 <div id="cabinet-group-box" style="display:none; background: rgba(0, 132, 255, 0.12); padding: 8px; border-radius: 6px; border: 1px solid rgba(0, 132, 255, 0.3); margin-top: 8px;">
                     <div style="font-size:11px; color:#4da6ff; font-weight:600; margin-bottom:6px;">🔗 自選相鄰展櫃/中島正面跨圖</div>
                     <div id="cabinet-multiselect-container" style="display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto; margin-bottom: 6px; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 4px;"></div>
-                    <button class="upload-face-btn" onclick="triggerGroupCabinetUpload()" style="background-color: rgba(0, 132, 255, 0.25); border:1px solid rgba(0, 132, 255, 0.6); color:#fff; font-weight:600; margin-bottom:0;">✨ 上傳勾選展櫃「跨圖大圖」</button>
+                    <button class="upload-face-btn" onclick="triggerGroupCabinetUpload()">✨ 上傳勾選展櫃「跨圖大圖」</button>
                 </div>
 
                 <button id="rm-front" class="remove-face-btn" onclick="clearFaceTexture('front')" style="display:none; margin-top:8px;">❌ 移除正面輸出</button>
@@ -403,14 +392,14 @@
             </div>
 
             <div class="section" style="border-top: none; padding-top: 0;">
-                <label>角度微調與物件操作</label>
+                <label>物件微調與操作</label>
                 <div class="two-btn-group" style="margin-bottom: 6px;">
-                    <button onclick="onKeyDown({key:'q'})">🔄 逆旋 15° (Q)</button>
-                    <button onclick="onKeyDown({key:'e'})">🔄 順旋 15° (E)</button>
+                    <button onclick="onKeyDown({key:'q'})">🔄 逆旋 15°</button>
+                    <button onclick="onKeyDown({key:'e'})">🔄 順旋 15°</button>
                 </div>
-                <button onclick="onKeyDown({key:'r'})" style="background-color:rgba(255,255,255,0.04);">📐 旋轉 90° (R)</button>
-                <button onclick="onKeyDown({key:'c'})" style="background-color:rgba(255,255,255,0.04);">📋 快速複製 (C)</button>
-                <button onclick="onKeyDown({key:'Delete'})" style="background-color:rgba(255, 69, 58, 0.15); color: #ff6961; border: 1px solid rgba(255, 69, 58, 0.3);">🗑️ 刪除此物件 (Del)</button>
+                <button onclick="onKeyDown({key:'r'})">📐 旋轉 90°</button>
+                <button onclick="onKeyDown({key:'c'})">📋 複製物件</button>
+                <button onclick="onKeyDown({key:'Delete'})" style="background-color: rgba(255, 69, 58, 0.15); color: #ff6961; border: 1px solid rgba(255, 69, 58, 0.3);">🗑️ 刪除此物件</button>
             </div>
         </div>
     </div>
@@ -466,12 +455,20 @@
         let FACE_INDEX_MAP = { right: 0, left: 1, front: 4 };
 
         function togglePanel(panelSide) {
+            let leftP = document.getElementById('ui-panel-left');
+            let rightP = document.getElementById('ui-panel-right');
+
             if (panelSide === 'left') {
-                let p = document.getElementById('ui-panel-left');
-                p.classList.toggle('panel-collapsed-left');
+                leftP.classList.toggle('panel-collapsed-left');
+                // 手機版若打開左側，自動收合右側
+                if (window.innerWidth <= 768 && !leftP.classList.contains('panel-collapsed-left')) {
+                    rightP.classList.add('panel-collapsed-right');
+                }
             } else if (panelSide === 'right') {
-                let p = document.getElementById('ui-panel-right');
-                p.classList.toggle('panel-collapsed-right');
+                rightP.classList.toggle('panel-collapsed-right');
+                if (window.innerWidth <= 768 && !rightP.classList.contains('panel-collapsed-right')) {
+                    leftP.classList.add('panel-collapsed-left');
+                }
             }
         }
 
@@ -479,11 +476,7 @@
             try {
                 let cleanElevatedWalls = {};
                 for (let key in elevatedWallSegments) {
-                    cleanElevatedWalls[key] = {
-                        hasTop: elevatedWallSegments[key].hasTop,
-                        img: null,      
-                        baseImg: null   
-                    };
+                    cleanElevatedWalls[key] = { hasTop: elevatedWallSegments[key].hasTop, img: null, baseImg: null };
                 }
 
                 let currentLayout = {
@@ -517,7 +510,7 @@
                 };
                 localStorage.setItem('expo_simulator_autosave_v47', JSON.stringify(currentLayout));
             } catch (e) {
-                console.warn("自動暫存失敗：", e);
+                console.warn("暫存失敗：", e);
             }
         }
 
@@ -567,7 +560,6 @@
                 }
                 selectObject(null);
             } catch (e) {
-                console.error("讀取存檔失敗：", e);
                 localStorage.removeItem('expo_simulator_autosave_v47');
             }
         }
@@ -594,14 +586,13 @@
             orbitControls.enableDamping = true;
             orbitControls.dampingFactor = 0.05;
             
-            // 完美優化操作邏輯：左鍵點選與拖拉物件，右鍵旋轉視角與平移
+            // 操作分工：左鍵空白處旋轉，右鍵平移，觸控單指旋轉
             orbitControls.mouseButtons = {
-                LEFT: THREE.MOUSE.NONE, // 釋放左鍵給物件拖拉使用
+                LEFT: THREE.MOUSE.ROTATE,
                 MIDDLE: THREE.MOUSE.DOLLY,
-                RIGHT: THREE.MOUSE.ROTATE
+                RIGHT: THREE.MOUSE.PAN
             };
 
-            // 手機觸控：單指旋轉，雙指縮放與平移
             orbitControls.touches = {
                 ONE: THREE.TOUCH.ROTATE,
                 TWO: THREE.TOUCH.DOLLY_PAN
@@ -1295,7 +1286,7 @@
         }
 
         function onPointerDown(event) {
-            if (event.target.closest('.glass-panel') || event.target.closest('.toggle-panel-btn') || event.target.closest('#ui-panel-view-presets') || event.target.closest('#ui-panel-controls-help')) {
+            if (event.target.closest('.glass-panel') || event.target.closest('.top-nav-bar') || event.target.closest('#ui-panel-controls-help')) {
                 return;
             }
 
@@ -1517,7 +1508,7 @@
                 };
                 img.src = e.target.result;
             };
-            reader.readAsDataURL(file);
+            reader.readAsText(file);
         }
 
         function applyGroupTextureToCabinets(cabinets, base64Data) {
@@ -1941,6 +1932,13 @@
                 }
                 rightPanel.style.display = 'block';
                 if (btnToggleRight) btnToggleRight.style.display = 'block';
+                
+                // 手機版選取物件時，自動彈出右側屬性面板，方便修改尺寸或上傳圖片
+                if (window.innerWidth <= 768) {
+                    rightPanel.classList.remove('panel-collapsed-right');
+                    document.getElementById('ui-panel-left').classList.add('panel-collapsed-left');
+                }
+
                 updateRightPanelUI();
             } else {
                 rightPanel.style.display = 'none';

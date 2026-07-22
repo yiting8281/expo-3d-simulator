@@ -77,11 +77,12 @@
             overflow-y: auto;
         }
 
-        /* 左側控制面板 */
+        /* 左側控制面板：高度剛好停在說明面板上方 */
         #ui-panel-left {
             top: 20px;
             left: 20px;
             width: 330px;
+            max-height: calc(100vh - 180px);
         }
 
         /* 右側專屬物件屬性面板 */
@@ -110,7 +111,7 @@
             box-shadow: var(--shadow-subtle);
         }
 
-        /* 左下角操作說明面板 */
+        /* 左下角固定操作說明面板 */
         #ui-panel-controls-help {
             position: absolute;
             bottom: 20px;
@@ -541,7 +542,7 @@
         </div>
     </div>
 
-    <!-- 左下角：操作說明與快捷鍵浮動面板 -->
+    <!-- 左下角：固定操作說明面板 -->
     <div id="ui-panel-controls-help">
         <div class="help-title">💡 3D 視角與物件操作說明</div>
         <div class="help-grid">

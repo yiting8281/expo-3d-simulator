@@ -946,10 +946,16 @@
             switch (viewType) {
                 case 'reset': targetCameraPosition = new THREE.Vector3(0, 12, 15); break;
                 case 'top': targetCameraPosition = new THREE.Vector3(0, 18, 0.001); break;
-                case 'front': targetCameraPosition = new THREE.Vector3(0, 1.25, 15); break; 
+                case 'front': targetCameraPosition = new THREE.Vector3(0, 1.25, 15); break;
                 case 'left': targetCameraPosition = new THREE.Vector3(-15, 1.25, 0); break;
                 case 'right': targetCameraPosition = new THREE.Vector3(15, 1.25, 0); break;
             }
+            
+            // 強制讓目前的作用中元素失焦，並把焦點還給視窗，確保 OrbitControls 正常接收滑鼠事件
+            if (document.activeElement) {
+                document.activeElement.blur();
+            }
+            window.focus();
         }
 
         function buildGridMapUI() {

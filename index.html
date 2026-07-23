@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EXPO 展場配置模擬器 </title>
+    <title>EXPO 展場配置模擬器 - 完整修復版</title>
     <style>
         :root {
             --bg-glass: rgba(22, 22, 25, 0.82);
@@ -121,6 +121,13 @@
         .wall-checkboxes { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; padding-top: 6px; border-top: 1px dashed rgba(255, 255, 255, 0.08); }
         .wall-checkboxes label { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-secondary); cursor: pointer; margin: 0; }
 
+        /* 地板顏色快速選色球樣式 */
+        .color-picker-row { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
+        .color-picker-row input[type="color"] { border: none; width: 28px; height: 22px; border-radius: 4px; cursor: pointer; background: transparent; }
+        .quick-colors { display: flex; gap: 6px; }
+        .color-dot { width: 16px; height: 16px; border-radius: 50%; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.2); transition: transform 0.15s; }
+        .color-dot:hover { transform: scale(1.15); }
+
         .dim-input-group { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 4px; margin-bottom: 8px; }
         .dim-input-box { background: rgba(0, 0, 0, 0.25); padding: 5px 3px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.06); text-align: center; }
         .dim-input-box label { font-size: 9px; color: var(--accent); margin: 0 0 2px 0; }
@@ -163,9 +170,16 @@
             <button onclick="clearAllFloors()" style="background-color: rgba(255,255,255,0.04); font-size: 11px; padding: 5px; color: var(--text-secondary);">重設所有格子</button>
 
             <div class="struct-box">
+                <!-- 地板顏色選擇與快速色票 -->
                 <div class="color-picker-row">
                     <span style="font-size:11px; color:var(--text-main); font-weight:500;">🎨 地板顏色</span>
                     <div style="display:flex; align-items:center; gap:8px;">
+                        <div class="quick-colors">
+                            <div class="color-dot" style="background:#2d2d2d;" onclick="setFloorColor('#2d2d2d')" title="深灰"></div>
+                            <div class="color-dot" style="background:#111111;" onclick="setFloorColor('#111111')" title="酷黑"></div>
+                            <div class="color-dot" style="background:#dcdde1;" onclick="setFloorColor('#dcdde1')" title="淺灰"></div>
+                            <div class="color-dot" style="background:#c0392b;" onclick="setFloorColor('#c0392b')" title="紅色"></div>
+                        </div>
                         <input type="color" id="floor-color-input" value="#2d2d2d" onchange="setFloorColor(this.value)">
                     </div>
                 </div>
@@ -198,14 +212,11 @@
             <button class="action-btn" onclick="createObject('folding_table')">🏷️ 新增摺疊桌 (120x60x60)</button>
             <button class="action-btn" onclick="createObject('straight_rack')">👗 新增直桿吊衣架 (100x40x160)</button>
             <button class="action-btn" onclick="createObject('round_rack')">⭕ 新增圓盤環形衣架 (80x80x160)</button>
-            
-            <!-- 鐵網展架按鈕 -->
             <button class="action-btn" onclick="createObject('grid_rack')" style="background-color: rgba(127, 140, 141, 0.2); color: #bdc3c7;">🕸️ 新增落地鐵網展架 (90x35x150)</button>
             <button class="action-btn" onclick="createObject('wall_grid_rack')" style="background-color: rgba(0, 168, 255, 0.2); color: #00a8ff;">🖼️ 新增壁掛鐵網片 (90x5x150)</button>
-
-            <button class="action-btn" onclick="createObject('fitting_room')">🚪 新增更衣室 (100x100x250)</button>
+            <button class="action-btn" onclick="createObject('fitting_room')">🚪 新增更衣室/試衣間 (100x100x250)</button>
             <button class="action-btn" onclick="createObject('backdrop')">🧱 新增背板 (300x30x250)</button>
-            <button class="action-btn" onclick="createObject('wall_shelf')">🪜 新增牆面層架 (100x35x180)</button>
+            <button class="action-btn" onclick="createObject('wall_shelf')">🪜 新導牆面層架 (100x35x180)</button>
             <button class="action-btn" onclick="createObject('storage')">🏪 新增倉儲區 (150x150x200)</button>
         </div>
 
@@ -216,8 +227,7 @@
             <button class="save-btn" onclick="exportJSON()">💾 儲存／匯出 JSON</button>
             <button class="img-btn" onclick="exportImage()">🖼️ 匯出 PNG 圖檔</button>
             
-            <!-- 快取強制修復按鈕 -->
-            <button onclick="hardResetApp()" style="background-color:rgba(255,69,58,0.15); color:#ff6961; border-color:rgba(255,69,58,0.3); margin-top:10px;">🧹 系統卡住時：一鍵清快取修復</button>
+            <button onclick="hardResetApp()" style="background-color:rgba(255,69,58,0.15); color:#ff6961; border-color:rgba(255,69,58,0.3); margin-top:10px;">🧹 一鍵清快取修復</button>
         </div>
     </div>
 
@@ -322,7 +332,7 @@
             fitting_room:   { name: '更衣室/試衣間', w: 1.0,  d: 1.00, h: 2.5,  color: FIXED_WALL_COLOR_HEX }, 
             backdrop:       { name: '背板',       w: 3.0,  d: 0.30, h: 2.5,  color: FIXED_WALL_COLOR_HEX }, 
             wall_shelf:     { name: '牆面層架',   w: 1.0,  d: 0.35, h: 1.8,  color: 0x34c759 }, 
-            storage:        { name: '倉儲區',     w: 1.5,  d: 1.50, h: 2.0,  color: 0x485460 }
+            storage:        { name: '🏪 倉儲區',  w: 1.5,  d: 1.50, h: 2.0,  color: 0x485460 }
         };
 
         function hardResetApp() {
@@ -346,7 +356,7 @@
 
         function loadProjectsFromStorage() {
             try {
-                let stored = localStorage.getItem('expo_simulator_projects_v2'); // 使用 v2 避開舊相容性崩潰
+                let stored = localStorage.getItem('expo_simulator_projects_v3');
                 if (stored) {
                     let parsed = JSON.parse(stored);
                     projectsData = parsed.projects || {};
@@ -367,8 +377,7 @@
                 updateProjectSelectUI();
                 applyProjectDataToScene(projectsData[currentProjectId].data);
             } catch (e) {
-                console.error("初始化載入快取失敗，進行防禦性修復:", e);
-                localStorage.removeItem('expo_simulator_projects_v2');
+                localStorage.removeItem('expo_simulator_projects_v3');
                 let pid = 'proj_' + Date.now();
                 projectsData = {};
                 projectsData[pid] = { id: pid, title: '展位配置方案 A', data: getEmptyLayoutData('展位配置方案 A') };
@@ -529,7 +538,7 @@
                 projectsData[currentProjectId].title = titleVal;
                 projectsData[currentProjectId].data = currentLayout;
 
-                localStorage.setItem('expo_simulator_projects_v2', JSON.stringify({
+                localStorage.setItem('expo_simulator_projects_v3', JSON.stringify({
                     currentProjectId: currentProjectId,
                     projects: projectsData
                 }));
@@ -538,12 +547,13 @@
             }
         }
 
+        function loadFromLocalStorage() { loadProjectsFromStorage(); }
+
         function init() {
             let container = document.getElementById('canvas-container');
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x111113);
-            scene.add(floorGroup); 
-            scene.add(structureGroup); 
+            scene.add(floorGroup); scene.add(structureGroup); 
 
             planeHelper = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
@@ -556,13 +566,12 @@
             container.appendChild(renderer.domElement);
 
             orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
-            orbitControls.enableDamping = true;
-            orbitControls.dampingFactor = 0.05;
+            orbitControls.enableDamping = true; orbitControls.dampingFactor = 0.05;
             setOrbitControlsMode(false);
 
-            let ambientLight = new THREE.AmbientLight(0xffffff, 0.6); scene.add(ambientLight);
-            let topFrontLight = new THREE.DirectionalLight(0xffffff, 0.3); topFrontLight.position.set(0, 15, 10); scene.add(topFrontLight);
-            let topBackLight = new THREE.DirectionalLight(0xffffff, 0.2); topBackLight.position.set(0, 15, -10); scene.add(topBackLight);
+            scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+            let topFront = new THREE.DirectionalLight(0xffffff, 0.3); topFront.position.set(0, 15, 10); scene.add(topFront);
+            let topBack = new THREE.DirectionalLight(0xffffff, 0.2); topBack.position.set(0, 15, -10); scene.add(topBack);
 
             buildGridMapUI();
             
@@ -606,8 +615,7 @@
             for (let r = 0; r < GRID_MAP_SIZE; r++) {
                 for (let c = 0; c < GRID_MAP_SIZE; c++) {
                     let cell = document.createElement('div');
-                    cell.className = 'grid-cell';
-                    cell.id = `cell-${r}-${c}`;
+                    cell.className = 'grid-cell'; cell.id = `cell-${r}-${c}`;
                     cell.innerText = `${r+1},${c+1}`; 
                     cell.addEventListener('click', () => toggleGridCell(r, c));
                     mapContainer.appendChild(cell);
@@ -620,14 +628,11 @@
             let cellIndex = activeFloorGrid.indexOf(gridId);
             let cellDOM = document.getElementById(`cell-${r}-${c}`);
             if (cellIndex === -1) {
-                activeFloorGrid.push(gridId);
-                if(cellDOM) cellDOM.classList.add('active');
+                activeFloorGrid.push(gridId); if(cellDOM) cellDOM.classList.add('active');
             } else {
-                activeFloorGrid.splice(cellIndex, 1);
-                if(cellDOM) cellDOM.classList.remove('active');
+                activeFloorGrid.splice(cellIndex, 1); if(cellDOM) cellDOM.classList.remove('active');
             }
-            render3DFloor();
-            saveToLocalStorage();
+            render3DFloor(); saveToLocalStorage();
         }
 
         function clearAllFloors() {
@@ -655,12 +660,10 @@
             activeFloorGrid.forEach(gridId => {
                 let [r, c] = gridId.split('-').map(Number);
                 gridMap[r][c] = true;
-                let posX = c * CELL_SIZE - offset;
-                let posZ = r * CELL_SIZE - offset;
+                let posX = c * CELL_SIZE - offset, posZ = r * CELL_SIZE - offset;
 
                 let tile = new THREE.Mesh(new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE), new THREE.MeshBasicMaterial({ color: parseInt(currentFloorColorHex.replace('#', '0x')), side: THREE.DoubleSide }));
-                tile.rotation.x = -Math.PI / 2; tile.position.set(posX, 0, posZ);
-                floorGroup.add(tile);
+                tile.rotation.x = -Math.PI / 2; tile.position.set(posX, 0, posZ); floorGroup.add(tile);
 
                 if (showSubGrid) {
                     let fineGrid = new THREE.GridHelper(CELL_SIZE, 3, 0x444444, 0x333333);
@@ -743,77 +746,40 @@
             }
         }
 
-        /* 1. 落地鐵網展架 (帶支架) */
-        function createGridRackGeometry(data, customW = null, customD = null, customH = null) {
-            let group = new THREE.Group();
-            let w = customW || data.w, d = customD || data.d, h = customH || data.h;
-            let frameRadius = 0.012, wireRadius = 0.003;
-            let matMetal = new THREE.MeshStandardMaterial({ color: 0x424242, metalness: 0.7, roughness: 0.3 });
-            let matWire = new THREE.MeshStandardMaterial({ color: 0x7f8c8d, metalness: 0.8, roughness: 0.2 });
+        function toggleWallSegmentHeight() {
+            if (!selectedObject) return;
+            let segId = selectedObject.userData.segmentId;
+            if (!segId && selectedObject.parent && selectedObject.parent.userData.segmentId) segId = selectedObject.parent.userData.segmentId;
+            if (!segId) return;
 
-            let leftLeg = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, d), matMetal); leftLeg.position.set(-w/2 + 0.02, -h/2 + 0.015, 0);
-            let rightLeg = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, d), matMetal); rightLeg.position.set(w/2 - 0.02, -h/2 + 0.015, 0);
-            let botCrossBar = new THREE.Mesh(new THREE.BoxGeometry(w, 0.03, 0.03), matMetal); botCrossBar.position.set(0, -h/2 + 0.015, 0);
-            group.add(leftLeg, rightLeg, botCrossBar);
+            if (!elevatedWallSegments[segId]) elevatedWallSegments[segId] = { hasTop: true, img: null, baseImg: null };
+            else elevatedWallSegments[segId].hasTop = !elevatedWallSegments[segId].hasTop;
 
-            let leftPost = new THREE.Mesh(new THREE.CylinderGeometry(frameRadius, frameRadius, h - 0.03, 16), matMetal); leftPost.position.set(-w/2 + 0.015, 0.015, 0);
-            let rightPost = new THREE.Mesh(new THREE.CylinderGeometry(frameRadius, frameRadius, h - 0.03, 16), matMetal); rightPost.position.set(w/2 - 0.015, 0.015, 0);
-            let topBar = new THREE.Mesh(new THREE.CylinderGeometry(frameRadius, frameRadius, w, 16), matMetal); topBar.rotation.z = Math.PI / 2; topBar.position.set(0, h/2 - 0.012, 0);
-            group.add(leftPost, rightPost, topBar);
-
-            let gridStep = 0.1;
-            let vertWireGeo = new THREE.CylinderGeometry(wireRadius, wireRadius, h - 0.08, 8);
-            for (let x = -w/2 + gridStep; x < w/2 - 0.02; x += gridStep) {
-                let vWire = new THREE.Mesh(vertWireGeo, matWire); vWire.position.set(x, 0, 0); group.add(vWire);
-            }
-            let horizWireGeo = new THREE.CylinderGeometry(wireRadius, wireRadius, w - 0.04, 8);
-            for (let y = -h/2 + gridStep; y < h/2 - 0.05; y += gridStep) {
-                let hWire = new THREE.Mesh(horizWireGeo, matWire); hWire.rotation.z = Math.PI / 2; hWire.position.set(0, y, 0); group.add(hWire);
-            }
-            return group;
+            render3DFloor();
+            let newObj = wallObjects.find(w => w.userData.segmentId === segId);
+            if (newObj) selectObject(newObj);
+            saveToLocalStorage();
         }
 
-        /* 2. 壁掛鐵網片 (無支架) */
-        function createWallGridRackGeometry(data, customW = null, customD = null, customH = null) {
-            let group = new THREE.Group();
-            let w = customW || data.w, h = customH || data.h;
-            let frameRadius = 0.008, wireRadius = 0.003;
-            let matMetal = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8, roughness: 0.2 });
-            let matWire = new THREE.MeshStandardMaterial({ color: 0x00a8ff, metalness: 0.6, roughness: 0.3 });
-
-            let leftPost = new THREE.Mesh(new THREE.CylinderGeometry(frameRadius, frameRadius, h, 12), matMetal); leftPost.position.set(-w/2 + frameRadius, 0, 0);
-            let rightPost = new THREE.Mesh(new THREE.CylinderGeometry(frameRadius, frameRadius, h, 12), matMetal); rightPost.position.set(w/2 - frameRadius, 0, 0);
-            let topPost = new THREE.Mesh(new THREE.CylinderGeometry(frameRadius, frameRadius, w, 12), matMetal); topPost.rotation.z = Math.PI / 2; topPost.position.set(0, h/2 - frameRadius, 0);
-            let botPost = new THREE.Mesh(new THREE.CylinderGeometry(frameRadius, frameRadius, w, 12), matMetal); botPost.rotation.z = Math.PI / 2; botPost.position.set(0, -h/2 + frameRadius, 0);
-            group.add(leftPost, rightPost, topPost, botPost);
-
-            let gridStep = 0.1;
-            let vertWireGeo = new THREE.CylinderGeometry(wireRadius, wireRadius, h - 0.02, 8);
-            for (let x = -w/2 + gridStep; x < w/2 - 0.02; x += gridStep) {
-                let vWire = new THREE.Mesh(vertWireGeo, matWire); vWire.position.set(x, 0, 0); group.add(vWire);
-            }
-            let horizWireGeo = new THREE.CylinderGeometry(wireRadius, wireRadius, w - 0.02, 8);
-            for (let y = -h/2 + gridStep; y < h/2 - 0.02; y += gridStep) {
-                let hWire = new THREE.Mesh(horizWireGeo, matWire); hWire.rotation.z = Math.PI / 2; hWire.position.set(0, y, 0); group.add(hWire);
-            }
-            return group;
+        function removeSelectedWallSegment() {
+            if (!selectedObject) return;
+            let segId = selectedObject.userData.segmentId;
+            if (!segId && selectedObject.parent && selectedObject.parent.userData.segmentId) segId = selectedObject.parent.userData.segmentId;
+            if (segId && !disabledWallSegments.includes(segId)) disabledWallSegments.push(segId);
+            selectObject(null); render3DFloor(); saveToLocalStorage();
         }
 
         function createShelfGeometry(data, layersCount, customW = null, customD = null, customH = null) {
             let group = new THREE.Group();
             let w = customW || data.w, d = customD || data.d, h = customH || data.h;
-            let backMesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.02), new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.6 }));
-            backMesh.position.set(0, 0, -d/2 + 0.01); group.add(backMesh);
-
+            group.add(new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.02), new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.6 })).translateZ(-d/2 + 0.01));
             let poleMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8 });
-            let leftPole = new THREE.Mesh(new THREE.BoxGeometry(0.03, h, d), poleMat); leftPole.position.set(-w/2 + 0.015, 0, 0);
-            let rightPole = new THREE.Mesh(new THREE.BoxGeometry(0.03, h, d), poleMat); rightPole.position.set(w/2 - 0.015, 0, 0);
-            group.add(leftPole, rightPole);
+            group.add(new THREE.Mesh(new THREE.BoxGeometry(0.03, h, d), poleMat).translateX(-w/2 + 0.015));
+            group.add(new THREE.Mesh(new THREE.BoxGeometry(0.03, h, d), poleMat).translateX(w/2 - 0.015));
 
             let boardGeo = new THREE.BoxGeometry(w - 0.04, 0.03, d - 0.02);
             let boardMat = new THREE.MeshStandardMaterial({ color: 0xdddddd, roughness: 0.5 });
-            let startY = -h/2 + 0.2, endY = h/2 - 0.1;
-            let stepY = layersCount > 1 ? (endY - startY) / (layersCount - 1) : 0;
+            let startY = -h/2 + 0.2, endY = h/2 - 0.1, stepY = layersCount > 1 ? (endY - startY) / (layersCount - 1) : 0;
             for (let i = 0; i < layersCount; i++) {
                 let board = new THREE.Mesh(boardGeo, boardMat);
                 board.position.set(0, (layersCount === 1) ? 0 : (startY + i * stepY), 0.01); group.add(board);
@@ -825,20 +791,67 @@
             let group = new THREE.Group();
             let w = customW || data.w, d = customD || data.d, h = customH || data.h;
             let matMetal = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8 });
-            let leftPole = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, h, 16), matMetal); leftPole.position.set(-w/2 + 0.05, 0, 0);
-            let rightPole = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, h, 16), matMetal); rightPole.position.set(w/2 - 0.05, 0, 0);
+            group.add(new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, h, 16), matMetal).translateX(-w/2 + 0.05));
+            group.add(new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, h, 16), matMetal).translateX(w/2 - 0.05));
             let topBar = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, w, 16), matMetal); topBar.rotation.z = Math.PI / 2; topBar.position.set(0, h/2 - 0.02, 0);
-            group.add(leftPole, rightPole, topBar);
-            return group;
+            group.add(topBar); return group;
         }
 
         function createRoundRackGeometry(data, customW = null, customD = null, customH = null) {
             let group = new THREE.Group();
             let radius = (customW || data.w) / 2, h = customH || data.h;
             let matMetal = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8 });
-            let pole = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, h, 24), matMetal);
+            group.add(new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, h, 24), matMetal));
             let ring = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.018, 16, 48), matMetal); ring.rotation.x = Math.PI / 2; ring.position.set(0, h/2 - 0.05, 0);
-            group.add(pole, ring);
+            group.add(ring); return group;
+        }
+
+        function createGridRackGeometry(data, customW = null, customD = null, customH = null) {
+            let group = new THREE.Group();
+            let w = customW || data.w, d = customD || data.d, h = customH || data.h;
+            let matMetal = new THREE.MeshStandardMaterial({ color: 0x424242, metalness: 0.7, roughness: 0.3 });
+            let matWire = new THREE.MeshStandardMaterial({ color: 0x7f8c8d, metalness: 0.8, roughness: 0.2 });
+
+            group.add(new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, d), matMetal).position.set(-w/2 + 0.02, -h/2 + 0.015, 0));
+            group.add(new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, d), matMetal).position.set(w/2 - 0.02, -h/2 + 0.015, 0));
+            group.add(new THREE.Mesh(new THREE.BoxGeometry(w, 0.03, 0.03), matMetal).position.set(0, -h/2 + 0.015, 0));
+
+            let leftPost = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, h - 0.03, 16), matMetal); leftPost.position.set(-w/2 + 0.015, 0.015, 0);
+            let rightPost = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, h - 0.03, 16), matMetal); rightPost.position.set(w/2 - 0.015, 0.015, 0);
+            let topBar = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, w, 16), matMetal); topBar.rotation.z = Math.PI / 2; topBar.position.set(0, h/2 - 0.012, 0);
+            group.add(leftPost, rightPost, topBar);
+
+            let gridStep = 0.1, vertWireGeo = new THREE.CylinderGeometry(0.003, 0.003, h - 0.08, 8);
+            for (let x = -w/2 + gridStep; x < w/2 - 0.02; x += gridStep) {
+                let v = new THREE.Mesh(vertWireGeo, matWire); v.position.set(x, 0, 0); group.add(v);
+            }
+            let horizWireGeo = new THREE.CylinderGeometry(0.003, 0.003, w - 0.04, 8);
+            for (let y = -h/2 + gridStep; y < h/2 - 0.05; y += gridStep) {
+                let hWire = new THREE.Mesh(horizWireGeo, matWire); hWire.rotation.z = Math.PI / 2; hWire.position.set(0, y, 0); group.add(hWire);
+            }
+            return group;
+        }
+
+        function createWallGridRackGeometry(data, customW = null, customD = null, customH = null) {
+            let group = new THREE.Group();
+            let w = customW || data.w, h = customH || data.h;
+            let matMetal = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8 });
+            let matWire = new THREE.MeshStandardMaterial({ color: 0x00a8ff, metalness: 0.6 });
+
+            group.add(new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, h, 12), matMetal).translateX(-w/2 + 0.008));
+            group.add(new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, h, 12), matMetal).translateX(w/2 - 0.008));
+            let topPost = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, w, 12), matMetal); topPost.rotation.z = Math.PI / 2; topPost.position.set(0, h/2 - 0.008, 0);
+            let botPost = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, w, 12), matMetal); botPost.rotation.z = Math.PI / 2; botPost.position.set(0, -h/2 + 0.008, 0);
+            group.add(topPost, botPost);
+
+            let gridStep = 0.1, vertWireGeo = new THREE.CylinderGeometry(0.003, 0.003, h - 0.02, 8);
+            for (let x = -w/2 + gridStep; x < w/2 - 0.02; x += gridStep) {
+                let v = new THREE.Mesh(vertWireGeo, matWire); v.position.set(x, 0, 0); group.add(v);
+            }
+            let horizWireGeo = new THREE.CylinderGeometry(0.003, 0.003, w - 0.02, 8);
+            for (let y = -h/2 + gridStep; y < h/2 - 0.02; y += gridStep) {
+                let hWire = new THREE.Mesh(horizWireGeo, matWire); hWire.rotation.z = Math.PI / 2; hWire.position.set(0, y, 0); group.add(hWire);
+            }
             return group;
         }
 
@@ -846,19 +859,13 @@
             let group = new THREE.Group();
             let w = customW || data.w, d = customD || data.d, h = customH || data.h;
             let wallMat = new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX, roughness: 0.6 });
-            let backWall = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.03), wallMat); backWall.position.set(0, 0, -d/2 + 0.015);
-            let leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.03, h, d - 0.03), wallMat); leftWall.position.set(-w/2 + 0.015, 0, 0.015);
-            let rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.03, h, d - 0.03), wallMat); rightWall.position.set(w/2 - 0.015, 0, 0.015);
-            group.add(backWall, leftWall, rightWall);
-            return group;
-        }
-
-        function createHumanGeometry(finalW, finalD, finalH) {
-            let group = new THREE.Group();
-            let skinMat = new THREE.MeshStandardMaterial({ color: 0xff7043, roughness: 0.5 }); 
-            let head = new THREE.Mesh(new THREE.SphereGeometry(0.11, 16, 16), skinMat); head.position.set(0, finalH / 2 - 0.11, 0);
-            let torso = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.65, 0.18), skinMat); torso.position.set(0, finalH / 2 - 0.22 - 0.325, 0);
-            group.add(head, torso);
+            group.add(new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.03), wallMat).translateZ(-d/2 + 0.015));
+            group.add(new THREE.Mesh(new THREE.BoxGeometry(0.03, h, d - 0.03), wallMat).position.set(-w/2 + 0.015, 0, 0.015));
+            group.add(new THREE.Mesh(new THREE.BoxGeometry(0.03, h, d - 0.03), wallMat).position.set(w/2 - 0.015, 0, 0.015));
+            if (hasTopLayer) {
+                let topBox = new THREE.Mesh(new THREE.BoxGeometry(w, 1.5, d), new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX }));
+                topBox.name = 'topBannerMesh'; topBox.position.set(0, h/2 + 0.75, 0); group.add(topBox);
+            }
             return group;
         }
 
@@ -870,9 +877,7 @@
             let finalD = customDims?.d || data.d;
             let finalH = customDims?.h || data.h;
 
-            if (type === 'wall_grid_rack' && customPos === null && elevation === 0) {
-                elevation = 0.8; // 壁掛鐵網預設離地 80cm
-            }
+            if (type === 'wall_grid_rack' && customPos === null && elevation === 0) elevation = 0.8;
 
             let finalMesh;
 
@@ -882,7 +887,7 @@
                 finalMesh.add(humanGroup);
             } else if (type === 'wall_shelf') {
                 let shelfGroup = createShelfGeometry(data, shelfLayers, finalW, finalD, finalH);
-                finalMesh = new THREE.Mesh(new THREE.BoxGeometry(finalW, finalH, finalD), new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.6 }));
+                finalMesh = new THREE.Mesh(new THREE.BoxGeometry(finalW, finalH, finalD), new THREE.MeshStandardMaterial({ color: data.color }));
                 finalMesh.add(shelfGroup);
             } else if (type === 'straight_rack') {
                 let straightGroup = createStraightRackGeometry(data, finalW, finalD, finalH);
@@ -902,16 +907,15 @@
                 finalMesh.add(wallGridGroup);
             } else if (type === 'fitting_room') {
                 let fittingRoomGroup = createFittingRoomGeometry(data, finalW, finalD, finalH, hasTopLayer);
-                finalMesh = new THREE.Group();
-                finalMesh.add(fittingRoomGroup);
+                finalMesh = new THREE.Group(); finalMesh.add(fittingRoomGroup);
             } else {
                 let materials = [];
-                for(let i=0; i<6; i++) materials.push(new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.6 }));
+                let initColor = (type === 'backdrop') ? FIXED_WALL_COLOR_HEX : data.color;
+                for(let i=0; i<6; i++) materials.push(new THREE.MeshStandardMaterial({ color: initColor }));
                 finalMesh = new THREE.Mesh(new THREE.BoxGeometry(finalW, finalH, finalD), materials);
             }
 
             let posY = finalH / 2 + elevation;
-
             if (customPos) {
                 finalMesh.position.set(customPos.x, (customPos.y !== undefined ? customPos.y : posY), customPos.z);
             } else {
@@ -926,16 +930,12 @@
                 elevation: elevation, hasTopLayer: hasTopLayer, shelfLayers: shelfLayers, images: savedImages || {} 
             };
             
-            scene.add(finalMesh);
-            draggableObjects.push(finalMesh);
-            selectObject(finalMesh);
-
+            scene.add(finalMesh); draggableObjects.push(finalMesh); selectObject(finalMesh);
             if (shouldSave) saveToLocalStorage();
         }
 
         function updateSelectedDimensions() {
             if (!selectedObject || selectedObject.userData.type === 'booth_wall') return;
-
             let wInput = parseFloat(document.getElementById('dim-w').value) / 100; 
             let dInput = parseFloat(document.getElementById('dim-d').value) / 100;
             let hInput = parseFloat(document.getElementById('dim-h').value) / 100;
@@ -950,7 +950,6 @@
 
             scene.remove(selectedObject);
             draggableObjects = draggableObjects.filter(o => o !== selectedObject);
-
             createObject(type, pos, rot, true, imgs, false, 3, { w: wInput, d: dInput, h: hInput }, elevInput);
         }
 
@@ -958,7 +957,6 @@
             if (!selectedObject || selectedObject.userData.type === 'booth_wall') return;
             let elevInput = parseFloat(document.getElementById('dim-elevation').value) / 100 || 0;
             let h = selectedObject.userData.customH || OBJECT_TYPES[selectedObject.userData.type].h;
-
             selectedObject.userData.elevation = elevInput;
             selectedObject.position.y = h / 2 + elevInput;
             saveToLocalStorage();
@@ -983,8 +981,7 @@
                 selectObject(hitObject);
                 if (hitObject.userData.type !== 'booth_wall' && hitObject.userData.type !== 'booth_wall_top') {
                     isDragging = true;
-                    previousPosition.copy(hitObject.position);
-                    previousRotation.copy(hitObject.rotation);
+                    previousPosition.copy(hitObject.position); previousRotation.copy(hitObject.rotation);
                     let intersectionPoint = new THREE.Vector3();
                     raycaster.ray.intersectPlane(planeHelper, intersectionPoint);
                     dragOffset.copy(hitObject.position).sub(intersectionPoint);
@@ -1022,40 +1019,29 @@
             if (selectedObject) {
                 rightPanel.style.display = 'block';
                 updateRightPanelUI();
-            } else {
-                rightPanel.style.display = 'none';
-            }
+            } else { rightPanel.style.display = 'none'; }
         }
 
         function updateRightPanelUI() {
             if(!selectedObject) return;
             let type = selectedObject.userData.type;
-            let typeName = OBJECT_TYPES[type]?.name || '展具';
-            document.getElementById('right-obj-title').innerText = `目前選取：${typeName}`;
+            document.getElementById('right-obj-title').innerText = `目前選取：${OBJECT_TYPES[type]?.name || '展具'}`;
 
-            let curW = selectedObject.userData.customW || OBJECT_TYPES[type].w;
-            let curD = selectedObject.userData.customD || OBJECT_TYPES[type].d;
-            let curH = selectedObject.userData.customH || OBJECT_TYPES[type].h;
-            let curElev = selectedObject.userData.elevation || 0;
-
-            document.getElementById('dim-w').value = Math.round(curW * 100);
-            document.getElementById('dim-d').value = Math.round(curD * 100);
-            document.getElementById('dim-h').value = Math.round(curH * 100);
-            document.getElementById('dim-elevation').value = Math.round(curElev * 100);
+            document.getElementById('dim-w').value = Math.round((selectedObject.userData.customW || OBJECT_TYPES[type].w) * 100);
+            document.getElementById('dim-d').value = Math.round((selectedObject.userData.customD || OBJECT_TYPES[type].d) * 100);
+            document.getElementById('dim-h').value = Math.round((selectedObject.userData.customH || OBJECT_TYPES[type].h) * 100);
+            document.getElementById('dim-elevation').value = Math.round((selectedObject.userData.elevation || 0) * 100);
         }
 
         function onGlobalKeyDown(event) {
             if (document.activeElement.tagName === 'INPUT') return;
-            if (event.key === " " || event.keyCode === 32) {
-                isSpacePressed = true; setOrbitControlsMode(true); event.preventDefault();
-            } else { onKeyDown(event); }
+            if (event.key === " " || event.keyCode === 32) { isSpacePressed = true; setOrbitControlsMode(true); event.preventDefault(); }
+            else { onKeyDown(event); }
         }
 
         function onGlobalKeyUp(event) {
             if (document.activeElement.tagName === 'INPUT') return;
-            if (event.key === " " || event.keyCode === 32) {
-                isSpacePressed = false; setOrbitControlsMode(false); event.preventDefault();
-            }
+            if (event.key === " " || event.keyCode === 32) { isSpacePressed = false; setOrbitControlsMode(false); event.preventDefault(); }
         }
 
         function onKeyDown(event) {
@@ -1066,38 +1052,26 @@
 
             switch (key) {
                 case 'w':
-                    currentElev += 0.1;
-                    selectedObject.userData.elevation = currentElev;
-                    selectedObject.position.y = h / 2 + currentElev;
-                    updateRightPanelUI(); saveToLocalStorage();
-                    break;
+                    currentElev += 0.1; selectedObject.userData.elevation = currentElev;
+                    selectedObject.position.y = h / 2 + currentElev; updateRightPanelUI(); saveToLocalStorage(); break;
                 case 's':
-                    currentElev = Math.max(0, currentElev - 0.1);
-                    selectedObject.userData.elevation = currentElev;
-                    selectedObject.position.y = h / 2 + currentElev;
-                    updateRightPanelUI(); saveToLocalStorage();
-                    break;
-                case 'r':
-                    selectedObject.rotation.y += Math.PI / 2; saveToLocalStorage();
-                    break;
+                    currentElev = Math.max(0, currentElev - 0.1); selectedObject.userData.elevation = currentElev;
+                    selectedObject.position.y = h / 2 + currentElev; updateRightPanelUI(); saveToLocalStorage(); break;
+                case 'r': selectedObject.rotation.y += Math.PI / 2; saveToLocalStorage(); break;
                 case 'q': selectedObject.rotation.y -= Math.PI / 12; saveToLocalStorage(); break;
                 case 'e': selectedObject.rotation.y += Math.PI / 12; saveToLocalStorage(); break;
                 case 'delete': case 'backspace':
-                    scene.remove(selectedObject);
-                    draggableObjects = draggableObjects.filter(o => o !== selectedObject);
-                    selectObject(null); saveToLocalStorage();
-                    break;
+                    scene.remove(selectedObject); draggableObjects = draggableObjects.filter(o => o !== selectedObject);
+                    selectObject(null); saveToLocalStorage(); break;
             }
         }
 
         function exportJSON() {
             let layoutData = projectsData[currentProjectId]?.data || {};
-            let dataStr = JSON.stringify(layoutData, null, 2);
-            let blob = new Blob([dataStr], { type: "application/json" });
-            let url = URL.createObjectURL(blob);
+            let blob = new Blob([JSON.stringify(layoutData, null, 2)], { type: "application/json" });
             let downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", url);
-            downloadAnchor.setAttribute("download", `EXPO_Layout_${new Date().toISOString().slice(0,10)}.json`);
+            downloadAnchor.setAttribute("href", URL.createObjectURL(blob));
+            downloadAnchor.setAttribute("download", `EXPO_Layout.json`);
             document.body.appendChild(downloadAnchor); downloadAnchor.click(); downloadAnchor.remove();
         }
 
@@ -1116,9 +1090,8 @@
 
         function exportImage() {
             renderer.render(scene, camera);
-            let imgData = renderer.domElement.toDataURL("image/png");
             let downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", imgData);
+            downloadAnchor.setAttribute("href", renderer.domElement.toDataURL("image/png"));
             downloadAnchor.setAttribute("download", `EXPO_Snapshot.png`);
             document.body.appendChild(downloadAnchor); downloadAnchor.click(); downloadAnchor.remove();
         }
@@ -1132,8 +1105,7 @@
             requestAnimationFrame(animate);
             if (targetCameraPosition) camera.position.lerp(targetCameraPosition, ANIMATION_SPEED);
             if (targetControlsTarget) orbitControls.target.lerp(targetControlsTarget, ANIMATION_SPEED);
-            orbitControls.update();
-            renderer.render(scene, camera);
+            orbitControls.update(); renderer.render(scene, camera);
         }
 
         window.onload = init;

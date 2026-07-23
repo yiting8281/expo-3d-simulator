@@ -2028,11 +2028,32 @@
                 texture.encoding = THREE.sRGBEncoding;
 
                 if (type === 'fitting_room') {
-                    let topBanner = mesh.getObjectByName('topBannerMesh');
-                    if (topBanner) {
-                        topBanner.material[FACE_INDEX_MAP[face] || 4].map = texture;
-                        topBanner.material[FACE_INDEX_MAP[face] || 4].color.setHex(0xffffff); 
-                        topBanner.material[FACE_INDEX_MAP[face] || 4].needsUpdate = true;
+                    if (face === 'front') {
+                        // 正面：貼在頂層獨立招牌上
+                        let topBanner = mesh.getObjectByName('topBannerMesh');
+                        if (topBanner) {
+                            topBanner.material[FACE_INDEX_MAP[face] || 4].map = texture;
+                            topBanner.material[FACE_INDEX_MAP[face] || 4].color.setHex(0xffffff); 
+                            topBanner.material[FACE_INDEX_MAP[face] || 4].needsUpdate = true;
+                        }
+                    } else if (face === 'left') {
+                        // 左側：貼在左側隔牆 Mesh 上
+                        mesh.traverse(child => {
+                            if (child.isMesh && child.position.x < 0) {
+                                child.material.map = texture;
+                                child.material.color.setHex(0xffffff);
+                                child.material.needsUpdate = true;
+                            }
+                        });
+                    } else if (face === 'right') {
+                        // 右側：貼在右側隔牆 Mesh 上
+                        mesh.traverse(child => {
+                            if (child.isMesh && child.position.x > 0) {
+                                child.material.map = texture;
+                                child.material.color.setHex(0xffffff);
+                                child.material.needsUpdate = true;
+                            }
+                        });
                     }
                 } else if (Array.isArray(mesh.material)) {
                     mesh.material[faceIndex].map = texture;
@@ -2077,11 +2098,29 @@
                 let type = selectedObject.userData.type;
 
                 if (type === 'fitting_room') {
-                    let topBanner = selectedObject.getObjectByName('topBannerMesh');
-                    if (topBanner) {
-                        topBanner.material[faceIndex].map = null;
-                        topBanner.material[faceIndex].color.setHex(FIXED_WALL_COLOR_HEX);
-                        topBanner.material[faceIndex].needsUpdate = true;
+                    if (face === 'front') {
+                        let topBanner = selectedObject.getObjectByName('topBannerMesh');
+                        if (topBanner) {
+                            topBanner.material[faceIndex].map = null;
+                            topBanner.material[faceIndex].color.setHex(FIXED_WALL_COLOR_HEX);
+                            topBanner.material[faceIndex].needsUpdate = true;
+                        }
+                    } else if (face === 'left') {
+                        selectedObject.traverse(child => {
+                            if (child.isMesh && child.position.x < 0) {
+                                child.material.map = null;
+                                child.material.color.setHex(FIXED_WALL_COLOR_HEX);
+                                child.material.needsUpdate = true;
+                            }
+                        });
+                    } else if (face === 'right') {
+                        selectedObject.traverse(child => {
+                            if (child.isMesh && child.position.x > 0) {
+                                child.material.map = null;
+                                child.material.color.setHex(FIXED_WALL_COLOR_HEX);
+                                child.material.needsUpdate = true;
+                            }
+                        });
                     }
                 } else if (Array.isArray(selectedObject.material)) {
                     selectedObject.material[faceIndex].map = null;
@@ -2132,7 +2171,13 @@
                 }
                 obj.traverse(child => {
                     if (child.isMesh && child.name !== 'topBannerMesh' && child.name !== 'curtainMesh') {
-                        child.material.color.setHex(FIXED_WALL_COLOR_HEX);
+                        let isLeftWall = child.position.x < 0;
+                        let isRightWall = child.position.x > 0;
+                        if ((isLeftWall && obj.userData.images?.left) || (isRightWall && obj.userData.images?.right)) {
+                            child.material.color.setHex(0xffffff);
+                        } else {
+                            child.material.color.setHex(FIXED_WALL_COLOR_HEX);
+                        }
                     } else if (child.name === 'curtainMesh') {
                         child.material.color.setHex(0x222222);
                     }
@@ -2173,6 +2218,10 @@
                 } else if (selectedObject.userData.type === 'fitting_room') {
                     selectedObject.traverse(child => {
                         if (child.isMesh && child.name !== 'curtainMesh') {
+                            let isLeftWall = child.position.x < 0;
+                            let isRightWall = child.position.x > 0;
+                            let hasSideImg = (isLeftWall && selectedObject.userData.images?.left) || (isRightWall && selectedObject.userData.images?.right);
+
                             if (Array.isArray(child.material)) {
                                 for(let i=0; i<6; i++) {
                                     let hasImg = (i === 4 && selectedObject.userData.images?.front) ||
@@ -2181,7 +2230,7 @@
                                     if (!hasImg) child.material[i].color.setHex(0xff9f0a);
                                 }
                             } else {
-                                child.material.color.setHex(0xff9f0a);
+                                if (!hasSideImg) child.material.color.setHex(0xff9f0a);
                             }
                         }
                     });

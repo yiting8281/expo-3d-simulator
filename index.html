@@ -765,7 +765,7 @@
             fitting_room:  { name: '更衣室/試衣間', w: 1.0,  d: 1.00, h: 2.5,  color: FIXED_WALL_COLOR_HEX }, 
             backdrop:      { name: '背板',        w: 3.0,  d: 0.30, h: 2.5,  color: FIXED_WALL_COLOR_HEX }, 
             wall_shelf:    { name: '牆面層架',   w: 1.0,  d: 0.35, h: 1.8,  color: 0x34c759 }, 
-            floor_mesh:    { name: '落地鐵網',   w: 0.9,  d: 0.40, h: 1.5,  color: 0x333333 }, 
+            floor_mesh:    { name: '落地鐵網',   w: 0.9,  d: 0.35, h: 1.5,  color: 0x333333 }, 
             wall_mesh:     { name: '掛牆鐵網',   w: 0.9,  d: 0.08, h: 1.5,  color: 0x333333 }, 
             storage:       { name: '倉儲區',     w: 1.5,  d: 1.50, h: 2.0,  color: 0x485460 }
         };
@@ -1413,55 +1413,61 @@
             return group;
         }
 
-        /* 鐵網幾何模型建立函數（落地鐵網建構於群組正中心，並擁有明確支撐腳） */
+        /* 完美整合：帶工字底座與 10cm 間距金屬網格的落地鐵網函式 */
         function createMeshGridGeometry(data, customW = null, customD = null, customH = null) {
             let group = new THREE.Group();
-            let w = customW || data.w;
-            let d = customD || data.d;
-            let h = customH || data.h;
-            let color = data.color;
+            let w = customW || data.w; 
+            let d = customD || data.d; 
+            let h = customH || data.h; 
 
-            let frameMat = new THREE.MeshStandardMaterial({ color: color, metalness: 0.6, roughness: 0.4 });
-            let wireMat = new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 0.5, roughness: 0.5 });
+            let frameRadius = 0.012; 
+            let wireRadius = 0.003;  
 
-            let thickness = 0.02;
-            let leftBar = new THREE.Mesh(new THREE.BoxGeometry(thickness, h, thickness), frameMat);
-            leftBar.position.set(-w/2 + thickness/2, 0, 0);
-            let rightBar = new THREE.Mesh(new THREE.BoxGeometry(thickness, h, thickness), frameMat);
-            rightBar.position.set(w/2 - thickness/2, 0, 0);
-            let topBar = new THREE.Mesh(new THREE.BoxGeometry(w, thickness, thickness), frameMat);
-            topBar.position.set(0, h/2 - thickness/2, 0);
-            let botBar = new THREE.Mesh(new THREE.BoxGeometry(w, thickness, thickness), frameMat);
-            botBar.position.set(0, -h/2 + thickness/2, 0);
-            group.add(leftBar, rightBar, topBar, botBar);
+            let matMetal = new THREE.MeshStandardMaterial({ color: 0x424242, metalness: 0.7, roughness: 0.3 });
+            let matWire = new THREE.MeshStandardMaterial({ color: 0x7f8c8d, metalness: 0.8, roughness: 0.2 });
 
-            let gridRows = 6;
-            let gridCols = 4;
-            for (let i = 1; i < gridRows; i++) {
-                let yPos = -h/2 + (h / gridRows) * i;
-                let hWire = new THREE.Mesh(new THREE.BoxGeometry(w - thickness*2, 0.008, 0.008), wireMat);
-                hWire.position.set(0, yPos, 0);
-                group.add(hWire);
-            }
-            for (let i = 1; i < gridCols; i++) {
-                let xPos = -w/2 + (w / gridCols) * i;
-                let vWire = new THREE.Mesh(new THREE.BoxGeometry(0.008, h - thickness*2, 0.008), wireMat);
-                vWire.position.set(xPos, 0, 0);
+            // 底座工字型金屬支架
+            let botLegGeo = new THREE.BoxGeometry(0.03, 0.03, d);
+            let leftLeg = new THREE.Mesh(botLegGeo, matMetal);
+            leftLeg.position.set(-w/2 + 0.02, -h/2 + 0.015, 0);
+            let rightLeg = new THREE.Mesh(botLegGeo, matMetal);
+            rightLeg.position.set(w/2 - 0.02, -h/2 + 0.015, 0);
+            group.add(leftLeg, rightLeg);
+
+            let botCrossBarGeo = new THREE.BoxGeometry(w, 0.03, 0.03);
+            let botCrossBar = new THREE.Mesh(botCrossBarGeo, matMetal);
+            botCrossBar.position.set(0, -h/2 + 0.015, 0);
+            group.add(botCrossBar);
+
+            // 立柱與外框
+            let sidePostGeo = new THREE.CylinderGeometry(frameRadius, frameRadius, h - 0.03, 16);
+            let leftPost = new THREE.Mesh(sidePostGeo, matMetal);
+            leftPost.position.set(-w/2 + 0.015, 0.015, 0);
+            let rightPost = new THREE.Mesh(sidePostGeo, matMetal);
+            rightPost.position.set(w/2 - 0.015, 0.015, 0);
+            group.add(leftPost, rightPost);
+
+            let topBarGeo = new THREE.CylinderGeometry(frameRadius, frameRadius, w, 16);
+            let topBar = new THREE.Mesh(topBarGeo, matMetal);
+            topBar.rotation.z = Math.PI / 2;
+            topBar.position.set(0, h/2 - 0.012, 0);
+            group.add(topBar);
+
+            // 網格細線 (10cm 間距)
+            let gridStep = 0.1; 
+            let vertWireGeo = new THREE.CylinderGeometry(wireRadius, wireRadius, h - 0.08, 8);
+            for (let x = -w/2 + gridStep; x < w/2 - 0.02; x += gridStep) {
+                let vWire = new THREE.Mesh(vertWireGeo, matWire);
+                vWire.position.set(x, 0, 0);
                 group.add(vWire);
             }
 
-            // 落地鐵網：加入雙側金屬支撐腳，底座與地面對齊
-            if (data.type === 'floor_mesh') {
-                let footMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.8, roughness: 0.3 });
-                let footGeo = new THREE.BoxGeometry(0.08, 0.06, d * 1.6);
-                
-                let leftFoot = new THREE.Mesh(footGeo, footMat);
-                leftFoot.position.set(-w / 3, -h / 2 - 0.03, 0);
-                
-                let rightFoot = new THREE.Mesh(footGeo, footMat);
-                rightFoot.position.set(w / 3, -h / 2 - 0.03, 0);
-
-                group.add(leftFoot, rightFoot);
+            let horizWireGeo = new THREE.CylinderGeometry(wireRadius, wireRadius, w - 0.04, 8);
+            for (let y = -h/2 + gridStep; y < h/2 - 0.05; y += gridStep) {
+                let hWire = new THREE.Mesh(horizWireGeo, matWire);
+                hWire.rotation.z = Math.PI / 2;
+                hWire.position.set(0, y, 0);
+                group.add(hWire);
             }
 
             return group;
@@ -1703,10 +1709,10 @@
                 finalMesh = new THREE.Mesh(geometry, materials);
             }
 
-            // 【核心修正】落地鐵網高度微調，確保支撐腳能完全浮現並貼齊地板
+            // 確保落地鐵網底部完美貼齊地板
             let posY = finalH / 2;
             if (type === 'floor_mesh') {
-                posY = (finalH / 2) + 0.03; // 向上抬高 3cm 讓腳架露出
+                posY = finalH / 2; 
             } else if (type === 'wall_mesh' && !customPos) {
                 posY = 1.1; 
             }
@@ -1879,8 +1885,6 @@
                 
                 if (selectedObject.userData.type === 'wall_mesh') {
                     selectedObject.position.y = Math.max(selectedObject.userData.height / 2, selectedObject.position.y);
-                } else if (selectedObject.userData.type === 'floor_mesh') {
-                    selectedObject.position.y = (selectedObject.userData.height / 2) + 0.03;
                 } else {
                     selectedObject.position.y = selectedObject.userData.height / 2;
                 }
@@ -2446,8 +2450,8 @@
                             let topCanvas = document.createElement('canvas');
                             let topCtx = topCanvas.getContext('2d');
                             topCanvas.width = 1024; topCanvas.height = 512;
-                            topCanvas.fillStyle = '#545454'; topCanvas.fillRect(0, 0, 1024, 512);
-                            topCanvas.drawImage(img, 0, 0, 1024, 512);
+                            topCtx.fillStyle = '#545454'; topCtx.fillRect(0, 0, 1024, 512);
+                            topCtx.drawImage(img, 0, 0, 1024, 512);
 
                             let topTexture = new THREE.CanvasTexture(topCanvas);
                             topTexture.encoding = THREE.sRGBEncoding;

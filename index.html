@@ -765,7 +765,7 @@
             fitting_room:  { name: '更衣室/試衣間', w: 1.0,  d: 1.00, h: 2.5,  color: FIXED_WALL_COLOR_HEX }, 
             backdrop:      { name: '背板',        w: 3.0,  d: 0.30, h: 2.5,  color: FIXED_WALL_COLOR_HEX }, 
             wall_shelf:    { name: '牆面層架',   w: 1.0,  d: 0.35, h: 1.8,  color: 0x34c759 }, 
-            floor_mesh:    { name: '落地鐵網',   w: 0.9,  d: 0.30, h: 1.5,  color: 0x333333 }, 
+            floor_mesh:    { name: '落地鐵網',   w: 0.9,  d: 0.40, h: 1.5,  color: 0x333333 }, 
             wall_mesh:     { name: '掛牆鐵網',   w: 0.9,  d: 0.08, h: 1.5,  color: 0x333333 }, 
             storage:       { name: '倉儲區',     w: 1.5,  d: 1.50, h: 2.0,  color: 0x485460 }
         };
@@ -1413,7 +1413,7 @@
             return group;
         }
 
-        /* 鐵網幾何模型建立函數（落地鐵網具備支撐腳；掛牆鐵網預設具備掛牆高度） */
+        /* 鐵網幾何模型建立函數（落地鐵網具備明顯突出的雙側支撐腳） */
         function createMeshGridGeometry(data, customW = null, customD = null, customH = null) {
             let group = new THREE.Group();
             let w = customW || data.w;
@@ -1450,25 +1450,20 @@
                 group.add(vWire);
             }
 
-            // 落地鐵網：增加穩固的底部雙支撐腳
+            // 落地鐵網：加入明顯、立體的金屬底座與雙側延伸支撐腳（往前與往後伸出，並向下貼齊地板）
             if (data.type === 'floor_mesh') {
                 let footMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8, roughness: 0.3 });
-                // 支撐腳往前後延伸與網架高度微調
-                let baseLegGeo = new THREE.BoxGeometry(0.04, 0.04, d * 1.2); 
                 
-                let leftLeg = new THREE.Mesh(baseLegGeo, footMat);
-                leftLeg.position.set(-w / 3, -h / 2 - 0.02, 0);
-                let rightLeg = new THREE.Mesh(baseLegGeo, footMat);
-                rightLeg.position.set(w / 3, -h / 2 - 0.02, 0);
+                // 建立左右兩側向前後延伸的底座腳架 (長度放大、高度加厚)
+                let footGeo = new THREE.BoxGeometry(0.08, 0.05, d * 1.5);
+                
+                let leftFoot = new THREE.Mesh(footGeo, footMat);
+                leftFoot.position.set(-w / 3, -h / 2 - 0.025, 0);
+                
+                let rightFoot = new THREE.Mesh(footGeo, footMat);
+                rightFoot.position.set(w / 3, -h / 2 - 0.025, 0);
 
-                // 加上垂直支柱與底座接合
-                let verticalConnGeo = new THREE.BoxGeometry(0.03, 0.04, 0.03);
-                let leftConn = new THREE.Mesh(verticalConnGeo, footMat);
-                leftConn.position.set(-w / 3, -h / 2, 0);
-                let rightConn = new THREE.Mesh(verticalConnGeo, footMat);
-                rightConn.position.set(w / 3, -h / 2, 0);
-
-                group.add(leftLeg, rightLeg, leftConn, rightConn);
+                group.add(leftFoot, rightFoot);
             }
 
             return group;

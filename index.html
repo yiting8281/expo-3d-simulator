@@ -454,6 +454,22 @@
         .dim-input-box input:focus {
             border-color: var(--accent);
         }
+
+        select.custom-select {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 159, 10, 0.3);
+            border-radius: var(--radius-sm);
+            color: var(--text-main);
+            font-size: 11px;
+            padding: 6px;
+            outline: none;
+            margin-top: 4px;
+            cursor: pointer;
+        }
+        select.custom-select:focus {
+            border-color: var(--accent);
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -543,7 +559,7 @@
 
     <!-- 左下角：固定操作說明面板 -->
     <div id="ui-panel-controls-help">
-        <div class="help-title">💡 3D 视角與物件操作說明</div>
+        <div class="help-title">💡 3D 視角與物件操作說明</div>
         <div class="help-grid">
             <div class="help-item">🖱️ <span class="help-key">右鍵</span> 旋轉視角</div>
             <div class="help-item">⌨️ <span class="help-key">Q</span> / <span class="help-key">E</span> 微轉 15°</div>
@@ -628,12 +644,14 @@
             <div class="section" id="image-management-section">
                 <h4 id="output-section-title" style="font-size:12px; color:var(--text-secondary); margin-bottom:8px;">📋 各面輸出示意圖管理</h4>
                 
-                <!-- 新增：連同加高區跨高選項 -->
-                <div id="include-top-box" style="display:none; background: rgba(255, 159, 10, 0.1); border: 1px solid rgba(255, 159, 10, 0.3); padding: 6px 8px; border-radius: 6px; margin-bottom: 10px;">
-                    <label style="display:flex; align-items:center; gap:6px; color:var(--accent); font-size:11px; margin:0; cursor:pointer;">
-                        <input type="checkbox" id="include-top-layer-check" checked onchange="saveToLocalStorage()">
-                        <span>🖼️ 側面/正面輸出連同頂層加高區 (整面 400cm 跨高)</span>
-                    </label>
+                <!-- 新增：加高區貼圖模式三選一下拉選單 -->
+                <div id="include-top-box" style="display:none; background: rgba(255, 159, 10, 0.1); border: 1px solid rgba(255, 159, 10, 0.3); padding: 8px; border-radius: 6px; margin-bottom: 10px;">
+                    <label style="color:var(--accent); font-size:11px; margin:0; font-weight:600;">🎯 加高模式貼圖範圍選擇</label>
+                    <select id="top-layer-mode-select" class="custom-select" onchange="saveToLocalStorage()">
+                        <option value="bottom_only">1. 僅貼下方 (250cm 基底牆)</option>
+                        <option value="top_only">2. 僅貼上方 (150cm 頂層招牌)</option>
+                        <option value="full_span" selected>3. 整面跨高 (400cm 完整延伸)</option>
+                    </select>
                 </div>
 
                 <label id="front-label">▶ 正面輸出</label>
@@ -1273,7 +1291,6 @@
             return group;
         }
 
-        /* 修正 1：更衣室每個牆面均給予獨立全新的 MeshStandardMaterial */
         function createFittingRoomGeometry(data, customW = null, customD = null, customH = null, hasTopLayer = false) {
             let group = new THREE.Group();
             group.name = 'fittingRoomGroup';
@@ -2011,7 +2028,7 @@
             return { faceIndex, faceWidth, faceHeight };
         }
 
-        /* 修正 2：支援自選是否連同加高區整面跨高貼圖 */
+        /* 升級：支援「僅貼下方」、「僅貼上方」、「整面跨高」三選一選項 */
         function applyTextureToFace(mesh, face, base64Data) {
             if (!mesh) return;
 
@@ -2021,8 +2038,8 @@
             currentTargetUploadFace = oldTarget;
 
             let type = mesh.userData.type;
-            let includeTopLayerCheck = document.getElementById('include-top-layer-check');
-            let shouldIncludeTop = includeTopLayerCheck ? includeTopLayerCheck.checked : false;
+            let selectElem = document.getElementById('top-layer-mode-select');
+            let textureMode = selectElem ? selectElem.value : 'full_span';
 
             let img = new Image();
             img.onload = function() {
@@ -2051,14 +2068,14 @@
                             topBanner.material[4].needsUpdate = true;
                         }
                     } else if (targetWall) {
-                        if (hasTop && shouldIncludeTop && topBanner) {
-                            // 跨高自動切割：下半 2.5m (62.5%), 上半 1.5m (37.5%)
+                        let sideFaceIdx = (face === 'left') ? 1 : 0;
+
+                        if (hasTop && textureMode === 'full_span' && topBanner) {
+                            // 選項 3：整面跨高 (下 62.5% + 上 37.5%)
                             let baseCanvas = document.createElement('canvas');
                             let baseCtx = baseCanvas.getContext('2d');
-                            baseCanvas.width = 1024;
-                            baseCanvas.height = 1024;
-                            baseCtx.fillStyle = '#545454';
-                            baseCtx.fillRect(0, 0, 1024, 1024);
+                            baseCanvas.width = 1024; baseCanvas.height = 1024;
+                            baseCtx.fillStyle = '#545454'; baseCtx.fillRect(0, 0, 1024, 1024);
                             baseCtx.drawImage(img, 0, img.height * 0.375, img.width, img.height * 0.625, 0, 0, 1024, 1024);
 
                             let baseTexture = new THREE.CanvasTexture(baseCanvas);
@@ -2069,27 +2086,43 @@
 
                             let topCanvas = document.createElement('canvas');
                             let topCtx = topCanvas.getContext('2d');
-                            topCanvas.width = 1024;
-                            topCanvas.height = 512;
-                            topCtx.fillStyle = '#545454';
-                            topCtx.fillRect(0, 0, 1024, 512);
+                            topCanvas.width = 1024; topCanvas.height = 512;
+                            topCtx.fillStyle = '#545454'; topCtx.fillRect(0, 0, 1024, 512);
                             topCtx.drawImage(img, 0, 0, img.width, img.height * 0.375, 0, 0, 1024, 512);
 
                             let topTexture = new THREE.CanvasTexture(topCanvas);
                             topTexture.encoding = THREE.sRGBEncoding;
 
-                            let sideFaceIdx = (face === 'left') ? 1 : 0;
                             topBanner.material[sideFaceIdx].map = topTexture;
                             topBanner.material[sideFaceIdx].color.setHex(0xffffff);
                             topBanner.material[sideFaceIdx].needsUpdate = true;
+
+                        } else if (hasTop && textureMode === 'top_only' && topBanner) {
+                            // 選項 2：僅貼上方 (150cm 頂層獨立招牌)
+                            let topCanvas = document.createElement('canvas');
+                            let topCtx = topCanvas.getContext('2d');
+                            topCanvas.width = 1024; topCanvas.height = 512;
+                            topCtx.fillStyle = '#545454'; topCtx.fillRect(0, 0, 1024, 512);
+                            topCtx.drawImage(img, 0, 0, 1024, 512);
+
+                            let topTexture = new THREE.CanvasTexture(topCanvas);
+                            topTexture.encoding = THREE.sRGBEncoding;
+
+                            topBanner.material[sideFaceIdx].map = topTexture;
+                            topBanner.material[sideFaceIdx].color.setHex(0xffffff);
+                            topBanner.material[sideFaceIdx].needsUpdate = true;
+
+                            // 清除下方貼圖
+                            targetWall.material.map = null;
+                            targetWall.material.color.setHex(FIXED_WALL_COLOR_HEX);
+                            targetWall.material.needsUpdate = true;
+
                         } else {
-                            // 僅貼於基底 250cm 牆面
+                            // 選項 1：僅貼下方 (250cm 基底牆面)
                             let canvas = document.createElement('canvas');
                             let ctx = canvas.getContext('2d');
-                            canvas.width = 1024;
-                            canvas.height = 1024;
-                            ctx.fillStyle = '#545454';
-                            ctx.fillRect(0, 0, 1024, 1024);
+                            canvas.width = 1024; canvas.height = 1024;
+                            ctx.fillStyle = '#545454'; ctx.fillRect(0, 0, 1024, 1024);
                             ctx.drawImage(img, 0, 0, 1024, 1024);
 
                             let texture = new THREE.CanvasTexture(canvas);
@@ -2099,7 +2132,6 @@
                             targetWall.material.needsUpdate = true;
 
                             if (topBanner) {
-                                let sideFaceIdx = (face === 'left') ? 1 : 0;
                                 topBanner.material[sideFaceIdx].map = null;
                                 topBanner.material[sideFaceIdx].color.setHex(FIXED_WALL_COLOR_HEX);
                                 topBanner.material[sideFaceIdx].needsUpdate = true;
@@ -2111,11 +2143,9 @@
                     let canvasHeight = Math.min(4096, Math.max(128, Math.round(canvasWidth * (faceHeight / faceWidth))));
                     let canvas = document.createElement('canvas');
                     let ctx = canvas.getContext('2d');
-                    canvas.width = canvasWidth;
-                    canvas.height = canvasHeight;
+                    canvas.width = canvasWidth; canvas.height = canvasHeight;
 
-                    ctx.fillStyle = '#545454';
-                    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+                    ctx.fillStyle = '#545454'; ctx.fillRect(0, 0, canvasWidth, canvasHeight);
                     ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
 
                     let texture = new THREE.CanvasTexture(canvas);
@@ -2444,7 +2474,7 @@
                 let frontLabel = document.getElementById('front-label');
                 let cabinetTypes = ['cabinet', 'table'];
 
-                // 顯示/隱藏跨高加高層選項
+                // 顯示/隱藏三選一下拉選單
                 let hasTopLayer = selectedObject.userData.hasTopLayer || false;
                 if (includeTopBox) {
                     includeTopBox.style.display = (hasTopLayer && (type === 'fitting_room' || type === 'backdrop')) ? 'block' : 'none';

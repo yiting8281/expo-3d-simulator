@@ -554,7 +554,7 @@
             <button class="action-btn" onclick="createObject('cabinet')">📦 新增中島 (150x60x160)</button>
             <button class="action-btn" onclick="createObject('folding_table')">🏷️ 新增摺疊桌 (120x60x60)</button>
             <button class="action-btn" onclick="createObject('straight_rack')">👗 新增直桿吊衣架 (100x40x160)</button>
-            <button class="action-btn" onclick="createObject('round_rack')">⭕ 新增圓盤環形衣架 (80x80x160)</button>
+            <button class="action-btn" onclick="createObject('round_rack')">⭕ 新睜圓盤環形衣架 (80x80x160)</button>
             <button class="action-btn" onclick="createObject('fitting_room')">🚪 新增更衣室/試衣間 (100x100x250)</button>
             <button class="action-btn" onclick="createObject('backdrop')">🧱 新增背板 (300x30x250)</button>
             <button class="action-btn" onclick="createObject('wall_shelf')">🪜 新增牆面層架 (100x35x180)</button>
@@ -1413,7 +1413,7 @@
             return group;
         }
 
-        // 新增：鐵網幾何模型建立函數（適用於落地鐵網與掛牆鐵網）
+        /* 鐵網幾何模型建立函數（落地鐵網具備支撐腳；掛牆鐵網預設具備掛牆高度） */
         function createMeshGridGeometry(data, customW = null, customD = null, customH = null) {
             let group = new THREE.Group();
             let w = customW || data.w;
@@ -1435,7 +1435,6 @@
             botBar.position.set(0, -h/2 + thickness/2, 0);
             group.add(leftBar, rightBar, topBar, botBar);
 
-            // 網格橫條與豎條
             let gridRows = 6;
             let gridCols = 4;
             for (let i = 1; i < gridRows; i++) {
@@ -1451,14 +1450,16 @@
                 group.add(vWire);
             }
 
-            // 如果是落地鐵網，增加底部支撐腳
+            // 落地鐵網：增加穩固的衣架式底部雙支撐腳
             if (data.type === 'floor_mesh') {
-                let footMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8 });
-                let leftFoot = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.02, d), footMat);
-                leftFoot.position.set(-w/3, -h/2, 0);
-                let rightFoot = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.02, d), footMat);
-                rightFoot.position.set(w/3, -h/2, 0);
-                group.add(leftFoot, rightFoot);
+                let footMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8, roughness: 0.3 });
+                let baseLegGeo = new THREE.BoxGeometry(0.03, 0.03, d);
+                
+                let leftLeg = new THREE.Mesh(baseLegGeo, footMat);
+                leftLeg.position.set(-w/3, -h/2 - 0.015, 0);
+                let rightLeg = new THREE.Mesh(baseLegGeo, footMat);
+                rightLeg.position.set(w/3, -h/2 - 0.015, 0);
+                group.add(leftLeg, rightLeg);
             }
 
             return group;
@@ -1700,10 +1701,14 @@
                 finalMesh = new THREE.Mesh(geometry, materials);
             }
 
+            // 掛牆鐵網預設具備牆面掛高（中心點 Y 預設在 1.1 公尺左右，方便直接掛在牆上）
             let posY = finalH / 2;
+            if (type === 'wall_mesh' && !customPos) {
+                posY = 1.1; 
+            }
 
             if (customPos) {
-                finalMesh.position.set(customPos.x, posY, customPos.z);
+                finalMesh.position.set(customPos.x, customPos.y, customPos.z);
             } else {
                 finalMesh.position.set(0, posY, 0);
             }
@@ -1867,7 +1872,12 @@
             let intersectionPoint = new THREE.Vector3();
             if (raycaster.ray.intersectPlane(planeHelper, intersectionPoint)) {
                 selectedObject.position.copy(intersectionPoint.add(dragOffset));
-                selectedObject.position.y = selectedObject.userData.height / 2;
+                // 掛牆鐵網維持其掛牆高度，落地鐵網貼齊地板
+                if (selectedObject.userData.type === 'wall_mesh') {
+                    selectedObject.position.y = Math.max(selectedObject.userData.height / 2, selectedObject.position.y);
+                } else {
+                    selectedObject.position.y = selectedObject.userData.height / 2;
+                }
             }
         }
 

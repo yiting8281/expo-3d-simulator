@@ -490,7 +490,7 @@
     <!-- 左側面板 -->
     <div id="ui-panel-left" class="glass-panel">
 
-        <!-- 新增：多場次/多方案切換管理區塊 -->
+        <!-- 多場次/多方案切換管理區塊 -->
         <div class="section" style="background: rgba(0, 132, 255, 0.08); padding: 12px; border-radius: var(--radius-sm); border: 1px solid rgba(0, 132, 255, 0.25);">
             <h3 style="color:#4da6ff;">📂 展場方案與切換</h3>
             <select id="project-select" class="custom-select" onchange="switchProject(this.value)"></select>
@@ -667,7 +667,7 @@
             <div class="section" id="image-management-section">
                 <h4 id="output-section-title" style="font-size:12px; color:var(--text-secondary); margin-bottom:8px;">📋 各面輸出示意圖管理</h4>
                 
-                <!-- 加高區貼圖模式三選一下拉選單 -->
+                <!-- 加高區貼圖模式三選一下拉選單 (適用更衣室與獨立背板) -->
                 <div id="include-top-box" style="display:none; background: rgba(255, 159, 10, 0.1); border: 1px solid rgba(255, 159, 10, 0.3); padding: 8px; border-radius: 6px; margin-bottom: 10px;">
                     <label style="color:var(--accent); font-size:11px; margin:0; font-weight:600;">🎯 加高模式貼圖範圍選擇</label>
                     <select id="top-layer-mode-select" class="custom-select" style="margin-bottom:0;" onchange="saveToLocalStorage()">

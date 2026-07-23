@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EXPO 展場配置模擬器</title>
+    <title>EXPO 展場配置模擬器 - 多場次管理版</title>
     <style>
         :root {
             --bg-glass: rgba(22, 22, 25, 0.82);
@@ -170,7 +170,7 @@
             color: var(--text-main);
             font-size: 13px;
             font-weight: 500;
-            padding: 10px 12px;
+            padding: 8px 10px;
             outline: none;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             margin-bottom: 2px;
@@ -457,18 +457,20 @@
 
         select.custom-select {
             width: 100%;
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 159, 10, 0.3);
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--primary);
             border-radius: var(--radius-sm);
             color: var(--text-main);
-            font-size: 11px;
-            padding: 6px;
+            font-size: 12px;
+            padding: 8px;
             outline: none;
-            margin-top: 4px;
+            margin-bottom: 8px;
             cursor: pointer;
+            font-weight: 600;
         }
         select.custom-select:focus {
             border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(255, 159, 10, 0.2);
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -487,9 +489,20 @@
 
     <!-- 左側面板 -->
     <div id="ui-panel-left" class="glass-panel">
-        <div class="section">
-            <h3>📝 活動場次備註</h3>
-            <input type="text" id="expo-title-input" placeholder="例如：2026 台北馬拉松 EXPO" oninput="saveToLocalStorage()">
+
+        <!-- 新增：多場次/多方案切換管理區塊 -->
+        <div class="section" style="background: rgba(0, 132, 255, 0.08); padding: 12px; border-radius: var(--radius-sm); border: 1px solid rgba(0, 132, 255, 0.25);">
+            <h3 style="color:#4da6ff;">📂 展場方案與切換</h3>
+            <select id="project-select" class="custom-select" onchange="switchProject(this.value)"></select>
+            
+            <label style="margin-top:2px;">📝 當前方案名稱</label>
+            <input type="text" id="expo-title-input" placeholder="例如：2026 台北馬拉松 EXPO" oninput="onTitleInputChange()">
+
+            <div class="two-btn-group" style="margin-top:8px;">
+                <button onclick="createNewProject()" style="background-color:rgba(0,132,255,0.2); color:#4da6ff; border-color:rgba(0,132,255,0.4);">➕ 新增方案</button>
+                <button onclick="duplicateProject()" style="background-color:rgba(255,255,255,0.06);">📋 複製方案</button>
+            </div>
+            <button onclick="deleteCurrentProject()" style="background-color:rgba(255,69,58,0.12); color:#ff6961; border-color:rgba(255,69,58,0.25); margin-top:4px; margin-bottom:0;">🗑️ 刪除當前方案</button>
         </div>
 
         <div class="section">
@@ -551,7 +564,7 @@
         <div class="section">
             <h3>3. 全域檔案與配置</h3>
             <input type="file" id="import-input" accept=".json" style="display:none" onchange="importJSON(event)">
-            <button class="load-btn" onclick="document.getElementById('import-input').click()">📂 載入配置</button>
+            <button class="load-btn" onclick="document.getElementById('import-input').click()">📂 載入 JSON 配置</button>
             <button class="save-btn" onclick="exportJSON()">💾 儲存／匯出 JSON</button>
             <button class="img-btn" onclick="exportImage()">🖼️ 匯出 PNG 圖檔</button>
         </div>
@@ -583,6 +596,16 @@
         <div id="wall-segment-control" class="section" style="background: rgba(0, 132, 255, 0.08); padding: 12px; border-radius: var(--radius-sm); border: 1px solid rgba(0, 132, 255, 0.2); display: none;">
             <h4 style="font-size:12px; color:var(--accent); margin-bottom:8px; font-weight:600;">🧱 獨立單段隔牆控制</h4>
             <button id="toggle-wall-height-btn" onclick="toggleWallSegmentHeight()" style="background-color: var(--accent); color: #111; border: none; margin-bottom: 8px; font-weight:600;">➕ 雙層加高：追加 150cm 頂層看板</button>
+
+            <!-- 外圍隔牆加高貼圖三選一模式 -->
+            <div id="wall-top-mode-box" style="display:none; background: rgba(255, 159, 10, 0.1); border: 1px solid rgba(255, 159, 10, 0.3); padding: 8px; border-radius: 6px; margin-bottom: 8px;">
+                <label style="color:var(--accent); font-size:11px; margin:0; font-weight:600;">🎯 牆面加高貼圖範圍</label>
+                <select id="booth-wall-mode-select" class="custom-select" style="margin-bottom:0;">
+                    <option value="full_span" selected>1. 整面跨高 (400cm 完整延伸)</option>
+                    <option value="bottom_only">2. 僅貼下方 (250cm 基底牆)</option>
+                    <option value="top_only">3. 僅貼上方 (150cm 頂層看板)</option>
+                </select>
+            </div>
 
             <div id="wall-upload-area" style="display:none; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 8px; margin-top: 8px;">
                 <label style="color:#fff; font-weight:500;">🖼️ 牆面看板輸出設定</label>
@@ -644,10 +667,10 @@
             <div class="section" id="image-management-section">
                 <h4 id="output-section-title" style="font-size:12px; color:var(--text-secondary); margin-bottom:8px;">📋 各面輸出示意圖管理</h4>
                 
-                <!-- 新增：加高區貼圖模式三選一下拉選單 -->
+                <!-- 加高區貼圖模式三選一下拉選單 -->
                 <div id="include-top-box" style="display:none; background: rgba(255, 159, 10, 0.1); border: 1px solid rgba(255, 159, 10, 0.3); padding: 8px; border-radius: 6px; margin-bottom: 10px;">
                     <label style="color:var(--accent); font-size:11px; margin:0; font-weight:600;">🎯 加高模式貼圖範圍選擇</label>
-                    <select id="top-layer-mode-select" class="custom-select" onchange="saveToLocalStorage()">
+                    <select id="top-layer-mode-select" class="custom-select" style="margin-bottom:0;" onchange="saveToLocalStorage()">
                         <option value="bottom_only">1. 僅貼下方 (250cm 基底牆)</option>
                         <option value="top_only">2. 僅貼上方 (150cm 頂層招牌)</option>
                         <option value="full_span" selected>3. 整面跨高 (400cm 完整延伸)</option>
@@ -726,6 +749,10 @@
 
         let FIXED_WALL_COLOR_HEX = 0x545454;
 
+        // 多場次管理變數
+        let projectsData = {}; 
+        let currentProjectId = null;
+
         let OBJECT_TYPES = {
             human:         { name: '比例模特兒', w: 0.4,  d: 0.3, h: 1.7,  color: 0xff7043 },
             table:         { name: '收銀桌',     w: 1.0,  d: 0.70, h: 1.0, color: 0x32ade6 },
@@ -741,7 +768,203 @@
 
         let FACE_INDEX_MAP = { right: 0, left: 1, front: 4 };
 
+        /* 核心升級：多場次儲存與載入邏輯 */
+        function getEmptyLayoutData(title) {
+            return {
+                expoTitle: title || '新展位方案',
+                floorColor: '#2d2d2d',
+                showFrame: true,
+                showMainGrid: true,
+                showSubGrid: true,
+                walls: { back: true, left: true, right: false, front: false },
+                disabledWallSegments: [],
+                elevatedWallSegments: {},
+                activeFloorGrid: ['2-2', '2-3'],
+                objects: []
+            };
+        }
+
+        function loadProjectsFromStorage() {
+            let stored = localStorage.getItem('expo_simulator_projects_v1');
+            if (stored) {
+                try {
+                    let parsed = JSON.parse(stored);
+                    projectsData = parsed.projects || {};
+                    currentProjectId = parsed.currentProjectId;
+                } catch(e) {
+                    console.error("載入多方案失敗：", e);
+                }
+            }
+
+            // 自動相容單場次舊版本存檔
+            let oldSave = localStorage.getItem('expo_simulator_autosave_v47');
+            if (oldSave && Object.keys(projectsData).length === 0) {
+                try {
+                    let oldData = JSON.parse(oldSave);
+                    let pid = 'proj_' + Date.now();
+                    projectsData[pid] = {
+                        id: pid,
+                        title: oldData.expoTitle || '2026 預設展場配置',
+                        data: oldData
+                    };
+                    currentProjectId = pid;
+                } catch(e) {}
+            }
+
+            if (Object.keys(projectsData).length === 0) {
+                let pid = 'proj_' + Date.now();
+                projectsData[pid] = {
+                    id: pid,
+                    title: '展位配置方案 A',
+                    data: getEmptyLayoutData('展位配置方案 A')
+                };
+                currentProjectId = pid;
+            }
+
+            if (!currentProjectId || !projectsData[currentProjectId]) {
+                currentProjectId = Object.keys(projectsData)[0];
+            }
+
+            updateProjectSelectUI();
+            applyProjectDataToScene(projectsData[currentProjectId].data);
+        }
+
+        function updateProjectSelectUI() {
+            let selectDOM = document.getElementById('project-select');
+            if (!selectDOM) return;
+            selectDOM.innerHTML = '';
+
+            for (let pid in projectsData) {
+                let option = document.createElement('option');
+                option.value = pid;
+                option.innerText = projectsData[pid].title || '未命名場次';
+                if (pid === currentProjectId) option.selected = true;
+                selectDOM.appendChild(option);
+            }
+        }
+
+        function switchProject(newPid) {
+            if (!projectsData[newPid] || newPid === currentProjectId) return;
+            saveToLocalStorage(); // 先存檔當前場次
+
+            currentProjectId = newPid;
+            updateProjectSelectUI();
+            applyProjectDataToScene(projectsData[currentProjectId].data);
+            saveToLocalStorage();
+        }
+
+        function createNewProject() {
+            saveToLocalStorage();
+            let pid = 'proj_' + Date.now();
+            let count = Object.keys(projectsData).length + 1;
+            let defaultTitle = `新展位方案 ${count}`;
+
+            projectsData[pid] = {
+                id: pid,
+                title: defaultTitle,
+                data: getEmptyLayoutData(defaultTitle)
+            };
+
+            currentProjectId = pid;
+            updateProjectSelectUI();
+            applyProjectDataToScene(projectsData[currentProjectId].data);
+            createObject('cabinet'); // 給一個初始中島展櫃
+            saveToLocalStorage();
+        }
+
+        function duplicateProject() {
+            if (!currentProjectId || !projectsData[currentProjectId]) return;
+            saveToLocalStorage();
+
+            let pid = 'proj_' + Date.now();
+            let srcTitle = projectsData[currentProjectId].title || '展位方案';
+            let newTitle = `${srcTitle} (副本)`;
+
+            let copiedData = JSON.parse(JSON.stringify(projectsData[currentProjectId].data));
+            copiedData.expoTitle = newTitle;
+
+            projectsData[pid] = {
+                id: pid,
+                title: newTitle,
+                data: copiedData
+            };
+
+            currentProjectId = pid;
+            updateProjectSelectUI();
+            applyProjectDataToScene(copiedData);
+            saveToLocalStorage();
+        }
+
+        function deleteCurrentProject() {
+            let keys = Object.keys(projectsData);
+            if (keys.length <= 1) {
+                alert("最少需要保留一個展位方案！");
+                return;
+            }
+
+            if (confirm(`確定要刪除「${projectsData[currentProjectId].title}」嗎？刪除後無法復原。`)) {
+                delete projectsData[currentProjectId];
+                currentProjectId = Object.keys(projectsData)[0];
+                updateProjectSelectUI();
+                applyProjectDataToScene(projectsData[currentProjectId].data);
+                saveToLocalStorage();
+            }
+        }
+
+        function onTitleInputChange() {
+            let val = document.getElementById('expo-title-input').value;
+            if (currentProjectId && projectsData[currentProjectId]) {
+                projectsData[currentProjectId].title = val || '未命名場次';
+                updateProjectSelectUI();
+                saveToLocalStorage();
+            }
+        }
+
+        function applyProjectDataToScene(data) {
+            // 清空目前的 3D 物件
+            draggableObjects.forEach(obj => scene.remove(obj));
+            draggableObjects.length = 0;
+            selectObject(null);
+
+            document.getElementById('expo-title-input').value = data.expoTitle || '';
+            document.getElementById('show-frame-check').checked = (data.showFrame !== undefined) ? data.showFrame : true;
+            document.getElementById('show-main-grid-check').checked = (data.showMainGrid !== undefined) ? data.showMainGrid : true;
+            document.getElementById('show-sub-grid-check').checked = (data.showSubGrid !== undefined) ? data.showSubGrid : true;
+
+            if (data.floorColor) {
+                currentFloorColorHex = data.floorColor;
+                document.getElementById('floor-color-input').value = data.floorColor;
+            }
+
+            if (data.walls) {
+                document.getElementById('wall-back-check').checked = !!data.walls.back;
+                document.getElementById('wall-left-check').checked = !!data.walls.left;
+                document.getElementById('wall-right-check').checked = !!data.walls.right;
+                document.getElementById('wall-front-check').checked = !!data.walls.front;
+            }
+
+            disabledWallSegments = data.disabledWallSegments || [];
+            elevatedWallSegments = data.elevatedWallSegments || {};
+
+            activeFloorGrid = data.activeFloorGrid || [];
+            document.querySelectorAll('.grid-cell').forEach(c => c.classList.remove('active'));
+            activeFloorGrid.forEach(gridId => {
+                let cellDOM = document.getElementById(`cell-${gridId}`);
+                if(cellDOM) cellDOM.classList.add('active');
+            });
+
+            render3DFloor();
+
+            if (data.objects && data.objects.length > 0) {
+                data.objects.forEach(objData => {
+                    createObject(objData.type, objData.position, objData.rotation, false, objData.images, objData.hasTopLayer, objData.shelfLayers, objData.customDims);
+                });
+            }
+        }
+
         function saveToLocalStorage() {
+            if (!currentProjectId || !projectsData[currentProjectId]) return;
+
             try {
                 let cleanElevatedWalls = {};
                 for (let key in elevatedWallSegments) {
@@ -752,8 +975,10 @@
                     };
                 }
 
+                let titleVal = document.getElementById('expo-title-input').value || '未命名場次';
+
                 let currentLayout = {
-                    expoTitle: document.getElementById('expo-title-input').value,
+                    expoTitle: titleVal,
                     floorColor: currentFloorColorHex,
                     showFrame: document.getElementById('show-frame-check').checked,
                     showMainGrid: document.getElementById('show-main-grid-check').checked,
@@ -781,61 +1006,21 @@
                         images: { front: null, left: null, right: null }
                     }))
                 };
-                localStorage.setItem('expo_simulator_autosave_v47', JSON.stringify(currentLayout));
+
+                projectsData[currentProjectId].title = titleVal;
+                projectsData[currentProjectId].data = currentLayout;
+
+                localStorage.setItem('expo_simulator_projects_v1', JSON.stringify({
+                    currentProjectId: currentProjectId,
+                    projects: projectsData
+                }));
             } catch (e) {
-                console.warn("自動暫存失敗，可能遇到極端儲存限制：", e);
+                console.warn("自動暫存失敗：", e);
             }
         }
 
         function loadFromLocalStorage() {
-            try {
-                let savedDataStr = localStorage.getItem('expo_simulator_autosave_v47');
-                if (!savedDataStr) {
-                    toggleGridCell(2, 2);
-                    toggleGridCell(2, 3);
-                    createObject('cabinet');
-                    return;
-                }
-
-                let data = JSON.parse(savedDataStr);
-                document.getElementById('expo-title-input').value = data.expoTitle || '';
-                document.getElementById('show-frame-check').checked = (data.showFrame !== undefined) ? data.showFrame : true;
-                document.getElementById('show-main-grid-check').checked = (data.showMainGrid !== undefined) ? data.showMainGrid : true;
-                document.getElementById('show-sub-grid-check').checked = (data.showSubGrid !== undefined) ? data.showSubGrid : true;
-
-                if (data.floorColor) {
-                    currentFloorColorHex = data.floorColor;
-                    document.getElementById('floor-color-input').value = data.floorColor;
-                }
-
-                if (data.walls) {
-                    document.getElementById('wall-back-check').checked = !!data.walls.back;
-                    document.getElementById('wall-left-check').checked = !!data.walls.left;
-                    document.getElementById('wall-right-check').checked = !!data.walls.right;
-                    document.getElementById('wall-front-check').checked = !!data.walls.front;
-                }
-
-                disabledWallSegments = data.disabledWallSegments || [];
-                elevatedWallSegments = data.elevatedWallSegments || {};
-
-                activeFloorGrid = data.activeFloorGrid || [];
-                document.querySelectorAll('.grid-cell').forEach(c => c.classList.remove('active'));
-                activeFloorGrid.forEach(gridId => {
-                    let cellDOM = document.getElementById(`cell-${gridId}`);
-                    if(cellDOM) cellDOM.classList.add('active');
-                });
-                render3DFloor();
-
-                if (data.objects && data.objects.length > 0) {
-                    data.objects.forEach(objData => {
-                        createObject(objData.type, objData.position, objData.rotation, false, objData.images, objData.hasTopLayer, objData.shelfLayers, objData.customDims);
-                    });
-                }
-                selectObject(null);
-            } catch (e) {
-                console.error("讀取存檔失敗，檔案可能已損壞：", e);
-                localStorage.removeItem('expo_simulator_autosave_v47');
-            }
+            loadProjectsFromStorage();
         }
 
         function init() {
@@ -1697,30 +1882,27 @@
                         let selectedSegmentIds = Array.from(checkboxes).map(cb => cb.value);
                         
                         if (selectedSegmentIds.length > 0) {
-                            let isTopLayer = (selectedObject.userData.type === 'booth_wall_top');
-                            let targetWallType = isTopLayer ? 'booth_wall_top' : 'booth_wall';
-                            
-                            let matchedWalls = wallObjects.filter(w => selectedSegmentIds.includes(w.userData.segmentId) && w.userData.type === targetWallType);
-                            
+                            let wallModeElem = document.getElementById('booth-wall-mode-select');
+                            let wallMode = wallModeElem ? wallModeElem.value : 'full_span';
+
                             let dir = selectedObject.userData.dir;
+                            let matchedBaseWalls = wallObjects.filter(w => selectedSegmentIds.includes(w.userData.segmentId) && w.userData.type === 'booth_wall');
+                            let matchedTopWalls = wallObjects.filter(w => selectedSegmentIds.includes(w.userData.segmentId) && w.userData.type === 'booth_wall_top');
+
                             if (dir === 'back' || dir === 'front') {
-                                matchedWalls.sort((a, b) => a.userData.c - b.userData.c);
+                                matchedBaseWalls.sort((a, b) => a.userData.c - b.userData.c);
+                                matchedTopWalls.sort((a, b) => a.userData.c - b.userData.c);
                             } else {
-                                matchedWalls.sort((a, b) => a.userData.r - b.userData.r);
+                                matchedBaseWalls.sort((a, b) => a.userData.r - b.userData.r);
+                                matchedTopWalls.sort((a, b) => a.userData.r - b.userData.r);
                             }
 
-                            if (matchedWalls.length > 1) {
-                                applyCustomGroupTextureToWalls(matchedWalls, base64Data, isTopLayer);
-                            } else if (matchedWalls.length === 1) {
-                                let segId = matchedWalls[0].userData.segmentId;
-                                if (!elevatedWallSegments[segId]) elevatedWallSegments[segId] = { hasTop: isTopLayer, img: null, baseImg: null };
-                                if (isTopLayer) {
-                                    elevatedWallSegments[segId].img = base64Data;
-                                    applyTextureToWallTop(matchedWalls[0], base64Data);
-                                } else {
-                                    elevatedWallSegments[segId].baseImg = base64Data;
-                                    applyTextureToWallBase(matchedWalls[0], base64Data);
-                                }
+                            if (wallMode === 'full_span' && matchedTopWalls.length > 0) {
+                                applyCustomGroupTextureToWallsSpan(matchedBaseWalls, matchedTopWalls, base64Data);
+                            } else if (wallMode === 'top_only' && matchedTopWalls.length > 0) {
+                                applyCustomGroupTextureToWalls(matchedTopWalls, base64Data, true);
+                            } else {
+                                applyCustomGroupTextureToWalls(matchedBaseWalls, base64Data, false);
                             }
                         }
                     } else if (currentTargetUploadFace === 'group_fitting') {
@@ -1759,16 +1941,26 @@
                         }
                     } else if (selectedObject.userData.type === 'booth_wall' || selectedObject.userData.type === 'booth_wall_top') {
                         let segId = selectedObject.userData.segmentId;
-                        let isTopLayer = (selectedObject.userData.type === 'booth_wall_top');
-                        if (segId) {
-                            if (!elevatedWallSegments[segId]) elevatedWallSegments[segId] = { hasTop: isTopLayer, img: null, baseImg: null };
-                        }
-                        if (isTopLayer) {
-                            elevatedWallSegments[segId].img = base64Data;
-                            applyTextureToWallTop(selectedObject, base64Data);
-                        } else {
-                            elevatedWallSegments[segId].baseImg = base64Data;
-                            applyTextureToWallBase(selectedObject, base64Data);
+                        let wallModeElem = document.getElementById('booth-wall-mode-select');
+                        let wallMode = wallModeElem ? wallModeElem.value : 'full_span';
+
+                        let baseObj = wallObjects.find(w => w.userData.type === 'booth_wall' && w.userData.segmentId === segId);
+                        let topObj = wallObjects.find(w => w.userData.type === 'booth_wall_top' && w.userData.segmentId === segId);
+
+                        if (wallMode === 'full_span' && topObj && baseObj) {
+                            applyWallSingleFullSpan(baseObj, topObj, base64Data);
+                        } else if (wallMode === 'top_only' && topObj) {
+                            if (segId) {
+                                if (!elevatedWallSegments[segId]) elevatedWallSegments[segId] = { hasTop: true, img: null, baseImg: null };
+                                elevatedWallSegments[segId].img = base64Data;
+                            }
+                            applyTextureToWallTop(topObj, base64Data);
+                        } else if (baseObj) {
+                            if (segId) {
+                                if (!elevatedWallSegments[segId]) elevatedWallSegments[segId] = { hasTop: !!topObj, img: null, baseImg: null };
+                                elevatedWallSegments[segId].baseImg = base64Data;
+                            }
+                            applyTextureToWallBase(baseObj, base64Data);
                         }
                     } else {
                         if (selectedObject.userData.type === 'fitting_room' && currentTargetUploadFace === 'front' && !selectedObject.userData.hasTopLayer) {
@@ -1797,6 +1989,92 @@
                 img.src = e.target.result;
             };
             reader.readAsDataURL(file);
+        }
+
+        /* 外圍單片牆面的整面跨高裁切 (400cm: 下 62.5%, 上 37.5%) */
+        function applyWallSingleFullSpan(baseObj, topObj, base64Data) {
+            let img = new Image();
+            img.onload = function() {
+                let segId = baseObj.userData.segmentId;
+                if (!elevatedWallSegments[segId]) elevatedWallSegments[segId] = { hasTop: true, img: null, baseImg: null };
+
+                // 下半部 250cm
+                let baseCanvas = document.createElement('canvas');
+                let baseCtx = baseCanvas.getContext('2d');
+                baseCanvas.width = 1024; baseCanvas.height = 1024;
+                baseCtx.fillStyle = '#545454'; baseCtx.fillRect(0, 0, 1024, 1024);
+                baseCtx.drawImage(img, 0, img.height * 0.375, img.width, img.height * 0.625, 0, 0, 1024, 1024);
+
+                let baseBase64 = baseCanvas.toDataURL('image/jpeg', 0.8);
+                elevatedWallSegments[segId].baseImg = baseBase64;
+                applyTextureToWallBase(baseObj, baseBase64);
+
+                // 上半部 150cm
+                let topCanvas = document.createElement('canvas');
+                let topCtx = topCanvas.getContext('2d');
+                topCanvas.width = 1024; topCanvas.height = 512;
+                topCtx.fillStyle = '#545454'; topCtx.fillRect(0, 0, 1024, 512);
+                topCtx.drawImage(img, 0, 0, img.width, img.height * 0.375, 0, 0, 1024, 512);
+
+                let topBase64 = topCanvas.toDataURL('image/jpeg', 0.8);
+                elevatedWallSegments[segId].img = topBase64;
+                applyTextureToWallTop(topObj, topBase64);
+
+                saveToLocalStorage();
+            };
+            img.src = base64Data;
+        }
+
+        /* 外圍多片選取牆面的整面跨高大圖裁切 */
+        function applyCustomGroupTextureToWallsSpan(baseWalls, topWalls, base64Data) {
+            let img = new Image();
+            img.onload = function() {
+                let totalCount = baseWalls.length;
+                let canvasW = 1024 * totalCount;
+                let canvasH = 1024;
+
+                let masterCanvas = document.createElement('canvas');
+                let masterCtx = masterCanvas.getContext('2d');
+                masterCanvas.width = canvasW; masterCanvas.height = canvasH;
+                masterCtx.fillStyle = '#545454'; masterCtx.fillRect(0, 0, canvasW, canvasH);
+                masterCtx.drawImage(img, 0, 0, canvasW, canvasH);
+
+                baseWalls.forEach((baseMesh, index) => {
+                    let segId = baseMesh.userData.segmentId;
+                    let topMesh = topWalls.find(t => t.userData.segmentId === segId);
+                    if (!elevatedWallSegments[segId]) elevatedWallSegments[segId] = { hasTop: true, img: null, baseImg: null };
+
+                    // 1. 切出單片牆的 400cm 垂直區域 (寬 1024, 高 1024)
+                    let colCanvas = document.createElement('canvas');
+                    let colCtx = colCanvas.getContext('2d');
+                    colCanvas.width = 1024; colCanvas.height = 1024;
+                    colCtx.drawImage(masterCanvas, index * 1024, 0, 1024, 1024, 0, 0, 1024, 1024);
+
+                    // 2. 切出基底 250cm (下半 62.5%)
+                    let baseCanvas = document.createElement('canvas');
+                    let baseCtx = baseCanvas.getContext('2d');
+                    baseCanvas.width = 1024; baseCanvas.height = 1024;
+                    baseCtx.drawImage(colCanvas, 0, 1024 * 0.375, 1024, 1024 * 0.625, 0, 0, 1024, 1024);
+
+                    let baseBase64 = baseCanvas.toDataURL('image/jpeg', 0.8);
+                    elevatedWallSegments[segId].baseImg = baseBase64;
+                    applyTextureToWallBase(baseMesh, baseBase64);
+
+                    // 3. 切出頂層 150cm (上半 37.5%)
+                    if (topMesh) {
+                        let topCanvas = document.createElement('canvas');
+                        let topCtx = topCanvas.getContext('2d');
+                        topCanvas.width = 1024; topCanvas.height = 512;
+                        topCtx.drawImage(colCanvas, 0, 0, 1024, 1024 * 0.375, 0, 0, 1024, 512);
+
+                        let topBase64 = topCanvas.toDataURL('image/jpeg', 0.8);
+                        elevatedWallSegments[segId].img = topBase64;
+                        applyTextureToWallTop(topMesh, topBase64);
+                    }
+                });
+                saveToLocalStorage();
+            };
+            img.src = base64Data;
         }
 
         function applyGroupTextureToCabinets(cabinets, base64Data) {
@@ -2028,7 +2306,6 @@
             return { faceIndex, faceWidth, faceHeight };
         }
 
-        /* 升級：支援「僅貼下方」、「僅貼上方」、「整面跨高」三選一選項 */
         function applyTextureToFace(mesh, face, base64Data) {
             if (!mesh) return;
 
@@ -2071,7 +2348,6 @@
                         let sideFaceIdx = (face === 'left') ? 1 : 0;
 
                         if (hasTop && textureMode === 'full_span' && topBanner) {
-                            // 選項 3：整面跨高 (下 62.5% + 上 37.5%)
                             let baseCanvas = document.createElement('canvas');
                             let baseCtx = baseCanvas.getContext('2d');
                             baseCanvas.width = 1024; baseCanvas.height = 1024;
@@ -2098,7 +2374,6 @@
                             topBanner.material[sideFaceIdx].needsUpdate = true;
 
                         } else if (hasTop && textureMode === 'top_only' && topBanner) {
-                            // 選項 2：僅貼上方 (150cm 頂層獨立招牌)
                             let topCanvas = document.createElement('canvas');
                             let topCtx = topCanvas.getContext('2d');
                             topCanvas.width = 1024; topCanvas.height = 512;
@@ -2112,13 +2387,11 @@
                             topBanner.material[sideFaceIdx].color.setHex(0xffffff);
                             topBanner.material[sideFaceIdx].needsUpdate = true;
 
-                            // 清除下方貼圖
                             targetWall.material.map = null;
                             targetWall.material.color.setHex(FIXED_WALL_COLOR_HEX);
                             targetWall.material.needsUpdate = true;
 
                         } else {
-                            // 選項 1：僅貼下方 (250cm 基底牆面)
                             let canvas = document.createElement('canvas');
                             let ctx = canvas.getContext('2d');
                             canvas.width = 1024; canvas.height = 1024;
@@ -2363,6 +2636,7 @@
             let includeTopBox = document.getElementById('include-top-box');
             let btnGroupFitting = document.getElementById('btn-group-fitting');
             let cabinetGroupBox = document.getElementById('cabinet-group-box');
+            let wallTopModeBox = document.getElementById('wall-top-mode-box');
 
             if (type === 'booth_wall' || type === 'booth_wall_top') {
                 document.getElementById('right-obj-title').innerText = selectedObject.userData.name || '目前選取：單段牆面';
@@ -2379,6 +2653,10 @@
                 let wallState = elevatedWallSegments[segId] || {};
                 let hasTop = wallState.hasTop || false;
                 let isTopLayer = (type === 'booth_wall_top');
+
+                if (wallTopModeBox) {
+                    wallTopModeBox.style.display = hasTop ? 'block' : 'none';
+                }
 
                 if (type === 'booth_wall') {
                     toggleWallBtn.innerText = hasTop ? '❌ 取消此牆追加（回復 250cm）' : '🧱 雙層加高：追加 150cm 頂層看板';
@@ -2408,7 +2686,7 @@
 
                 let groupTitle = document.getElementById('wall-group-title');
                 if (groupTitle) {
-                    groupTitle.innerText = isTopLayer ? '🔗 自選頂層 150cm 跨圖大圖' : '🔗 自選 250cm 基底牆跨圖大圖';
+                    groupTitle.innerText = hasTop ? '🔗 自選相鄰牆面跨圖大圖 (400cm/150cm)' : '🔗 自選 250cm 基底牆跨圖大圖';
                 }
 
                 let container = document.getElementById('wall-multiselect-container');
@@ -2474,7 +2752,6 @@
                 let frontLabel = document.getElementById('front-label');
                 let cabinetTypes = ['cabinet', 'table'];
 
-                // 顯示/隱藏三選一下拉選單
                 let hasTopLayer = selectedObject.userData.hasTopLayer || false;
                 if (includeTopBox) {
                     includeTopBox.style.display = (hasTopLayer && (type === 'fitting_room' || type === 'backdrop')) ? 'block' : 'none';
@@ -2627,35 +2904,7 @@
 
         function exportJSON() {
             let titleValue = document.getElementById('expo-title-input').value;
-            let layoutData = {
-                expoTitle: titleValue,
-                floorColor: currentFloorColorHex,
-                showFrame: document.getElementById('show-frame-check').checked,
-                showMainGrid: document.getElementById('show-main-grid-check').checked,
-                showSubGrid: document.getElementById('show-sub-grid-check').checked,
-                walls: {
-                    back: document.getElementById('wall-back-check').checked,
-                    left: document.getElementById('wall-left-check').checked,
-                    right: document.getElementById('wall-right-check').checked,
-                    front: document.getElementById('wall-front-check').checked
-                },
-                disabledWallSegments: disabledWallSegments,
-                elevatedWallSegments: elevatedWallSegments,
-                activeFloorGrid: activeFloorGrid,
-                objects: draggableObjects.map(obj => ({
-                    type: obj.userData.type,
-                    position: { x: obj.position.x, y: obj.position.y, z: obj.position.z },
-                    rotation: { x: obj.rotation.x, y: obj.rotation.y, z: obj.rotation.z },
-                    customDims: {
-                        w: obj.userData.customW || OBJECT_TYPES[obj.userData.type].w,
-                        d: obj.userData.customD || OBJECT_TYPES[obj.userData.type].d,
-                        h: obj.userData.customH || OBJECT_TYPES[obj.userData.type].h
-                    },
-                    hasTopLayer: obj.userData.hasTopLayer || false, 
-                    shelfLayers: obj.userData.shelfLayers || 3,
-                    images: obj.userData.images || null
-                }))
-            };
+            let layoutData = projectsData[currentProjectId]?.data || {};
             
             let dataStr = JSON.stringify(layoutData, null, 2);
             let blob = new Blob([dataStr], { type: "application/json" });
@@ -2677,42 +2926,18 @@
             let reader = new FileReader();
             reader.onload = function(e) {
                 let data = JSON.parse(e.target.result);
-                draggableObjects.forEach(obj => scene.remove(obj));
-                draggableObjects.length = 0; 
-                selectObject(null);
+                
+                let pid = 'proj_' + Date.now();
+                let title = data.expoTitle || '匯入的展位方案';
+                projectsData[pid] = {
+                    id: pid,
+                    title: title,
+                    data: data
+                };
+                currentProjectId = pid;
 
-                document.getElementById('expo-title-input').value = data.expoTitle || '';
-                document.getElementById('show-frame-check').checked = (data.showFrame !== undefined) ? data.showFrame : true;
-                document.getElementById('show-main-grid-check').checked = (data.showMainGrid !== undefined) ? data.showMainGrid : true;
-                document.getElementById('show-sub-grid-check').checked = (data.showSubGrid !== undefined) ? data.showSubGrid : true;
-
-                if (data.floorColor) {
-                    currentFloorColorHex = data.floorColor;
-                    document.getElementById('floor-color-input').value = data.floorColor;
-                }
-
-                if (data.walls) {
-                    document.getElementById('wall-back-check').checked = !!data.walls.back;
-                    document.getElementById('wall-left-check').checked = !!data.walls.left;
-                    document.getElementById('wall-right-check').checked = !!data.walls.right;
-                    document.getElementById('wall-front-check').checked = !!data.walls.front;
-                }
-
-                disabledWallSegments = data.disabledWallSegments || [];
-                elevatedWallSegments = data.elevatedWallSegments || {};
-
-                activeFloorGrid = data.activeFloorGrid || [];
-                document.querySelectorAll('.grid-cell').forEach(c => c.classList.remove('active'));
-                activeFloorGrid.forEach(gridId => {
-                    let cellDOM = document.getElementById(`cell-${gridId}`);
-                    if(cellDOM) cellDOM.classList.add('active');
-                });
-
-                render3DFloor();
-                data.objects.forEach(objData => {
-                    createObject(objData.type, objData.position, objData.rotation, false, objData.images, objData.hasTopLayer, objData.shelfLayers, objData.customDims);
-                });
-                selectObject(null);
+                updateProjectSelectUI();
+                applyProjectDataToScene(data);
                 saveToLocalStorage();
             };
             reader.readAsText(file);

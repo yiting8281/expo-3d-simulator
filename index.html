@@ -1475,20 +1475,20 @@
             return group;
         }
 
-        /* 新增：建構鐵網展架 (90x35x150cm) 的精細 3D 結構 */
+        /* 鐵網展架 (90x35x150cm) 精細 3D 模型建立 */
         function createGridRackGeometry(data, customW = null, customD = null, customH = null) {
             let group = new THREE.Group();
             let w = customW || data.w; // 預設 0.9m
             let d = customD || data.d; // 預設 0.35m
             let h = customH || data.h; // 預設 1.5m
 
-            let frameRadius = 0.012; // 外框金屬管徑
-            let wireRadius = 0.003;  // 網格鐵絲徑
+            let frameRadius = 0.012; 
+            let wireRadius = 0.003;  
 
             let matMetal = new THREE.MeshStandardMaterial({ color: 0x424242, metalness: 0.7, roughness: 0.3 });
             let matWire = new THREE.MeshStandardMaterial({ color: 0x7f8c8d, metalness: 0.8, roughness: 0.2 });
 
-            // 1. 底座橫支架 (工字型底座)
+            // 1. 底座工字型金屬支架
             let botLegGeo = new THREE.BoxGeometry(0.03, 0.03, d);
             let leftLeg = new THREE.Mesh(botLegGeo, matMetal);
             leftLeg.position.set(-w/2 + 0.02, -h/2 + 0.015, 0);
@@ -1501,7 +1501,7 @@
             botCrossBar.position.set(0, -h/2 + 0.015, 0);
             group.add(botCrossBar);
 
-            // 2. 鐵網主要立柱框
+            // 2. 鐵網立柱與外框
             let sidePostGeo = new THREE.CylinderGeometry(frameRadius, frameRadius, h - 0.03, 16);
             let leftPost = new THREE.Mesh(sidePostGeo, matMetal);
             leftPost.position.set(-w/2 + 0.015, 0.015, 0);
@@ -1515,7 +1515,7 @@
             topBar.position.set(0, h/2 - 0.012, 0);
             group.add(topBar);
 
-            // 3. 網格縱橫鐵絲生成 (10cm 網格密度)
+            // 3. 網格細線 (10cm 間距)
             let gridStep = 0.1; 
             
             // 垂直線
@@ -1653,7 +1653,7 @@
                 for(let i=0; i<6; i++) materials.push(new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.6, transparent: true, opacity: 0.0 }));
                 finalMesh = new THREE.Mesh(outerGeo, materials);
                 finalMesh.add(roundGroup);
-            } else if (type === 'grid_rack') {
+            } else if (type === 'grid_rack') { // 鐵網展架對接點
                 let gridGroup = createGridRackGeometry(data, finalW, finalD, finalH);
                 let outerGeo = new THREE.BoxGeometry(finalW, finalH, finalD);
                 let materials = [];

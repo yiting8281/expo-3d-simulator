@@ -556,7 +556,7 @@
             <button class="action-btn" onclick="createObject('straight_rack')">👗 新增直桿吊衣架 (100x40x160)</button>
             <button class="action-btn" onclick="createObject('round_rack')">⭕ 新增圓盤環形衣架 (80x80x160)</button>
             
-            <!-- 拆分為：落地型帶腳底座 vs 壁掛型純網片 -->
+            <!-- 兩種鐵網展架按鈕 -->
             <button class="action-btn" onclick="createObject('grid_rack')" style="background-color: rgba(127, 140, 141, 0.15); border-color: rgba(127, 140, 141, 0.4); color: #bdc3c7;">🕸️ 新增落地鐵網展架 (90x35x150)</button>
             <button class="action-btn" onclick="createObject('wall_grid_rack')" style="background-color: rgba(0, 168, 255, 0.15); border-color: rgba(0, 168, 255, 0.4); color: #00a8ff;">🖼️ 新增壁掛鐵網片 (90x5x150)</button>
 
@@ -970,7 +970,10 @@
 
             if (data.objects && data.objects.length > 0) {
                 data.objects.forEach(objData => {
-                    createObject(objData.type, objData.position, objData.rotation, false, objData.images, objData.hasTopLayer, objData.shelfLayers, objData.customDims, objData.elevation || 0);
+                    // 安全相容：檢查展具類型是否存在於庫中
+                    if (OBJECT_TYPES[objData.type]) {
+                        createObject(objData.type, objData.position, objData.rotation, false, objData.images, objData.hasTopLayer, objData.shelfLayers, objData.customDims, objData.elevation || 0);
+                    }
                 });
             }
         }
@@ -1503,7 +1506,6 @@
             let matMetal = new THREE.MeshStandardMaterial({ color: 0x424242, metalness: 0.7, roughness: 0.3 });
             let matWire = new THREE.MeshStandardMaterial({ color: 0x7f8c8d, metalness: 0.8, roughness: 0.2 });
 
-            // 底座工字型金屬支架
             let botLegGeo = new THREE.BoxGeometry(0.03, 0.03, d);
             let leftLeg = new THREE.Mesh(botLegGeo, matMetal);
             leftLeg.position.set(-w/2 + 0.02, -h/2 + 0.015, 0);
@@ -1516,7 +1518,6 @@
             botCrossBar.position.set(0, -h/2 + 0.015, 0);
             group.add(botCrossBar);
 
-            // 立柱與外框
             let sidePostGeo = new THREE.CylinderGeometry(frameRadius, frameRadius, h - 0.03, 16);
             let leftPost = new THREE.Mesh(sidePostGeo, matMetal);
             leftPost.position.set(-w/2 + 0.015, 0.015, 0);
@@ -1530,7 +1531,6 @@
             topBar.position.set(0, h/2 - 0.012, 0);
             group.add(topBar);
 
-            // 網格細線 (10cm 間距)
             let gridStep = 0.1; 
             let vertWireGeo = new THREE.CylinderGeometry(wireRadius, wireRadius, h - 0.08, 8);
             for (let x = -w/2 + gridStep; x < w/2 - 0.02; x += gridStep) {
@@ -1562,7 +1562,6 @@
             let matMetal = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8, roughness: 0.2 });
             let matWire = new THREE.MeshStandardMaterial({ color: 0x95a5a6, metalness: 0.8, roughness: 0.2 });
 
-            // 輕量四方金屬細外框
             let sidePostGeo = new THREE.CylinderGeometry(frameRadius, frameRadius, h, 12);
             let leftPost = new THREE.Mesh(sidePostGeo, matMetal);
             leftPost.position.set(-w/2 + frameRadius, 0, 0);
@@ -1579,7 +1578,6 @@
             botPost.position.set(0, -h/2 + frameRadius, 0);
             group.add(topPost, botPost);
 
-            // 網格細線 (10cm 間距)
             let gridStep = 0.1; 
             let vertWireGeo = new THREE.CylinderGeometry(wireRadius, wireRadius, h - 0.02, 8);
             for (let x = -w/2 + gridStep; x < w/2 - 0.02; x += gridStep) {
@@ -1682,7 +1680,6 @@
             let finalD = customDims?.d || data.d;
             let finalH = customDims?.h || data.h;
 
-            // 如果是新創建的壁掛鐵網，預設賦予 0.8m (80cm) 的離地高度
             if (type === 'wall_grid_rack' && customPos === null && elevation === 0) {
                 elevation = 0.8;
             }
@@ -1724,7 +1721,7 @@
                 for(let i=0; i<6; i++) materials.push(new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.6, transparent: true, opacity: 0.0 }));
                 finalMesh = new THREE.Mesh(outerGeo, materials);
                 finalMesh.add(gridGroup);
-            } else if (type === 'wall_grid_rack') { // 壁掛鐵網片
+            } else if (type === 'wall_grid_rack') { 
                 let wallGridGroup = createWallGridRackGeometry(data, finalW, finalD, finalH);
                 let outerGeo = new THREE.BoxGeometry(finalW, finalH, finalD);
                 let materials = [];
@@ -1780,7 +1777,7 @@
                 finalMesh = new THREE.Mesh(geometry, materials);
             }
 
-            let posY = finalH / 2 + elevation; // 計算加上離地高度後的中心點
+            let posY = finalH / 2 + elevation; 
 
             if (customPos) {
                 finalMesh.position.set(customPos.x, (customPos.y !== undefined ? customPos.y : posY), customPos.z);

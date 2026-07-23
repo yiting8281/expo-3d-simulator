@@ -1450,16 +1450,25 @@
                 group.add(vWire);
             }
 
-            // 落地鐵網：增加穩固的衣架式底部雙支撐腳
+            // 落地鐵網：增加穩固的底部雙支撐腳
             if (data.type === 'floor_mesh') {
                 let footMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8, roughness: 0.3 });
-                let baseLegGeo = new THREE.BoxGeometry(0.03, 0.03, d);
+                // 支撐腳往前後延伸與網架高度微調
+                let baseLegGeo = new THREE.BoxGeometry(0.04, 0.04, d * 1.2); 
                 
                 let leftLeg = new THREE.Mesh(baseLegGeo, footMat);
-                leftLeg.position.set(-w/3, -h/2 - 0.015, 0);
+                leftLeg.position.set(-w / 3, -h / 2 - 0.02, 0);
                 let rightLeg = new THREE.Mesh(baseLegGeo, footMat);
-                rightLeg.position.set(w/3, -h/2 - 0.015, 0);
-                group.add(leftLeg, rightLeg);
+                rightLeg.position.set(w / 3, -h / 2 - 0.02, 0);
+
+                // 加上垂直支柱與底座接合
+                let verticalConnGeo = new THREE.BoxGeometry(0.03, 0.04, 0.03);
+                let leftConn = new THREE.Mesh(verticalConnGeo, footMat);
+                leftConn.position.set(-w / 3, -h / 2, 0);
+                let rightConn = new THREE.Mesh(verticalConnGeo, footMat);
+                rightConn.position.set(w / 3, -h / 2, 0);
+
+                group.add(leftLeg, rightLeg, leftConn, rightConn);
             }
 
             return group;

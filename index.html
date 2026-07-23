@@ -422,21 +422,22 @@
             transform: scale(1.15);
         }
 
+        /* 擴充：4 欄尺寸與高度輸入框網格 */
         .dim-input-group {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 6px;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 4px;
             margin-bottom: 8px;
         }
         .dim-input-box {
             background: rgba(0, 0, 0, 0.25);
-            padding: 6px;
+            padding: 5px 3px;
             border-radius: 6px;
             border: 1px solid rgba(255, 255, 255, 0.06);
             text-align: center;
         }
         .dim-input-box label {
-            font-size: 10px;
+            font-size: 9px;
             color: var(--accent);
             margin: 0 0 2px 0;
         }
@@ -446,9 +447,9 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: #fff;
             text-align: center;
-            font-size: 12px;
+            font-size: 11px;
             border-radius: 4px;
-            padding: 3px;
+            padding: 3px 0;
             outline: none;
         }
         .dim-input-box input:focus {
@@ -579,7 +580,7 @@
             <div class="help-item">⌨️ <span class="help-key">Q</span> / <span class="help-key">E</span> 微轉 15°</div>
             <div class="help-item">🖱️ <span class="help-key">左鍵</span> 選擇/拖拉</div>
             <div class="help-item">⌨️ <span class="help-key">R</span> 旋轉 90°</div>
-            <div class="help-item">🖱️ <span class="help-key">滾輪</span> 縮放畫面</div>
+            <div class="help-item">⌨️ <span class="help-key">W</span> / <span class="help-key">S</span> 上升/下降</div>
             <div class="help-item">⌨️ <span class="help-key">C</span> 快速複製</div>
             <div class="help-item" style="grid-column: span 2;">⌨️ <span class="help-key">Space</span> + <span class="help-key">左鍵</span> 平移畫面</div>
             <div class="help-item" style="grid-column: span 2;">⌨️ <span class="help-key">Delete</span> 刪除點選物件</div>
@@ -645,9 +646,9 @@
 
         <!-- 普通道具控制項 -->
         <div id="normal-object-controls">
-            <!-- 自訂展具長寬高控制區 -->
+            <!-- 自訂展具長寬高與離地高度控制區 -->
             <div id="dimension-control-section" class="section" style="background: rgba(255, 159, 10, 0.06); padding:10px; border-radius:var(--radius-sm); border:1px solid rgba(255, 159, 10, 0.2);">
-                <h4 style="font-size:12px; color:var(--accent); margin-bottom:6px; font-weight:600;">📐 展具自訂尺寸 (cm)</h4>
+                <h4 style="font-size:12px; color:var(--accent); margin-bottom:6px; font-weight:600;">📐 展具自訂尺寸與高度 (cm)</h4>
                 <div class="dim-input-group">
                     <div class="dim-input-box">
                         <label id="lbl-dim-w">寬度 W</label>
@@ -660,6 +661,11 @@
                     <div class="dim-input-box">
                         <label>高度 H</label>
                         <input type="number" id="dim-h" step="5" min="10" onchange="updateSelectedDimensions()">
+                    </div>
+                    <!-- 新增：離地 Y 軸高度輸入框 -->
+                    <div class="dim-input-box" style="border-color: rgba(0, 132, 255, 0.4); background: rgba(0, 132, 255, 0.1);">
+                        <label style="color:#4da6ff;">離地 Y</label>
+                        <input type="number" id="dim-elevation" step="5" min="0" value="0" onchange="updateSelectedElevation()">
                     </div>
                 </div>
             </div>
@@ -702,7 +708,11 @@
             </div>
 
             <div class="section" style="border-top: none; padding-top: 0;">
-                <label>角度微調與物件操作</label>
+                <label>角度與高低控制</label>
+                <div class="two-btn-group" style="margin-bottom: 6px;">
+                    <button onclick="onKeyDown({key:'w'})">⬆️ 上升 10cm (W)</button>
+                    <button onclick="onKeyDown({key:'s'})">⬇️ 下降 10cm (S)</button>
+                </div>
                 <div class="two-btn-group" style="margin-bottom: 6px;">
                     <button onclick="onKeyDown({key:'q'})">🔄 逆旋 15° (Q)</button>
                     <button onclick="onKeyDown({key:'e'})">🔄 順旋 15° (E)</button>
@@ -956,7 +966,7 @@
 
             if (data.objects && data.objects.length > 0) {
                 data.objects.forEach(objData => {
-                    createObject(objData.type, objData.position, objData.rotation, false, objData.images, objData.hasTopLayer, objData.shelfLayers, objData.customDims);
+                    createObject(objData.type, objData.position, objData.rotation, false, objData.images, objData.hasTopLayer, objData.shelfLayers, objData.customDims, objData.elevation || 0);
                 });
             }
         }
@@ -1000,6 +1010,7 @@
                             d: obj.userData.customD || OBJECT_TYPES[obj.userData.type].d,
                             h: obj.userData.customH || OBJECT_TYPES[obj.userData.type].h
                         },
+                        elevation: obj.userData.elevation || 0,
                         hasTopLayer: obj.userData.hasTopLayer || false, 
                         shelfLayers: obj.userData.shelfLayers || 3,
                         images: { front: null, left: null, right: null }
@@ -1613,7 +1624,8 @@
             return group;
         }
 
-        function createObject(type, customPos = null, customRot = null, shouldSave = true, savedImages = null, hasTopLayer = false, shelfLayers = 3, customDims = null) {
+        /* 升級：新增 elevation (離地高度) 變數處理 */
+        function createObject(type, customPos = null, customRot = null, shouldSave = true, savedImages = null, hasTopLayer = false, shelfLayers = 3, customDims = null, elevation = 0) {
             let data = OBJECT_TYPES[type];
             if (!data) return;
 
@@ -1653,7 +1665,7 @@
                 for(let i=0; i<6; i++) materials.push(new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.6, transparent: true, opacity: 0.0 }));
                 finalMesh = new THREE.Mesh(outerGeo, materials);
                 finalMesh.add(roundGroup);
-            } else if (type === 'grid_rack') { // 鐵網展架對接點
+            } else if (type === 'grid_rack') { 
                 let gridGroup = createGridRackGeometry(data, finalW, finalD, finalH);
                 let outerGeo = new THREE.BoxGeometry(finalW, finalH, finalD);
                 let materials = [];
@@ -1709,10 +1721,10 @@
                 finalMesh = new THREE.Mesh(geometry, materials);
             }
 
-            let posY = finalH / 2;
+            let posY = finalH / 2 + elevation; // 計算加上離地高度後的中心點
 
             if (customPos) {
-                finalMesh.position.set(customPos.x, posY, customPos.z);
+                finalMesh.position.set(customPos.x, (customPos.y !== undefined ? customPos.y : posY), customPos.z);
             } else {
                 finalMesh.position.set(0, posY, 0);
             }
@@ -1740,6 +1752,7 @@
                 customW: finalW,
                 customD: finalD,
                 customH: finalH,
+                elevation: elevation,
                 hasTopLayer: hasTopLayer, 
                 shelfLayers: shelfLayers, 
                 images: normalizedImages 
@@ -1763,11 +1776,12 @@
             let wInput = parseFloat(document.getElementById('dim-w').value) / 100; 
             let dInput = parseFloat(document.getElementById('dim-d').value) / 100;
             let hInput = parseFloat(document.getElementById('dim-h').value) / 100;
+            let elevInput = parseFloat(document.getElementById('dim-elevation').value) / 100 || 0;
 
             if (isNaN(wInput) || isNaN(dInput) || isNaN(hInput) || wInput <= 0 || dInput <= 0 || hInput <= 0) return;
 
             let type = selectedObject.userData.type;
-            let pos = { x: selectedObject.position.x, y: selectedObject.position.y, z: selectedObject.position.z };
+            let pos = { x: selectedObject.position.x, y: hInput / 2 + elevInput, z: selectedObject.position.z };
             let rot = { x: selectedObject.rotation.x, y: selectedObject.rotation.y, z: selectedObject.rotation.z };
             let imgs = selectedObject.userData.images;
             let hasTop = selectedObject.userData.hasTopLayer;
@@ -1776,7 +1790,20 @@
             scene.remove(selectedObject);
             draggableObjects = draggableObjects.filter(o => o !== selectedObject);
 
-            createObject(type, pos, rot, true, imgs, hasTop, shelfLayers, { w: wInput, d: dInput, h: hInput });
+            createObject(type, pos, rot, true, imgs, hasTop, shelfLayers, { w: wInput, d: dInput, h: hInput }, elevInput);
+        }
+
+        /* 離地高度調整反應函式 */
+        function updateSelectedElevation() {
+            if (!selectedObject || selectedObject.userData.type === 'booth_wall') return;
+
+            let elevInput = parseFloat(document.getElementById('dim-elevation').value) / 100 || 0;
+            let h = selectedObject.userData.customH || OBJECT_TYPES[selectedObject.userData.type].h;
+
+            selectedObject.userData.elevation = elevInput;
+            selectedObject.position.y = h / 2 + elevInput;
+
+            saveToLocalStorage();
         }
 
         function adjustShelfLayers(delta) {
@@ -1815,6 +1842,7 @@
             let rot = { x: selectedObject.rotation.x, y: selectedObject.rotation.y, z: selectedObject.rotation.z };
             let imgs = selectedObject.userData.images;
             let shelfLayers = selectedObject.userData.shelfLayers;
+            let elev = selectedObject.userData.elevation || 0;
             let dims = {
                 w: selectedObject.userData.customW,
                 d: selectedObject.userData.customD,
@@ -1824,7 +1852,7 @@
             scene.remove(selectedObject);
             draggableObjects = draggableObjects.filter(o => o !== selectedObject);
 
-            createObject(type, pos, rot, true, imgs, newState, shelfLayers, dims);
+            createObject(type, pos, rot, true, imgs, newState, shelfLayers, dims, elev);
         }
 
         function onPointerDown(event) {
@@ -1875,8 +1903,9 @@
             raycaster.setFromCamera(mouse, camera);
             let intersectionPoint = new THREE.Vector3();
             if (raycaster.ray.intersectPlane(planeHelper, intersectionPoint)) {
+                let elev = selectedObject.userData.elevation || 0;
                 selectedObject.position.copy(intersectionPoint.add(dragOffset));
-                selectedObject.position.y = selectedObject.userData.height / 2;
+                selectedObject.position.y = selectedObject.userData.height / 2 + elev; // 拖曳時維持原本的離地高度
             }
         }
 
@@ -2037,13 +2066,14 @@
                             let rot = { x: selectedObject.rotation.x, y: selectedObject.rotation.y, z: selectedObject.rotation.z };
                             let shelfLayers = selectedObject.userData.shelfLayers;
                             let dims = { w: selectedObject.userData.customW, d: selectedObject.userData.customD, h: selectedObject.userData.customH };
-                            
+                            let elev = selectedObject.userData.elevation || 0;
+
                             if(!selectedObject.userData.images) selectedObject.userData.images = {};
                             selectedObject.userData.images[currentTargetUploadFace] = base64Data; 
 
                             scene.remove(selectedObject);
                             draggableObjects = draggableObjects.filter(o => o !== selectedObject);
-                            createObject('fitting_room', pos, rot, true, selectedObject.userData.images, true, shelfLayers, dims);
+                            createObject('fitting_room', pos, rot, true, selectedObject.userData.images, true, shelfLayers, dims, elev);
                         } else {
                             if(!selectedObject.userData.images) selectedObject.userData.images = {};
                             selectedObject.userData.images[currentTargetUploadFace] = base64Data; 
@@ -2261,10 +2291,11 @@
                         let rot = { x: mesh.rotation.x, y: mesh.rotation.y, z: mesh.rotation.z };
                         let shelfLayers = mesh.userData.shelfLayers;
                         let dims = { w: mesh.userData.customW, d: mesh.userData.customD, h: mesh.userData.customH };
-                        
+                        let elev = mesh.userData.elevation || 0;
+
                         scene.remove(mesh);
                         draggableObjects = draggableObjects.filter(o => o !== mesh);
-                        createObject('fitting_room', pos, rot, false, mesh.userData.images, true, shelfLayers, dims);
+                        createObject('fitting_room', pos, rot, false, mesh.userData.images, true, shelfLayers, dims, elev);
                     } else {
                         applyTextureToFace(mesh, 'front', slicedBase64);
                     }
@@ -2788,6 +2819,7 @@
                 let curW = selectedObject.userData.customW || OBJECT_TYPES[type].w;
                 let curD = selectedObject.userData.customD || OBJECT_TYPES[type].d;
                 let curH = selectedObject.userData.customH || OBJECT_TYPES[type].h;
+                let curElev = selectedObject.userData.elevation || 0;
 
                 let lblW = document.getElementById('lbl-dim-w');
                 let lblD = document.getElementById('lbl-dim-d');
@@ -2802,6 +2834,7 @@
                 document.getElementById('dim-w').value = Math.round(curW * 100);
                 document.getElementById('dim-d').value = Math.round(curD * 100);
                 document.getElementById('dim-h').value = Math.round(curH * 100);
+                document.getElementById('dim-elevation').value = Math.round(curElev * 100);
 
                 let noImageTypes = ['straight_rack', 'round_rack', 'grid_rack', 'folding_table', 'human'];
                 if (noImageTypes.includes(type)) {
@@ -2915,6 +2948,7 @@
             }
         }
 
+        /* 升級：按鍵 W (上升 10cm) 與 S (下降 10cm) 控制離地高度 */
         function onKeyDown(event) {
             if (!selectedObject) return;
 
@@ -2927,7 +2961,25 @@
 
             previousRotation.copy(selectedObject.rotation);
 
-            switch (event.key.toLowerCase()) {
+            let key = event.key.toLowerCase();
+            let currentElev = selectedObject.userData.elevation || 0;
+            let h = selectedObject.userData.customH || OBJECT_TYPES[selectedObject.userData.type].h;
+
+            switch (key) {
+                case 'w':
+                    currentElev += 0.1; // 上升 10cm
+                    selectedObject.userData.elevation = currentElev;
+                    selectedObject.position.y = h / 2 + currentElev;
+                    updateRightPanelUI();
+                    saveToLocalStorage();
+                    break;
+                case 's':
+                    currentElev = Math.max(0, currentElev - 0.1); // 下降 10cm，最低到地面 0
+                    selectedObject.userData.elevation = currentElev;
+                    selectedObject.position.y = h / 2 + currentElev;
+                    updateRightPanelUI();
+                    saveToLocalStorage();
+                    break;
                 case 'r':
                     selectedObject.rotation.y += Math.PI / 2;
                     if(checkCollision(selectedObject)) selectedObject.rotation.copy(previousRotation);
@@ -2959,7 +3011,7 @@
                         d: selectedObject.userData.customD,
                         h: selectedObject.userData.customH
                     };
-                    createObject(type, pos, rot, true, selectedObject.userData.images, selectedObject.userData.hasTopLayer, selectedObject.userData.shelfLayers, dims);
+                    createObject(type, pos, rot, true, selectedObject.userData.images, selectedObject.userData.hasTopLayer, selectedObject.userData.shelfLayers, dims, currentElev);
                     break;
             }
         }

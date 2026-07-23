@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EXPO 展場配置模擬器 - 最終穩定修復版</title>
+    <title>EXPO 展場配置模擬器 - 多場次管理版</title>
     <style>
         :root {
             --bg-glass: rgba(22, 22, 25, 0.82);
@@ -46,11 +46,22 @@
             z-index: 1;
         }
 
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
+        /* 捲軸美化 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
 
+        /* 通用面板樣式 (玻璃擬態) */
         .glass-panel {
             position: absolute;
             background: var(--bg-glass);
@@ -66,79 +77,408 @@
             overflow-y: auto;
         }
 
-        #ui-panel-left { top: 20px; left: 20px; width: 330px; max-height: calc(100vh - 180px); }
-        #ui-panel-right { top: 20px; right: 20px; width: 330px; border: 1px solid rgba(0, 132, 255, 0.3); display: none; }
+        /* 左側控制面板 */
+        #ui-panel-left {
+            top: 20px;
+            left: 20px;
+            width: 330px;
+            max-height: calc(100vh - 180px);
+        }
 
+        /* 右側專屬物件屬性面板 */
+        #ui-panel-right {
+            top: 20px;
+            right: 20px;
+            width: 330px;
+            border: 1px solid rgba(0, 132, 255, 0.3);
+            display: none;
+        }
+
+        /* 右上角視角切換面板 */
         #ui-panel-view-presets {
-            position: absolute; top: 20px; right: 370px; z-index: 10; display: flex; gap: 6px;
-            background: var(--bg-glass); backdrop-filter: blur(20px); padding: 6px;
-            border-radius: var(--radius-sm); border: 1px solid var(--border-glass); box-shadow: var(--shadow-subtle);
+            position: absolute;
+            top: 20px;
+            right: 370px; 
+            z-index: 10;
+            display: flex;
+            gap: 6px;
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 6px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-glass);
+            box-shadow: var(--shadow-subtle);
         }
 
+        /* 左下角固定操作說明面板 */
         #ui-panel-controls-help {
-            position: absolute; bottom: 20px; left: 20px; z-index: 10; width: 330px;
-            background: var(--bg-glass); backdrop-filter: blur(20px); padding: 12px 14px;
-            border-radius: var(--radius-md); border: 1px solid var(--border-glass); box-shadow: var(--shadow-subtle); color: var(--text-main);
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 10;
+            width: 330px;
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 12px 14px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-glass);
+            box-shadow: var(--shadow-subtle);
+            color: var(--text-main);
         }
 
-        .help-title { font-size: 12px; font-weight: 600; color: var(--accent); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
-        .help-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; font-size: 11px; color: var(--text-secondary); }
-        .help-item { display: flex; align-items: center; gap: 4px; }
-        .help-key { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 4px; padding: 1px 5px; font-size: 10px; color: #fff; font-weight: 500; }
+        .help-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .help-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px 10px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .help-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .help-key {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            padding: 1px 5px;
+            font-size: 10px;
+            color: #fff;
+            font-weight: 500;
+        }
 
         #expo-title-input {
-            width: 100%; background: rgba(0, 0, 0, 0.3); border: 1px dashed var(--border-glass-focus);
-            border-radius: var(--radius-sm); color: var(--text-main); font-size: 13px; font-weight: 500;
-            padding: 8px 10px; outline: none; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); margin-bottom: 2px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px dashed var(--border-glass-focus);
+            border-radius: var(--radius-sm);
+            color: var(--text-main);
+            font-size: 13px;
+            font-weight: 500;
+            padding: 8px 10px;
+            outline: none;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-bottom: 2px;
+        }
+        #expo-title-input:focus {
+            border-style: solid;
+            background: rgba(0, 0, 0, 0.5);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 132, 255, 0.15);
         }
 
-        h3 { margin-bottom: 10px; font-size: 13px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
-        .section { margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-        .section:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
-        label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; margin-top: 8px; }
+        h3 {
+            margin-bottom: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .section {
+            margin-bottom: 16px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .section:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            margin-top: 8px;
+        }
 
         button {
-            width: 100%; padding: 9px 12px; background-color: rgba(255, 255, 255, 0.06); color: var(--text-main);
-            border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-sm); cursor: pointer;
-            font-weight: 500; margin-bottom: 6px; display: flex; align-items: center; justify-content: center;
-            gap: 8px; font-size: 12px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 100%;
+            padding: 9px 12px;
+            background-color: rgba(255, 255, 255, 0.06);
+            color: var(--text-main);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-weight: 500;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 12px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        button:hover { background-color: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.15); transform: translateY(-1px); }
+        button:hover { 
+            background-color: rgba(255, 255, 255, 0.12); 
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+
         button.action-btn { background-color: rgba(0, 132, 255, 0.12); border-color: rgba(0, 132, 255, 0.3); color: #4da6ff; }
         button.action-btn:hover { background-color: rgba(0, 132, 255, 0.22); border-color: var(--primary); color: #fff; }
+
         button.load-btn { background-color: rgba(0, 132, 255, 0.08); border-color: rgba(0, 132, 255, 0.2); color: #4da6ff; }
+        button.load-btn:hover { background-color: rgba(0, 132, 255, 0.18); color: #fff; }
+
         button.save-btn { background-color: rgba(52, 199, 89, 0.12); border-color: rgba(52, 199, 89, 0.3); color: #30d158; }
+        button.save-btn:hover { background-color: rgba(52, 199, 89, 0.25); color: #fff; }
+
         button.img-btn { background-color: rgba(90, 200, 250, 0.12); border-color: rgba(90, 200, 250, 0.3); color: #64d2ff; }
+        button.img-btn:hover { background-color: rgba(90, 200, 250, 0.25); color: #fff; }
+        
+        #ui-panel-view-presets button {
+            width: auto;
+            margin-bottom: 0;
+            padding: 5px 10px;
+            font-size: 11px;
+            background-color: transparent;
+            border: 1px solid transparent;
+            color: var(--text-secondary);
+        }
+        #ui-panel-view-presets button:hover {
+            background-color: rgba(255, 255, 255, 0.08);
+            color: var(--text-main);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        #ui-panel-view-presets button.reset-view-btn {
+            color: var(--accent);
+        }
+        #ui-panel-view-presets button.reset-view-btn:hover {
+            background-color: rgba(255, 159, 10, 0.15);
+            border-color: rgba(255, 159, 10, 0.3);
+            color: var(--accent);
+        }
 
-        .grid-map { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; background: rgba(0, 0, 0, 0.3); padding: 6px; border-radius: var(--radius-sm); margin-bottom: 8px; }
-        .grid-cell { aspect-ratio: 1; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--text-secondary); }
-        .grid-cell.active { background: var(--success); border-color: transparent; color: white; font-weight: 600; }
+        button.upload-face-btn {
+            background-color: rgba(255, 159, 10, 0.08);
+            border: 1px dashed rgba(255, 159, 10, 0.4);
+            color: var(--accent);
+            font-size: 12px;
+        }
+        button.upload-face-btn:hover { background-color: rgba(255, 159, 10, 0.18); border-color: var(--accent); color: #fff; }
+        
+        button.remove-face-btn {
+            background-color: rgba(255, 69, 58, 0.1);
+            border: 1px solid rgba(255, 69, 58, 0.2);
+            color: #ff6961;
+            font-size: 11px;
+            padding: 5px;
+            margin-bottom: 10px;
+        }
+        button.remove-face-btn:hover { background-color: rgba(255, 69, 58, 0.2); color: #fff; }
 
-        #right-obj-title { font-size: 13px; color: var(--accent); font-weight: 600; margin-bottom: 12px; text-align: center; background: rgba(255, 159, 10, 0.08); padding: 8px; border-radius: var(--radius-sm); border: 1px solid rgba(255, 159, 10, 0.2); }
-        .two-btn-group { display: flex; gap: 6px; }
-        .two-btn-group button { font-size: 11px; padding: 7px; }
-        .struct-box { background: var(--bg-glass-card); padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid rgba(255, 255, 255, 0.04); margin-top: 8px; }
-        .wall-checkboxes { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; padding-top: 6px; border-top: 1px dashed rgba(255, 255, 255, 0.08); }
-        .wall-checkboxes label { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-secondary); cursor: pointer; margin: 0; }
+        .grid-map {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 6px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        .grid-cell {
+            aspect-ratio: 1;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: var(--text-secondary);
+            user-select: none;
+            transition: all 0.15s ease;
+        }
+        .grid-cell:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-main);
+        }
+        .grid-cell.active {
+            background: var(--success);
+            border-color: transparent;
+            color: white;
+            font-weight: 600;
+        }
 
-        .color-picker-row { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
-        .color-picker-row input[type="color"] { border: none; width: 28px; height: 22px; border-radius: 4px; cursor: pointer; background: transparent; }
-        .quick-colors { display: flex; gap: 6px; }
-        .color-dot { width: 16px; height: 16px; border-radius: 50%; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.2); transition: transform 0.15s; }
-        .color-dot:hover { transform: scale(1.15); }
+        #right-obj-title {
+            font-size: 13px;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 12px;
+            text-align: center;
+            background: rgba(255, 159, 10, 0.08);
+            padding: 8px;
+            border-radius: var(--radius-sm);
+            border: 1px solid rgba(255, 159, 10, 0.2);
+        }
 
-        .dim-input-group { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 4px; margin-bottom: 8px; }
-        .dim-input-box { background: rgba(0, 0, 0, 0.25); padding: 5px 3px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.06); text-align: center; }
-        .dim-input-box label { font-size: 9px; color: var(--accent); margin: 0 0 2px 0; }
-        .dim-input-box input { width: 100%; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); color: #fff; text-align: center; font-size: 11px; border-radius: 4px; padding: 3px 0; outline: none; }
+        .two-btn-group {
+            display: flex;
+            gap: 6px;
+        }
+        .two-btn-group button {
+            font-size: 11px;
+            padding: 7px;
+        }
 
-        select.custom-select { width: 100%; background: rgba(0, 0, 0, 0.5); border: 1px solid var(--primary); border-radius: var(--radius-sm); color: var(--text-main); font-size: 12px; padding: 8px; outline: none; margin-bottom: 8px; cursor: pointer; font-weight: 600; }
+        .struct-box {
+            background: var(--bg-glass-card);
+            padding: 10px 12px;
+            border-radius: var(--radius-sm);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            margin-top: 8px;
+        }
+        .struct-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 12px;
+            color: var(--text-main);
+        }
+        .wall-checkboxes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 1px dashed rgba(255, 255, 255, 0.08);
+        }
+        .wall-checkboxes label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            margin: 0;
+            transition: color 0.15s;
+        }
+        .wall-checkboxes label:hover {
+            color: var(--text-main);
+        }
+        
+        input[type="checkbox"] {
+            accent-color: var(--primary);
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+        }
+
+        .color-picker-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 4px;
+        }
+        .color-picker-row input[type="color"] {
+            border: none;
+            width: 28px;
+            height: 22px;
+            border-radius: 4px;
+            cursor: pointer;
+            background: transparent;
+        }
+        .quick-colors {
+            display: flex;
+            gap: 6px;
+        }
+        .color-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.15s;
+        }
+        .color-dot:hover {
+            transform: scale(1.15);
+        }
+
+        .dim-input-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        .dim-input-box {
+            background: rgba(0, 0, 0, 0.25);
+            padding: 6px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            text-align: center;
+        }
+        .dim-input-box label {
+            font-size: 10px;
+            color: var(--accent);
+            margin: 0 0 2px 0;
+        }
+        .dim-input-box input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            text-align: center;
+            font-size: 12px;
+            border-radius: 4px;
+            padding: 3px;
+            outline: none;
+        }
+        .dim-input-box input:focus {
+            border-color: var(--accent);
+        }
+
+        select.custom-select {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--primary);
+            border-radius: var(--radius-sm);
+            color: var(--text-main);
+            font-size: 12px;
+            padding: 8px;
+            outline: none;
+            margin-bottom: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        select.custom-select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(255, 159, 10, 0.2);
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
 
+    <!-- 右上角快速視角切換面板 -->
     <div id="ui-panel-view-presets">
         <button class="reset-view-btn" onclick="switchView('reset'); this.blur();">🏠 預設</button>
         <button onclick="switchView('top'); this.blur();">🗺️ 俯瞰</button>
@@ -149,6 +489,8 @@
 
     <!-- 左側面板 -->
     <div id="ui-panel-left" class="glass-panel">
+
+        <!-- 多場次/多方案切換管理區塊 -->
         <div class="section" style="background: rgba(0, 132, 255, 0.08); padding: 12px; border-radius: var(--radius-sm); border: 1px solid rgba(0, 132, 255, 0.25);">
             <h3 style="color:#4da6ff;">📂 展場方案與切換</h3>
             <select id="project-select" class="custom-select" onchange="switchProject(this.value)"></select>
@@ -169,8 +511,9 @@
             <button onclick="clearAllFloors()" style="background-color: rgba(255,255,255,0.04); font-size: 11px; padding: 5px; color: var(--text-secondary);">重設所有格子</button>
 
             <div class="struct-box">
+                <!-- 地板顏色選擇 -->
                 <div class="color-picker-row">
-                    <span style="font-size:11px; color:var(--text-main); font-weight:500;">🎨 地板顏色</span>
+                    <span style="font-size:11px; color:var(--text-main); font-weight:500;">🎨 展位地板顏色</span>
                     <div style="display:flex; align-items:center; gap:8px;">
                         <div class="quick-colors">
                             <div class="color-dot" style="background:#2d2d2d;" onclick="setFloorColor('#2d2d2d')" title="深灰"></div>
@@ -182,9 +525,10 @@
                     </div>
                 </div>
 
+                <!-- 地板網格線控制開關 -->
                 <div class="wall-checkboxes" style="margin-top:8px;">
-                    <label><input type="checkbox" id="show-main-grid-check" checked onchange="updateStructureUI()"> 3m 主紅框</label>
-                    <label><input type="checkbox" id="show-sub-grid-check" checked onchange="updateStructureUI()"> 1m 細網格</label>
+                    <label><input type="checkbox" id="show-main-grid-check" checked onchange="updateStructureUI()"> 3m 主紅框線</label>
+                    <label><input type="checkbox" id="show-sub-grid-check" checked onchange="updateStructureUI()"> 1m 網格細線</label>
                 </div>
 
                 <div class="struct-row" style="margin-top:10px; border-top: 1px dashed rgba(255,255,255,0.08); padding-top:8px;">
@@ -194,24 +538,23 @@
                 
                 <div style="font-size: 11px; color: var(--accent); font-weight: 500; margin-top: 10px;">🧱 自選外圍背板牆面</div>
                 <div class="wall-checkboxes">
-                    <label><input type="checkbox" id="wall-back-check" checked onchange="updateStructureUI()"> 後牆</label>
-                    <label><input type="checkbox" id="wall-left-check" checked onchange="updateStructureUI()"> 左牆</label>
-                    <label><input type="checkbox" id="wall-right-check" onchange="updateStructureUI()"> 右牆</label>
-                    <label><input type="checkbox" id="wall-front-check" onchange="updateStructureUI()"> 前牆</label>
+                    <label><input type="checkbox" id="wall-back-check" checked onchange="updateStructureUI()"> 後方牆 (Back)</label>
+                    <label><input type="checkbox" id="wall-left-check" checked onchange="updateStructureUI()"> 左側牆 (Left)</label>
+                    <label><input type="checkbox" id="wall-right-check" onchange="updateStructureUI()"> 右側牆 (Right)</label>
+                    <label><input type="checkbox" id="wall-front-check" onchange="updateStructureUI()"> 前方牆 (Front)</label>
                 </div>
+                <button onclick="resetDisabledWalls()" style="background-color: rgba(255,255,255,0.04); font-size: 11px; padding: 5px; margin-top: 8px; color: var(--text-secondary);">🔄 還原隱藏牆面</button>
             </div>
         </div>
 
         <div class="section">
             <h3>2. 展具物件庫</h3>
-            <button class="action-btn" onclick="createObject('human')" style="background-color: rgba(255, 112, 67, 0.15); color: #ff8a65;">🧍 新增比例模特兒 (170cm)</button>
+            <button class="action-btn" onclick="createObject('human')" style="background-color: rgba(255, 112, 67, 0.15); border-color: rgba(255, 112, 67, 0.4); color: #ff8a65;">🧍 新增比例模特兒 (170cm)</button>
             <button class="action-btn" onclick="createObject('table')">🪑 新增收銀桌 (100x70x100)</button>
             <button class="action-btn" onclick="createObject('cabinet')">📦 新增中島 (150x60x160)</button>
             <button class="action-btn" onclick="createObject('folding_table')">🏷️ 新增摺疊桌 (120x60x60)</button>
             <button class="action-btn" onclick="createObject('straight_rack')">👗 新增直桿吊衣架 (100x40x160)</button>
             <button class="action-btn" onclick="createObject('round_rack')">⭕ 新增圓盤環形衣架 (80x80x160)</button>
-            <button class="action-btn" onclick="createObject('grid_rack')" style="background-color: rgba(127, 140, 141, 0.2); color: #bdc3c7;">🕸️ 新增落地鐵網展架 (90x35x150)</button>
-            <button class="action-btn" onclick="createObject('wall_grid_rack')" style="background-color: rgba(0, 168, 255, 0.2); color: #00a8ff;">🖼️ 新增壁掛鐵網片 (90x5x150)</button>
             <button class="action-btn" onclick="createObject('fitting_room')">🚪 新增更衣室/試衣間 (100x100x250)</button>
             <button class="action-btn" onclick="createObject('backdrop')">🧱 新增背板 (300x30x250)</button>
             <button class="action-btn" onclick="createObject('wall_shelf')">🪜 新增牆面層架 (100x35x180)</button>
@@ -219,17 +562,15 @@
         </div>
 
         <div class="section">
-            <h3>3. 全域檔案與修復</h3>
+            <h3>3. 全域檔案與配置</h3>
             <input type="file" id="import-input" accept=".json" style="display:none" onchange="importJSON(event)">
             <button class="load-btn" onclick="document.getElementById('import-input').click()">📂 載入 JSON 配置</button>
             <button class="save-btn" onclick="exportJSON()">💾 儲存／匯出 JSON</button>
             <button class="img-btn" onclick="exportImage()">🖼️ 匯出 PNG 圖檔</button>
-            
-            <button onclick="hardResetApp()" style="background-color:rgba(255,69,58,0.15); color:#ff6961; border-color:rgba(255,69,58,0.3); margin-top:10px;">🧹 一鍵清快取修復</button>
         </div>
     </div>
 
-    <!-- 左下角說明 -->
+    <!-- 左下角：固定操作說明面板 -->
     <div id="ui-panel-controls-help">
         <div class="help-title">💡 3D 視角與物件操作說明</div>
         <div class="help-grid">
@@ -237,50 +578,137 @@
             <div class="help-item">⌨️ <span class="help-key">Q</span> / <span class="help-key">E</span> 微轉 15°</div>
             <div class="help-item">🖱️ <span class="help-key">左鍵</span> 選擇/拖拉</div>
             <div class="help-item">⌨️ <span class="help-key">R</span> 旋轉 90°</div>
-            <div class="help-item">⌨️ <span class="help-key">W</span> / <span class="help-key">S</span> 升高/降低</div>
+            <div class="help-item">🖱️ <span class="help-key">滾輪</span> 縮放畫面</div>
             <div class="help-item">⌨️ <span class="help-key">C</span> 快速複製</div>
+            <div class="help-item" style="grid-column: span 2;">⌨️ <span class="help-key">Space</span> + <span class="help-key">左鍵</span> 平移畫面</div>
+            <div class="help-item" style="grid-column: span 2;">⌨️ <span class="help-key">Delete</span> 刪除點選物件</div>
         </div>
     </div>
 
-    <!-- 右側面板 -->
+    <!-- 右側面板：單一展具屬性面板 -->
     <div id="ui-panel-right" class="glass-panel">
         <h3 style="color:var(--accent);">⚙️ 展具屬性與輸出面板</h3>
         <div id="right-obj-title">目前選取：無</div>
         
         <input type="file" id="face-image-upload" accept="image/*" style="display:none;" onchange="handleFaceUpload(event)">
 
-        <div id="wall-segment-control" class="section" style="display: none;">
-            <button id="toggle-wall-height-btn" onclick="toggleWallSegmentHeight()">➕ 雙層加高：追加 150cm 頂層看板</button>
-            <button onclick="removeSelectedWallSegment()" style="background-color: rgba(255, 69, 58, 0.15); color: #ff6961;">🗑️ 隱藏／移除此段隔牆 (Del)</button>
+        <!-- 單段牆面專屬控制區 -->
+        <div id="wall-segment-control" class="section" style="background: rgba(0, 132, 255, 0.08); padding: 12px; border-radius: var(--radius-sm); border: 1px solid rgba(0, 132, 255, 0.2); display: none;">
+            <h4 style="font-size:12px; color:var(--accent); margin-bottom:8px; font-weight:600;">🧱 獨立單段隔牆控制</h4>
+            <button id="toggle-wall-height-btn" onclick="toggleWallSegmentHeight()" style="background-color: var(--accent); color: #111; border: none; margin-bottom: 8px; font-weight:600;">➕ 雙層加高：追加 150cm 頂層看板</button>
+
+            <!-- 外圍隔牆加高貼圖三選一模式 -->
+            <div id="wall-top-mode-box" style="display:none; background: rgba(255, 159, 10, 0.1); border: 1px solid rgba(255, 159, 10, 0.3); padding: 8px; border-radius: 6px; margin-bottom: 8px;">
+                <label style="color:var(--accent); font-size:11px; margin:0; font-weight:600;">🎯 牆面加高貼圖範圍</label>
+                <select id="booth-wall-mode-select" class="custom-select" style="margin-bottom:0;">
+                    <option value="full_span" selected>1. 整面跨高 (400cm 完整延伸)</option>
+                    <option value="bottom_only">2. 僅貼下方 (250cm 基底牆)</option>
+                    <option value="top_only">3. 僅貼上方 (150cm 頂層看板)</option>
+                </select>
+            </div>
+
+            <div id="wall-upload-area" style="display:none; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 8px; margin-top: 8px;">
+                <label style="color:#fff; font-weight:500;">🖼️ 牆面看板輸出設定</label>
+                <button class="upload-face-btn" onclick="triggerFaceUpload('front')" style="margin-top:4px;">🖼️ 上傳單片牆面圖片</button>
+                
+                <!-- 自選相鄰牆面跨圖區塊 -->
+                <div style="background: rgba(0, 132, 255, 0.12); padding: 8px; border-radius: 6px; border: 1px solid rgba(0, 132, 255, 0.3); margin-top: 8px;">
+                    <div id="wall-group-title" style="font-size:11px; color:#4da6ff; font-weight:600; margin-bottom:6px;">🔗 自選相鄰牆面跨圖輸出</div>
+                    <div id="wall-multiselect-container" style="display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto; margin-bottom: 6px; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 4px;">
+                    </div>
+                    <button class="upload-face-btn" onclick="triggerCustomGroupUpload()" style="background-color: rgba(0, 132, 255, 0.25); border:1px solid rgba(0, 132, 255, 0.6); color:#fff; font-weight:600; margin-bottom:0;">✨ 上傳勾選牆面「跨圖大圖」</button>
+                </div>
+
+                <button id="rm-wall-front" class="remove-face-btn" onclick="clearFaceTexture('front')" style="display:none; margin-top:8px;">❌ 移除牆面輸出</button>
+            </div>
+
+            <button onclick="removeSelectedWallSegment()" style="background-color: rgba(255, 69, 58, 0.15); color: #ff6961; border: 1px solid rgba(255, 69, 58, 0.3); margin-top: 10px; margin-bottom: 0;">🗑️ 隱藏／移除此段隔牆 (Del)</button>
         </div>
 
+        <!-- 雙層背板/招牌控制區 -->
+        <div id="backdrop-layer-control" class="section" style="background: rgba(0, 132, 255, 0.06); padding: 12px; border-radius: var(--radius-sm); border: 1px solid rgba(0, 132, 255, 0.2); display: none;">
+            <h4 style="font-size:12px; color:#fff; margin-bottom:4px; font-weight:600;">🧱 雙層背板/招牌結構控制</h4>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;">基底結構固定 250cm</div>
+            <button id="toggle-layer-btn" onclick="toggleBackdropLayer()" style="background-color: var(--accent); color: #111; border: none; margin-bottom: 0; font-weight:600;">➕ 追加 150cm 頂層獨立招牌</button>
+        </div>
+
+        <!-- 牆面層架控制區 -->
+        <div id="shelf-layer-control" class="section" style="background: rgba(52, 199, 89, 0.08); padding: 12px; border-radius: var(--radius-sm); border: 1px solid rgba(52, 199, 89, 0.2); display: none;">
+            <h4 style="font-size:12px; color:var(--success); margin-bottom:6px; font-weight:600;">🪜 牆面層板層數自由設定</h4>
+            <div id="shelf-count-display" style="font-size: 12px; color: #fff; font-weight: 600; margin-bottom: 8px;">目前層數：3 層板</div>
+            <div class="two-btn-group">
+                <button onclick="adjustShelfLayers(1)" style="background-color: rgba(52, 199, 89, 0.2); color: #30d158; border: 1px solid rgba(52, 199, 89, 0.4);">➕ 增加一層板</button>
+                <button onclick="adjustShelfLayers(-1)" style="background-color: rgba(255, 255, 255, 0.06); color: #fff; border: 1px solid rgba(255, 255, 255, 0.1);">➖ 減少一層板</button>
+            </div>
+        </div>
+
+        <!-- 普通道具控制項 -->
         <div id="normal-object-controls">
-            <div id="dimension-control-section" class="section" style="background: rgba(255, 159, 10, 0.06); padding:10px; border-radius:var(--radius-sm);">
-                <h4 style="font-size:12px; color:var(--accent); margin-bottom:6px;">📐 尺寸與離地高度 (cm)</h4>
+            <!-- 自訂展具長寬高控制區 -->
+            <div id="dimension-control-section" class="section" style="background: rgba(255, 159, 10, 0.06); padding:10px; border-radius:var(--radius-sm); border:1px solid rgba(255, 159, 10, 0.2);">
+                <h4 style="font-size:12px; color:var(--accent); margin-bottom:6px; font-weight:600;">📐 展具自訂尺寸 (cm)</h4>
                 <div class="dim-input-group">
-                    <div class="dim-input-box"><label>寬 W</label><input type="number" id="dim-w" step="5" min="10" onchange="updateSelectedDimensions()"></div>
-                    <div class="dim-input-box"><label>深 D</label><input type="number" id="dim-d" step="5" min="1" onchange="updateSelectedDimensions()"></div>
-                    <div class="dim-input-box"><label>高 H</label><input type="number" id="dim-h" step="5" min="10" onchange="updateSelectedDimensions()"></div>
-                    <div class="dim-input-box" style="border-color: rgba(0, 132, 255, 0.4); background: rgba(0, 132, 255, 0.1);">
-                        <label style="color:#4da6ff;">離地 Y</label>
-                        <input type="number" id="dim-elevation" step="5" min="0" value="0" onchange="updateSelectedElevation()">
+                    <div class="dim-input-box">
+                        <label id="lbl-dim-w">寬度 W</label>
+                        <input type="number" id="dim-w" step="5" min="10" onchange="updateSelectedDimensions()">
+                    </div>
+                    <div class="dim-input-box">
+                        <label id="lbl-dim-d">深度 D</label>
+                        <input type="number" id="dim-d" step="5" min="10" onchange="updateSelectedDimensions()">
+                    </div>
+                    <div class="dim-input-box">
+                        <label>高度 H</label>
+                        <input type="number" id="dim-h" step="5" min="10" onchange="updateSelectedDimensions()">
                     </div>
                 </div>
             </div>
 
-            <div class="section" style="border-top: none; padding-top: 0;">
-                <label>高低微調與操作</label>
-                <div class="two-btn-group" style="margin-bottom: 6px;">
-                    <button onclick="onKeyDown({key:'w'})">⬆️ 上升 10cm (W)</button>
-                    <button onclick="onKeyDown({key:'s'})">⬇️ 下降 10cm (S)</button>
+            <!-- 可隱藏的圖片管理區塊 -->
+            <div class="section" id="image-management-section">
+                <h4 id="output-section-title" style="font-size:12px; color:var(--text-secondary); margin-bottom:8px;">📋 各面輸出示意圖管理</h4>
+                
+                <!-- 加高區貼圖模式三選一下拉選單 (適用更衣室與獨立背板) -->
+                <div id="include-top-box" style="display:none; background: rgba(255, 159, 10, 0.1); border: 1px solid rgba(255, 159, 10, 0.3); padding: 8px; border-radius: 6px; margin-bottom: 10px;">
+                    <label style="color:var(--accent); font-size:11px; margin:0; font-weight:600;">🎯 加高模式貼圖範圍選擇</label>
+                    <select id="top-layer-mode-select" class="custom-select" style="margin-bottom:0;" onchange="saveToLocalStorage()">
+                        <option value="bottom_only">1. 僅貼下方 (250cm 基底牆)</option>
+                        <option value="top_only">2. 僅貼上方 (150cm 頂層招牌)</option>
+                        <option value="full_span" selected>3. 整面跨高 (400cm 完整延伸)</option>
+                    </select>
                 </div>
+
+                <label id="front-label">▶ 正面輸出</label>
+                <button class="upload-face-btn" onclick="triggerFaceUpload('front')">🖼️ 上傳單個正面圖片</button>
+                <button id="btn-group-fitting" class="upload-face-btn" onclick="triggerGroupFittingUpload()" style="display:none; margin-top:6px; background-color: rgba(0, 132, 255, 0.15); border:1px solid rgba(0, 132, 255, 0.4); color:#4da6ff;">✨ 上傳多間更衣室「招牌跨圖大圖」</button>
+                
+                <!-- 展櫃類自選跨圖區塊 -->
+                <div id="cabinet-group-box" style="display:none; background: rgba(0, 132, 255, 0.12); padding: 8px; border-radius: 6px; border: 1px solid rgba(0, 132, 255, 0.3); margin-top: 8px;">
+                    <div style="font-size:11px; color:#4da6ff; font-weight:600; margin-bottom:6px;">🔗 自選相鄰展櫃/中島正面跨圖</div>
+                    <div id="cabinet-multiselect-container" style="display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto; margin-bottom: 6px; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 4px;">
+                    </div>
+                    <button class="upload-face-btn" onclick="triggerGroupCabinetUpload()" style="background-color: rgba(0, 132, 255, 0.25); border:1px solid rgba(0, 132, 255, 0.6); color:#fff; font-weight:600; margin-bottom:0;">✨ 上傳勾選展櫃「跨圖大圖」</button>
+                </div>
+
+                <button id="rm-front" class="remove-face-btn" onclick="clearFaceTexture('front')" style="display:none; margin-top:8px;">❌ 移除正面輸出</button>
+
+                <label style="margin-top: 14px;">▶ 左側邊輸出</label>
+                <button class="upload-face-btn" onclick="triggerFaceUpload('left')">🖼️ 上傳左側圖片</button>
+                <button id="rm-left" class="remove-face-btn" onclick="clearFaceTexture('left')" style="display:none;">❌ 移除左側輸出</button>
+
+                <label style="margin-top: 14px;">▶ 右側邊輸出</label>
+                <button class="upload-face-btn" onclick="triggerFaceUpload('right')">🖼️ 上傳右側圖片</button>
+                <button id="rm-right" class="remove-face-btn" onclick="clearFaceTexture('right')" style="display:none;">❌ 移除右側輸出</button>
+            </div>
+
+            <div class="section" style="border-top: none; padding-top: 0;">
+                <label>角度微調與物件操作</label>
                 <div class="two-btn-group" style="margin-bottom: 6px;">
                     <button onclick="onKeyDown({key:'q'})">🔄 逆旋 15° (Q)</button>
                     <button onclick="onKeyDown({key:'e'})">🔄 順旋 15° (E)</button>
                 </div>
-                <button onclick="onKeyDown({key:'r'})">📐 旋轉 90° (R)</button>
-                <button onclick="onKeyDown({key:'c'})">📋 快速複製 (C)</button>
-                <button onclick="onKeyDown({key:'Delete'})" style="background-color:rgba(255, 69, 58, 0.15); color: #ff6961;">🗑️ 刪除此物件 (Del)</button>
+                <button onclick="onKeyDown({key:'r'})" style="background-color:rgba(255,255,255,0.04);">📐 旋轉 90° (R)</button>
+                <button onclick="onKeyDown({key:'c'})" style="background-color:rgba(255,255,255,0.04);">📋 快速複製 (C)</button>
+                <button onclick="onKeyDown({key:'Delete'})" style="background-color:rgba(255, 69, 58, 0.15); color: #ff6961; border: 1px solid rgba(255, 69, 58, 0.3);">🗑️ 刪除此物件 (Del)</button>
             </div>
         </div>
     </div>
@@ -309,86 +737,103 @@
         let structureGroup = new THREE.Group(); 
 
         let currentTargetUploadFace = 'front';
-        let targetCameraPosition = null, targetControlsTarget = null; 
+
+        let targetCameraPosition = null;
+        let targetControlsTarget = null; 
         let ANIMATION_SPEED = 0.08; 
 
-        let SNAP_UNIT = 0.1, GRID_MAP_SIZE = 5, CELL_SIZE = 3, FRAME_HEIGHT = 2.5; 
+        let SNAP_UNIT = 0.1;    
+        let GRID_MAP_SIZE = 5; 
+        let CELL_SIZE = 3;     
+        let FRAME_HEIGHT = 2.5; 
+
         let FIXED_WALL_COLOR_HEX = 0x545454;
 
+        // 多場次管理變數
         let projectsData = {}; 
         let currentProjectId = null;
 
         let OBJECT_TYPES = {
-            human:          { name: '比例模特兒', w: 0.4,  d: 0.3, h: 1.7,  color: 0xff7043 },
-            table:          { name: '收銀桌',     w: 1.0,  d: 0.70, h: 1.0, color: 0x32ade6 },
-            cabinet:        { name: '中島',       w: 1.5,  d: 0.6, h: 1.6,  color: 0x0084ff },
-            folding_table:  { name: '摺疊桌',     w: 1.2,  d: 0.6, h: 0.6,  color: 0x0084ff },
-            straight_rack:  { name: '直桿吊衣架', w: 1.0,  d: 0.40, h: 1.6,  color: 0xaf52de }, 
-            round_rack:     { name: '圓盤環形衣架', w: 0.8,  d: 0.80, h: 1.6,  color: 0xaf52de }, 
-            grid_rack:      { name: '落地鐵網展架', w: 0.9,  d: 0.35, h: 1.5,  color: 0x7f8c8d },
-            wall_grid_rack: { name: '壁掛鐵網片',   w: 0.9,  d: 0.05, h: 1.5,  color: 0x00a8ff },
-            fitting_room:   { name: '更衣室/試衣間', w: 1.0,  d: 1.00, h: 2.5,  color: FIXED_WALL_COLOR_HEX }, 
-            backdrop:       { name: '背板',       w: 3.0,  d: 0.30, h: 2.5,  color: FIXED_WALL_COLOR_HEX }, 
-            wall_shelf:     { name: '牆面層架',   w: 1.0,  d: 0.35, h: 1.8,  color: 0x34c759 }, 
-            storage:        { name: '倉儲區',     w: 1.5,  d: 1.50, h: 2.0,  color: 0x485460 }
+            human:         { name: '比例模特兒', w: 0.4,  d: 0.3, h: 1.7,  color: 0xff7043 },
+            table:         { name: '收銀桌',     w: 1.0,  d: 0.70, h: 1.0, color: 0x32ade6 },
+            cabinet:       { name: '中島',       w: 1.5,  d: 0.6, h: 1.6,  color: 0x0084ff },
+            folding_table: { name: '摺疊桌',     w: 1.2,  d: 0.6, h: 0.6,  color: 0x0084ff },
+            straight_rack: { name: '直桿吊衣架', w: 1.0,  d: 0.40, h: 1.6,  color: 0xaf52de }, 
+            round_rack:    { name: '圓盤環形衣架', w: 0.8,  d: 0.80, h: 1.6,  color: 0xaf52de }, 
+            fitting_room:  { name: '更衣室/試衣間', w: 1.0,  d: 1.00, h: 2.5,  color: FIXED_WALL_COLOR_HEX }, 
+            backdrop:      { name: '背板',       w: 3.0,  d: 0.30, h: 2.5,  color: FIXED_WALL_COLOR_HEX }, 
+            wall_shelf:    { name: '牆面層架',   w: 1.0,  d: 0.35, h: 1.8,  color: 0x34c759 }, 
+            storage:       { name: '倉儲區',     w: 1.5,  d: 1.50, h: 2.0,  color: 0x485460 }
         };
 
-        function hardResetApp() {
-            if (confirm("這將會清除所有舊快取並重置展場方案，確定嗎？")) {
-                localStorage.clear();
-                location.reload();
-            }
-        }
+        let FACE_INDEX_MAP = { right: 0, left: 1, front: 4 };
 
+        /* 核心升級：多場次儲存與載入邏輯 */
         function getEmptyLayoutData(title) {
             return {
                 expoTitle: title || '新展位方案',
                 floorColor: '#2d2d2d',
-                showFrame: true, showMainGrid: true, showSubGrid: true,
+                showFrame: true,
+                showMainGrid: true,
+                showSubGrid: true,
                 walls: { back: true, left: true, right: false, front: false },
-                disabledWallSegments: [], elevatedWallSegments: {},
+                disabledWallSegments: [],
+                elevatedWallSegments: {},
                 activeFloorGrid: ['2-2', '2-3'],
                 objects: []
             };
         }
 
         function loadProjectsFromStorage() {
-            try {
-                let stored = localStorage.getItem('expo_simulator_projects_v7');
-                if (stored) {
+            let stored = localStorage.getItem('expo_simulator_projects_v1');
+            if (stored) {
+                try {
                     let parsed = JSON.parse(stored);
                     projectsData = parsed.projects || {};
                     currentProjectId = parsed.currentProjectId;
+                } catch(e) {
+                    console.error("載入多方案失敗：", e);
                 }
-
-                if (!projectsData || Object.keys(projectsData).length === 0) {
-                    let pid = 'proj_' + Date.now();
-                    projectsData = {};
-                    projectsData[pid] = { id: pid, title: '展位配置方案 A', data: getEmptyLayoutData('展位配置方案 A') };
-                    currentProjectId = pid;
-                }
-
-                if (!currentProjectId || !projectsData[currentProjectId]) {
-                    currentProjectId = Object.keys(projectsData)[0];
-                }
-
-                updateProjectSelectUI();
-                applyProjectDataToScene(projectsData[currentProjectId].data);
-            } catch (e) {
-                localStorage.removeItem('expo_simulator_projects_v7');
-                let pid = 'proj_' + Date.now();
-                projectsData = {};
-                projectsData[pid] = { id: pid, title: '展位配置方案 A', data: getEmptyLayoutData('展位配置方案 A') };
-                currentProjectId = pid;
-                updateProjectSelectUI();
-                applyProjectDataToScene(projectsData[currentProjectId].data);
             }
+
+            // 自動相容單場次舊版本存檔
+            let oldSave = localStorage.getItem('expo_simulator_autosave_v47');
+            if (oldSave && Object.keys(projectsData).length === 0) {
+                try {
+                    let oldData = JSON.parse(oldSave);
+                    let pid = 'proj_' + Date.now();
+                    projectsData[pid] = {
+                        id: pid,
+                        title: oldData.expoTitle || '2026 預設展場配置',
+                        data: oldData
+                    };
+                    currentProjectId = pid;
+                } catch(e) {}
+            }
+
+            if (Object.keys(projectsData).length === 0) {
+                let pid = 'proj_' + Date.now();
+                projectsData[pid] = {
+                    id: pid,
+                    title: '展位配置方案 A',
+                    data: getEmptyLayoutData('展位配置方案 A')
+                };
+                currentProjectId = pid;
+            }
+
+            if (!currentProjectId || !projectsData[currentProjectId]) {
+                currentProjectId = Object.keys(projectsData)[0];
+            }
+
+            updateProjectSelectUI();
+            applyProjectDataToScene(projectsData[currentProjectId].data);
         }
 
         function updateProjectSelectUI() {
             let selectDOM = document.getElementById('project-select');
             if (!selectDOM) return;
             selectDOM.innerHTML = '';
+
             for (let pid in projectsData) {
                 let option = document.createElement('option');
                 option.value = pid;
@@ -400,7 +845,8 @@
 
         function switchProject(newPid) {
             if (!projectsData[newPid] || newPid === currentProjectId) return;
-            saveToLocalStorage();
+            saveToLocalStorage(); // 先存檔當前場次
+
             currentProjectId = newPid;
             updateProjectSelectUI();
             applyProjectDataToScene(projectsData[currentProjectId].data);
@@ -412,23 +858,37 @@
             let pid = 'proj_' + Date.now();
             let count = Object.keys(projectsData).length + 1;
             let defaultTitle = `新展位方案 ${count}`;
-            projectsData[pid] = { id: pid, title: defaultTitle, data: getEmptyLayoutData(defaultTitle) };
+
+            projectsData[pid] = {
+                id: pid,
+                title: defaultTitle,
+                data: getEmptyLayoutData(defaultTitle)
+            };
+
             currentProjectId = pid;
             updateProjectSelectUI();
             applyProjectDataToScene(projectsData[currentProjectId].data);
-            createObject('cabinet'); 
+            createObject('cabinet'); // 給一個初始中島展櫃
             saveToLocalStorage();
         }
 
         function duplicateProject() {
             if (!currentProjectId || !projectsData[currentProjectId]) return;
             saveToLocalStorage();
+
             let pid = 'proj_' + Date.now();
             let srcTitle = projectsData[currentProjectId].title || '展位方案';
             let newTitle = `${srcTitle} (副本)`;
+
             let copiedData = JSON.parse(JSON.stringify(projectsData[currentProjectId].data));
             copiedData.expoTitle = newTitle;
-            projectsData[pid] = { id: pid, title: newTitle, data: copiedData };
+
+            projectsData[pid] = {
+                id: pid,
+                title: newTitle,
+                data: copiedData
+            };
+
             currentProjectId = pid;
             updateProjectSelectUI();
             applyProjectDataToScene(copiedData);
@@ -436,8 +896,13 @@
         }
 
         function deleteCurrentProject() {
-            if (Object.keys(projectsData).length <= 1) { alert("最少需要保留一個展位方案！"); return; }
-            if (confirm(`確定要刪除「${projectsData[currentProjectId].title}」嗎？`)) {
+            let keys = Object.keys(projectsData);
+            if (keys.length <= 1) {
+                alert("最少需要保留一個展位方案！");
+                return;
+            }
+
+            if (confirm(`確定要刪除「${projectsData[currentProjectId].title}」嗎？刪除後無法復原。`)) {
                 delete projectsData[currentProjectId];
                 currentProjectId = Object.keys(projectsData)[0];
                 updateProjectSelectUI();
@@ -456,6 +921,7 @@
         }
 
         function applyProjectDataToScene(data) {
+            // 清空目前的 3D 物件
             draggableObjects.forEach(obj => scene.remove(obj));
             draggableObjects.length = 0;
             selectObject(null);
@@ -491,17 +957,26 @@
 
             if (data.objects && data.objects.length > 0) {
                 data.objects.forEach(objData => {
-                    if (OBJECT_TYPES[objData.type]) {
-                        createObject(objData.type, objData.position, objData.rotation, false, objData.images, objData.hasTopLayer, objData.shelfLayers, objData.customDims, objData.elevation || 0);
-                    }
+                    createObject(objData.type, objData.position, objData.rotation, false, objData.images, objData.hasTopLayer, objData.shelfLayers, objData.customDims);
                 });
             }
         }
 
         function saveToLocalStorage() {
             if (!currentProjectId || !projectsData[currentProjectId]) return;
+
             try {
+                let cleanElevatedWalls = {};
+                for (let key in elevatedWallSegments) {
+                    cleanElevatedWalls[key] = {
+                        hasTop: elevatedWallSegments[key].hasTop,
+                        img: null,      
+                        baseImg: null   
+                    };
+                }
+
                 let titleVal = document.getElementById('expo-title-input').value || '未命名場次';
+
                 let currentLayout = {
                     expoTitle: titleVal,
                     floorColor: currentFloorColorHex,
@@ -515,7 +990,7 @@
                         front: document.getElementById('wall-front-check').checked
                     },
                     disabledWallSegments: disabledWallSegments,
-                    elevatedWallSegments: cleanElevatedWallsData(),
+                    elevatedWallSegments: cleanElevatedWalls,
                     activeFloorGrid: activeFloorGrid,
                     objects: draggableObjects.map(obj => ({
                         type: obj.userData.type,
@@ -526,7 +1001,6 @@
                             d: obj.userData.customD || OBJECT_TYPES[obj.userData.type].d,
                             h: obj.userData.customH || OBJECT_TYPES[obj.userData.type].h
                         },
-                        elevation: obj.userData.elevation || 0,
                         hasTopLayer: obj.userData.hasTopLayer || false, 
                         shelfLayers: obj.userData.shelfLayers || 3,
                         images: { front: null, left: null, right: null }
@@ -536,7 +1010,7 @@
                 projectsData[currentProjectId].title = titleVal;
                 projectsData[currentProjectId].data = currentLayout;
 
-                localStorage.setItem('expo_simulator_projects_v7', JSON.stringify({
+                localStorage.setItem('expo_simulator_projects_v1', JSON.stringify({
                     currentProjectId: currentProjectId,
                     projects: projectsData
                 }));
@@ -545,21 +1019,17 @@
             }
         }
 
-        function cleanElevatedWallsData() {
-            let clean = {};
-            for (let key in elevatedWallSegments) {
-                clean[key] = { hasTop: elevatedWallSegments[key].hasTop, img: null, baseImg: null };
-            }
-            return clean;
+        function loadFromLocalStorage() {
+            loadProjectsFromStorage();
         }
-
-        function loadFromLocalStorage() { loadProjectsFromStorage(); }
 
         function init() {
             let container = document.getElementById('canvas-container');
+
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x111113);
-            scene.add(floorGroup); scene.add(structureGroup); 
+            scene.add(floorGroup); 
+            scene.add(structureGroup); 
 
             planeHelper = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
@@ -572,12 +1042,29 @@
             container.appendChild(renderer.domElement);
 
             orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
-            orbitControls.enableDamping = true; orbitControls.dampingFactor = 0.05;
+            orbitControls.enableDamping = true;
+            orbitControls.dampingFactor = 0.05;
+            
             setOrbitControlsMode(false);
 
-            scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-            let topFront = new THREE.DirectionalLight(0xffffff, 0.3); topFront.position.set(0, 15, 10); scene.add(topFront);
-            let topBack = new THREE.DirectionalLight(0xffffff, 0.2); topBack.position.set(0, 15, -10); scene.add(topBack);
+            let ambientLight = new THREE.AmbientLight(0xffffff, 0.6); 
+            scene.add(ambientLight);
+
+            let topFrontLight = new THREE.DirectionalLight(0xffffff, 0.3);
+            topFrontLight.position.set(0, 15, 10);
+            scene.add(topFrontLight);
+
+            let topBackLight = new THREE.DirectionalLight(0xffffff, 0.2);
+            topBackLight.position.set(0, 15, -10);
+            scene.add(topBackLight);
+
+            let sideLeftLight = new THREE.DirectionalLight(0xffffff, 0.15);
+            sideLeftLight.position.set(-15, 10, 0);
+            scene.add(sideLeftLight);
+
+            let sideRightLight = new THREE.DirectionalLight(0xffffff, 0.15);
+            sideRightLight.position.set(15, 10, 0);
+            scene.add(sideRightLight);
 
             buildGridMapUI();
             
@@ -585,20 +1072,30 @@
             window.addEventListener('pointermove', onPointerMove, false);
             window.addEventListener('pointerup', onPointerUp, false);
             window.addEventListener('dblclick', function() { selectObject(null); });
+            
             window.addEventListener('keydown', onGlobalKeyDown);
             window.addEventListener('keyup', onGlobalKeyUp);
             window.addEventListener('resize', onWindowResize);
 
             render3DFloor();
-            loadProjectsFromStorage();
+            loadFromLocalStorage();
+
             animate();
         }
 
         function setOrbitControlsMode(spacePressed) {
             if (spacePressed) {
-                orbitControls.mouseButtons = { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.PAN, RIGHT: THREE.MOUSE.ROTATE };
+                orbitControls.mouseButtons = {
+                    LEFT: THREE.MOUSE.PAN,      
+                    MIDDLE: THREE.MOUSE.PAN,
+                    RIGHT: THREE.MOUSE.ROTATE
+                };
             } else {
-                orbitControls.mouseButtons = { LEFT: THREE.MOUSE.NONE, MIDDLE: THREE.MOUSE.PAN, RIGHT: THREE.MOUSE.ROTATE };
+                orbitControls.mouseButtons = {
+                    LEFT: THREE.MOUSE.NONE,      
+                    MIDDLE: THREE.MOUSE.PAN,
+                    RIGHT: THREE.MOUSE.ROTATE
+                };
             }
         }
 
@@ -611,7 +1108,10 @@
                 case 'left': targetCameraPosition = new THREE.Vector3(-15, 1.25, 0); break;
                 case 'right': targetCameraPosition = new THREE.Vector3(15, 1.25, 0); break;
             }
-            if (document.activeElement) document.activeElement.blur();
+            
+            if (document.activeElement) {
+                document.activeElement.blur();
+            }
             window.focus();
         }
 
@@ -621,7 +1121,8 @@
             for (let r = 0; r < GRID_MAP_SIZE; r++) {
                 for (let c = 0; c < GRID_MAP_SIZE; c++) {
                     let cell = document.createElement('div');
-                    cell.className = 'grid-cell'; cell.id = `cell-${r}-${c}`;
+                    cell.className = 'grid-cell';
+                    cell.id = `cell-${r}-${c}`;
                     cell.innerText = `${r+1},${c+1}`; 
                     cell.addEventListener('click', () => toggleGridCell(r, c));
                     mapContainer.appendChild(cell);
@@ -634,23 +1135,42 @@
             let cellIndex = activeFloorGrid.indexOf(gridId);
             let cellDOM = document.getElementById(`cell-${r}-${c}`);
             if (cellIndex === -1) {
-                activeFloorGrid.push(gridId); if(cellDOM) cellDOM.classList.add('active');
+                activeFloorGrid.push(gridId);
+                if(cellDOM) cellDOM.classList.add('active');
             } else {
-                activeFloorGrid.splice(cellIndex, 1); if(cellDOM) cellDOM.classList.remove('active');
+                activeFloorGrid.splice(cellIndex, 1);
+                if(cellDOM) cellDOM.classList.remove('active');
             }
-            render3DFloor(); saveToLocalStorage();
+            render3DFloor();
+            saveToLocalStorage();
         }
 
         function clearAllFloors() {
             activeFloorGrid = [];
             document.querySelectorAll('.grid-cell').forEach(c => c.classList.remove('active'));
-            disabledWallSegments = []; elevatedWallSegments = {};
-            render3DFloor(); saveToLocalStorage();
+            disabledWallSegments = [];
+            elevatedWallSegments = {};
+            render3DFloor();
+            saveToLocalStorage();
         }
 
-        function resetDisabledWalls() { disabledWallSegments = []; render3DFloor(); saveToLocalStorage(); }
-        function setFloorColor(hexColor) { currentFloorColorHex = hexColor; document.getElementById('floor-color-input').value = hexColor; render3DFloor(); saveToLocalStorage(); }
-        function updateStructureUI() { render3DFloor(); saveToLocalStorage(); }
+        function resetDisabledWalls() {
+            disabledWallSegments = [];
+            render3DFloor();
+            saveToLocalStorage();
+        }
+
+        function setFloorColor(hexColor) {
+            currentFloorColorHex = hexColor;
+            document.getElementById('floor-color-input').value = hexColor;
+            render3DFloor();
+            saveToLocalStorage();
+        }
+
+        function updateStructureUI() {
+            render3DFloor();
+            saveToLocalStorage();
+        }
 
         function render3DFloor() {
             while(floorGroup.children.length > 0) floorGroup.remove(floorGroup.children[0]);
@@ -660,24 +1180,36 @@
             let offset = (GRID_MAP_SIZE * CELL_SIZE) / 2 - (CELL_SIZE / 2);
             let gridMap = Array(GRID_MAP_SIZE).fill(false).map(() => Array(GRID_MAP_SIZE).fill(false));
 
-            let showMainGrid = document.getElementById('show-main-grid-check')?.checked ?? true;
-            let showSubGrid = document.getElementById('show-sub-grid-check')?.checked ?? true;
+            let mainGridDOM = document.getElementById('show-main-grid-check');
+            let subGridDOM = document.getElementById('show-sub-grid-check');
+
+            let showMainGrid = mainGridDOM ? mainGridDOM.checked : true;
+            let showSubGrid = subGridDOM ? subGridDOM.checked : true;
 
             activeFloorGrid.forEach(gridId => {
                 let [r, c] = gridId.split('-').map(Number);
                 gridMap[r][c] = true;
-                let posX = c * CELL_SIZE - offset, posZ = r * CELL_SIZE - offset;
 
-                let tile = new THREE.Mesh(new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE), new THREE.MeshBasicMaterial({ color: parseInt(currentFloorColorHex.replace('#', '0x')), side: THREE.DoubleSide }));
-                tile.rotation.x = -Math.PI / 2; tile.position.set(posX, 0, posZ); floorGroup.add(tile);
+                let posX = c * CELL_SIZE - offset;
+                let posZ = r * CELL_SIZE - offset;
+
+                let tileGeo = new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE);
+                let tileMat = new THREE.MeshBasicMaterial({ color: parseInt(currentFloorColorHex.replace('#', '0x')), side: THREE.DoubleSide });
+                let tile = new THREE.Mesh(tileGeo, tileMat);
+                tile.rotation.x = -Math.PI / 2;
+                tile.position.set(posX, 0, posZ);
+                floorGroup.add(tile);
 
                 if (showSubGrid) {
                     let fineGrid = new THREE.GridHelper(CELL_SIZE, 3, 0x444444, 0x333333);
-                    fineGrid.position.set(posX, 0.002, posZ); floorGroup.add(fineGrid);
+                    fineGrid.position.set(posX, 0.002, posZ);
+                    floorGroup.add(fineGrid);
                 }
+
                 if (showMainGrid) {
                     let mainGrid = new THREE.GridHelper(CELL_SIZE, 1, 0x0084ff, 0x0084ff);
-                    mainGrid.position.set(posX, 0.004, posZ); floorGroup.add(mainGrid);
+                    mainGrid.position.set(posX, 0.004, posZ);
+                    floorGroup.add(mainGrid);
                 }
             });
 
@@ -691,61 +1223,114 @@
             let wallThick = 0.05;
 
             function addFrameLine(x1, z1, x2, z2, y1, y2) {
-                let points = [new THREE.Vector3(x1, y1, z1), new THREE.Vector3(x2, y1, z2), new THREE.Vector3(x1, y2, z1), new THREE.Vector3(x2, y2, z2)];
-                structureGroup.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(points), lineMat));
+                let points = [
+                    new THREE.Vector3(x1, y1, z1), new THREE.Vector3(x2, y1, z2),
+                    new THREE.Vector3(x1, y2, z1), new THREE.Vector3(x2, y2, z2)
+                ];
+                let geo = new THREE.BufferGeometry().setFromPoints(points);
+                structureGroup.add(new THREE.LineSegments(geo, lineMat));
             }
 
             function addVerticalPost(x, z) {
                 let points = [new THREE.Vector3(x, 0, z), new THREE.Vector3(x, FRAME_HEIGHT, z)];
-                structureGroup.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(points), lineMat));
+                let geo = new THREE.BufferGeometry().setFromPoints(points);
+                structureGroup.add(new THREE.LineSegments(geo, lineMat));
             }
 
             function createWallSegment(w, d, px, pz, segmentId, dirLabel) {
                 if (disabledWallSegments.includes(segmentId)) return;
+
                 let wallState = elevatedWallSegments[segmentId] || {};
                 let hasTop = wallState.hasTop || false;
-                let rIdx = parseInt(segmentId.split('-')[0]), cIdx = parseInt(segmentId.split('-')[1]), dirStr = segmentId.split('-')[2];
-
-                let baseMaterials = [];
-                for(let i=0; i<6; i++) baseMaterials.push(new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX, roughness: 0.6 }));
-                let baseMesh = new THREE.Mesh(new THREE.BoxGeometry(w, FRAME_HEIGHT, d), baseMaterials);
-                baseMesh.position.set(px, FRAME_HEIGHT / 2, pz);
-                baseMesh.userData = { type: 'booth_wall', segmentId: segmentId, r: rIdx, c: cIdx, dir: dirStr, hasTopLayer: hasTop, name: `展會外圍牆面 (${dirLabel})` };
                 
-                structureGroup.add(baseMesh); wallObjects.push(baseMesh);
+                let rIdx = parseInt(segmentId.split('-')[0]);
+                let cIdx = parseInt(segmentId.split('-')[1]);
+                let dirStr = segmentId.split('-')[2];
+
+                let baseGeo = new THREE.BoxGeometry(w, FRAME_HEIGHT, d);
+                let baseMaterials = [];
+                for(let i=0; i<6; i++) {
+                    baseMaterials.push(new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX, roughness: 0.6 }));
+                }
+                let baseMesh = new THREE.Mesh(baseGeo, baseMaterials);
+                baseMesh.position.set(px, FRAME_HEIGHT / 2, pz);
+                
+                baseMesh.userData = {
+                    type: 'booth_wall',
+                    segmentId: segmentId,
+                    r: rIdx,
+                    c: cIdx,
+                    dir: dirStr,
+                    hasTopLayer: hasTop,
+                    name: `展會外圍牆面 (${dirLabel}${hasTop ? ' - 400cm加高' : ''})`
+                };
+
+                if (wallState.baseImg) {
+                    applyTextureToWallBase(baseMesh, wallState.baseImg);
+                }
+
+                structureGroup.add(baseMesh);
+                wallObjects.push(baseMesh);
 
                 if (hasTop) {
                     let topH = 1.5;
+                    let topGeo = new THREE.BoxGeometry(w, topH, d);
                     let topMaterials = [];
-                    for(let i=0; i<6; i++) topMaterials.push(new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX, roughness: 0.6 }));
-                    let topMesh = new THREE.Mesh(new THREE.BoxGeometry(w, topH, d), topMaterials);
+                    for(let i=0; i<6; i++) {
+                        topMaterials.push(new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX, roughness: 0.6 }));
+                    }
+                    let topMesh = new THREE.Mesh(topGeo, topMaterials);
+                    topMesh.name = 'wallTopBannerMesh';
                     topMesh.position.set(px, FRAME_HEIGHT + topH / 2, pz);
-                    topMesh.userData = { type: 'booth_wall_top', segmentId: segmentId, r: rIdx, c: cIdx, dir: dirStr, name: `外圍牆面頂層看板 (${dirLabel})` };
-                    structureGroup.add(topMesh); wallObjects.push(topMesh);
+                    
+                    topMesh.userData = {
+                        type: 'booth_wall_top',
+                        segmentId: segmentId,
+                        r: rIdx,
+                        c: cIdx,
+                        dir: dirStr,
+                        name: `外圍牆面頂層看板 (${dirLabel})`
+                    };
+
+                    structureGroup.add(topMesh);
+                    wallObjects.push(topMesh);
+
+                    if (wallState.img) {
+                        applyTextureToWallTop(topMesh, wallState.img);
+                    }
                 }
             }
 
             for (let r = 0; r < GRID_MAP_SIZE; r++) {
                 for (let c = 0; c < GRID_MAP_SIZE; c++) {
                     if (!gridMap[r][c]) continue;
-                    let posX = c * CELL_SIZE - offset, posZ = r * CELL_SIZE - offset;
-                    let minX = posX - CELL_SIZE / 2, maxX = posX + CELL_SIZE / 2;
-                    let minZ = posZ - CELL_SIZE / 2, maxZ = posZ + CELL_SIZE / 2;
+
+                    let posX = c * CELL_SIZE - offset;
+                    let posZ = r * CELL_SIZE - offset;
+
+                    let minX = posX - CELL_SIZE / 2;
+                    let maxX = posX + CELL_SIZE / 2;
+                    let minZ = posZ - CELL_SIZE / 2;
+                    let maxZ = posZ + CELL_SIZE / 2;
 
                     if (r === 0 || !gridMap[r - 1][c]) {
-                        if (checkBack) createWallSegment(CELL_SIZE, wallThick, posX, minZ - wallThick/2, `${r}-${c}-back`, '後牆');
+                        let segId = `${r}-${c}-back`;
+                        if (checkBack) createWallSegment(CELL_SIZE, wallThick, posX, minZ - wallThick/2, segId, '後牆');
                         if (showFrame) { addFrameLine(minX, minZ, maxX, minZ, 0, FRAME_HEIGHT); addVerticalPost(minX, minZ); addVerticalPost(maxX, minZ); }
                     }
                     if (r === GRID_MAP_SIZE - 1 || !gridMap[r + 1][c]) {
-                        if (checkFront) createWallSegment(CELL_SIZE, wallThick, posX, maxZ + wallThick/2, `${r}-${c}-front`, '前牆');
+                        let segId = `${r}-${c}-front`;
+                        if (checkFront) createWallSegment(CELL_SIZE, wallThick, posX, maxZ + wallThick/2, segId, '前牆');
                         if (showFrame) { addFrameLine(minX, maxZ, maxX, maxZ, 0, FRAME_HEIGHT); addVerticalPost(minX, maxZ); addVerticalPost(maxX, maxZ); }
                     }
                     if (c === 0 || !gridMap[r][c - 1]) {
-                        if (checkLeft) createWallSegment(wallThick, CELL_SIZE, minX - wallThick/2, posZ, `${r}-${c}-left`, '左牆');
+                        let segId = `${r}-${c}-left`;
+                        if (checkLeft) createWallSegment(wallThick, CELL_SIZE, minX - wallThick/2, posZ, segId, '左牆');
                         if (showFrame) { addFrameLine(minX, minZ, minX, maxZ, 0, FRAME_HEIGHT); addVerticalPost(minX, minZ); addVerticalPost(minX, maxZ); }
                     }
                     if (c === GRID_MAP_SIZE - 1 || !gridMap[r][c + 1]) {
-                        if (checkRight) createWallSegment(wallThick, CELL_SIZE, maxX + wallThick/2, posZ, `${r}-${c}-right`, '右牆');
+                        let segId = `${r}-${c}-right`;
+                        if (checkRight) createWallSegment(wallThick, CELL_SIZE, maxX + wallThick/2, posZ, segId, '右牆');
                         if (showFrame) { addFrameLine(maxX, minZ, maxX, maxZ, 0, FRAME_HEIGHT); addVerticalPost(maxX, minZ); addVerticalPost(maxX, maxZ); }
                     }
                 }
@@ -755,11 +1340,16 @@
         function toggleWallSegmentHeight() {
             if (!selectedObject) return;
             let segId = selectedObject.userData.segmentId;
-            if (!segId && selectedObject.parent && selectedObject.parent.userData.segmentId) segId = selectedObject.parent.userData.segmentId;
+            if (!segId && selectedObject.parent && selectedObject.parent.userData.segmentId) {
+                segId = selectedObject.parent.userData.segmentId;
+            }
             if (!segId) return;
 
-            if (!elevatedWallSegments[segId]) elevatedWallSegments[segId] = { hasTop: true, img: null, baseImg: null };
-            else elevatedWallSegments[segId].hasTop = !elevatedWallSegments[segId].hasTop;
+            if (!elevatedWallSegments[segId]) {
+                elevatedWallSegments[segId] = { hasTop: true, img: null, baseImg: null };
+            } else {
+                elevatedWallSegments[segId].hasTop = !elevatedWallSegments[segId].hasTop;
+            }
 
             render3DFloor();
             let newObj = wallObjects.find(w => w.userData.segmentId === segId);
@@ -770,12 +1360,198 @@
         function removeSelectedWallSegment() {
             if (!selectedObject) return;
             let segId = selectedObject.userData.segmentId;
-            if (!segId && selectedObject.parent && selectedObject.parent.userData.segmentId) segId = selectedObject.parent.userData.segmentId;
-            if (segId && !disabledWallSegments.includes(segId)) disabledWallSegments.push(segId);
-            selectObject(null); render3DFloor(); saveToLocalStorage();
+            if (!segId && selectedObject.parent && selectedObject.parent.userData.segmentId) {
+                segId = selectedObject.parent.userData.segmentId;
+            }
+            if (segId && !disabledWallSegments.includes(segId)) {
+                disabledWallSegments.push(segId);
+            }
+
+            selectObject(null);
+            render3DFloor();
+            saveToLocalStorage();
         }
 
-        function createObject(type, customPos = null, customRot = null, shouldSave = true, savedImages = null, hasTopLayer = false, shelfLayers = 3, customDims = null, elevation = 0) {
+        function createShelfGeometry(data, layersCount, customW = null, customD = null, customH = null) {
+            let group = new THREE.Group();
+            let w = customW || data.w; 
+            let d = customD || data.d; 
+            let h = customH || data.h; 
+            let color = data.color;
+
+            let backGeo = new THREE.BoxGeometry(w, h, 0.02);
+            let backMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.6 });
+            let backMesh = new THREE.Mesh(backGeo, backMat);
+            backMesh.position.set(0, 0, -d/2 + 0.01);
+            group.add(backMesh);
+
+            let poleGeo = new THREE.BoxGeometry(0.03, h, d);
+            let poleMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8, roughness: 0.3 });
+            let leftPole = new THREE.Mesh(poleGeo, poleMat);
+            leftPole.position.set(-w/2 + 0.015, 0, 0);
+            let rightPole = new THREE.Mesh(poleGeo, poleMat);
+            rightPole.position.set(w/2 - 0.015, 0, 0);
+            group.add(leftPole);
+            group.add(rightPole);
+
+            let boardGeo = new THREE.BoxGeometry(w - 0.04, 0.03, d - 0.02);
+            let boardMat = new THREE.MeshStandardMaterial({ color: 0xdddddd, roughness: 0.5 });
+
+            let startY = -h/2 + 0.2; 
+            let endY = h/2 - 0.1;    
+            let stepY = layersCount > 1 ? (endY - startY) / (layersCount - 1) : 0;
+
+            for (let i = 0; i < layersCount; i++) {
+                let board = new THREE.Mesh(boardGeo, boardMat);
+                let currentY = (layersCount === 1) ? 0 : (startY + i * stepY);
+                board.position.set(0, currentY, 0.01);
+                group.add(board);
+            }
+
+            return group;
+        }
+
+        function createStraightRackGeometry(data, customW = null, customD = null, customH = null) {
+            let group = new THREE.Group();
+            let w = customW || data.w; 
+            let d = customD || data.d; 
+            let h = customH || data.h; 
+            let pipeRadius = 0.018;
+
+            let matMetal = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8, roughness: 0.2 });
+
+            let botBarGeo = new THREE.CylinderGeometry(pipeRadius, pipeRadius, d, 16);
+            let leftBot = new THREE.Mesh(botBarGeo, matMetal);
+            leftBot.rotation.x = Math.PI / 2;
+            leftBot.position.set(-w/2 + 0.05, -h/2 + 0.02, 0);
+            group.add(leftBot);
+
+            let rightBot = new THREE.Mesh(botBarGeo, matMetal);
+            rightBot.rotation.x = Math.PI / 2;
+            rightBot.position.set(w/2 - 0.05, -h/2 + 0.02, 0);
+            group.add(rightBot);
+
+            let poleGeo = new THREE.CylinderGeometry(pipeRadius, pipeRadius, h, 16);
+            let leftPole = new THREE.Mesh(poleGeo, matMetal);
+            leftPole.position.set(-w/2 + 0.05, 0, 0);
+            group.add(leftPole);
+
+            let rightPole = new THREE.Mesh(poleGeo, matMetal);
+            rightPole.position.set(w/2 - 0.05, 0, 0);
+            group.add(rightPole);
+
+            let topBarGeo = new THREE.CylinderGeometry(pipeRadius, pipeRadius, w, 16);
+            let topBar = new THREE.Mesh(topBarGeo, matMetal);
+            topBar.rotation.z = Math.PI / 2;
+            topBar.position.set(0, h/2 - 0.02, 0);
+            group.add(topBar);
+
+            return group;
+        }
+
+        function createRoundRackGeometry(data, customW = null, customD = null, customH = null) {
+            let group = new THREE.Group();
+            let radius = (customW || data.w) / 2; 
+            let h = customH || data.h; 
+            let pipeRadius = 0.018;
+
+            let matMetal = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8, roughness: 0.2 });
+            let matBase = new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.5 });
+
+            let baseGeo = new THREE.CylinderGeometry(radius * 0.7, radius * 0.7, 0.03, 32);
+            let base = new THREE.Mesh(baseGeo, matBase);
+            base.position.set(0, -h/2 + 0.015, 0);
+            group.add(base);
+
+            let poleGeo = new THREE.CylinderGeometry(0.025, 0.025, h, 24);
+            let pole = new THREE.Mesh(poleGeo, matMetal);
+            group.add(pole);
+
+            let ringGeo = new THREE.TorusGeometry(radius, pipeRadius, 16, 48);
+            let ring = new THREE.Mesh(ringGeo, matMetal);
+            ring.rotation.x = Math.PI / 2;
+            ring.position.set(0, h/2 - 0.05, 0);
+            group.add(ring);
+
+            return group;
+        }
+
+        function createFittingRoomGeometry(data, customW = null, customD = null, customH = null, hasTopLayer = false) {
+            let group = new THREE.Group();
+            group.name = 'fittingRoomGroup';
+
+            let w = customW || data.w; 
+            let d = customD || data.d; 
+            let h = customH || data.h; 
+            let wallThick = 0.03; 
+
+            let backWall = new THREE.Mesh(new THREE.BoxGeometry(w, h, wallThick), new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX, roughness: 0.6 }));
+            backWall.name = 'backWallMesh';
+            backWall.position.set(0, 0, -d/2 + wallThick/2);
+            group.add(backWall);
+
+            let leftWall = new THREE.Mesh(new THREE.BoxGeometry(wallThick, h, d - wallThick), new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX, roughness: 0.6 }));
+            leftWall.name = 'leftWallMesh';
+            leftWall.position.set(-w/2 + wallThick/2, 0, wallThick/2);
+            group.add(leftWall);
+
+            let rightWall = new THREE.Mesh(new THREE.BoxGeometry(wallThick, h, d - wallThick), new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX, roughness: 0.6 }));
+            rightWall.name = 'rightWallMesh';
+            rightWall.position.set(w/2 - wallThick/2, 0, wallThick/2);
+            group.add(rightWall);
+
+            let topHeader = new THREE.Mesh(new THREE.BoxGeometry(w, 0.2, wallThick), new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX, roughness: 0.6 }));
+            topHeader.name = 'topHeaderMesh';
+            topHeader.position.set(0, h/2 - 0.1, d/2 - wallThick/2);
+            group.add(topHeader);
+
+            let curtainMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.9 }); 
+            let curtain = new THREE.Mesh(new THREE.BoxGeometry(w - 0.04, h - 0.25, 0.02), curtainMat);
+            curtain.name = 'curtainMesh';
+            curtain.position.set(0, -0.1, d/2 - wallThick/2);
+            group.add(curtain);
+
+            if (hasTopLayer) {
+                let topHeaderH = 1.5; 
+                let topBoxGeo = new THREE.BoxGeometry(w, topHeaderH, d);
+                let topMaterials = [];
+                for(let i=0; i<6; i++) {
+                    topMaterials.push(new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX, roughness: 0.6 }));
+                }
+                let topBoxMesh = new THREE.Mesh(topBoxGeo, topMaterials);
+                topBoxMesh.name = 'topBannerMesh';
+                topBoxMesh.position.set(0, h/2 + topHeaderH/2, 0); 
+                group.add(topBoxMesh);
+            }
+
+            return group;
+        }
+
+        function createHumanGeometry(finalW, finalD, finalH) {
+            let group = new THREE.Group();
+            let skinMat = new THREE.MeshStandardMaterial({ color: 0xff7043, roughness: 0.5 }); 
+
+            let headGeo = new THREE.SphereGeometry(0.11, 16, 16);
+            let head = new THREE.Mesh(headGeo, skinMat);
+            head.position.set(0, finalH / 2 - 0.11, 0);
+            group.add(head);
+
+            let torsoGeo = new THREE.BoxGeometry(0.32, 0.65, 0.18);
+            let torso = new THREE.Mesh(torsoGeo, skinMat);
+            torso.position.set(0, finalH / 2 - 0.22 - 0.325, 0);
+            group.add(torso);
+
+            let legGeo = new THREE.BoxGeometry(0.12, 0.83, 0.15);
+            let leftLeg = new THREE.Mesh(legGeo, skinMat);
+            leftLeg.position.set(-0.08, -finalH / 2 + 0.415, 0);
+            let rightLeg = new THREE.Mesh(legGeo, skinMat);
+            rightLeg.position.set(0.08, -finalH / 2 + 0.415, 0);
+            group.add(leftLeg, rightLeg);
+
+            return group;
+        }
+
+        function createObject(type, customPos = null, customRot = null, shouldSave = true, savedImages = null, hasTopLayer = false, shelfLayers = 3, customDims = null) {
             let data = OBJECT_TYPES[type];
             if (!data) return;
 
@@ -783,89 +1559,203 @@
             let finalD = customDims?.d || data.d;
             let finalH = customDims?.h || data.h;
 
-            if (type === 'wall_grid_rack' && customPos === null && elevation === 0) elevation = 0.8;
-
             let finalMesh;
 
             if (type === 'human') {
-                finalMesh = createHumanGeometry(finalW, finalD, finalH);
+                let humanGroup = createHumanGeometry(finalW, finalD, finalH);
+                let outerGeo = new THREE.BoxGeometry(finalW, finalH, finalD);
+                let materials = [];
+                for(let i=0; i<6; i++) {
+                    materials.push(new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.6, transparent: true, opacity: 0.0 }));
+                }
+                finalMesh = new THREE.Mesh(outerGeo, materials);
+                finalMesh.add(humanGroup);
             } else if (type === 'wall_shelf') {
-                finalMesh = createShelfGeometry(data, shelfLayers, finalW, finalD, finalH);
+                let shelfGroup = createShelfGeometry(data, shelfLayers, finalW, finalD, finalH);
+                let outerGeo = new THREE.BoxGeometry(finalW, finalH, finalD);
+                let materials = [];
+                for(let i=0; i<6; i++) materials.push(new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.6 }));
+                finalMesh = new THREE.Mesh(outerGeo, materials);
+                finalMesh.add(shelfGroup);
             } else if (type === 'straight_rack') {
-                finalMesh = createStraightRackGeometry(data, finalW, finalD, finalH);
+                let straightGroup = createStraightRackGeometry(data, finalW, finalD, finalH);
+                let outerGeo = new THREE.BoxGeometry(finalW, finalH, finalD);
+                let materials = [];
+                for(let i=0; i<6; i++) materials.push(new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.6, transparent: true, opacity: 0.0 }));
+                finalMesh = new THREE.Mesh(outerGeo, materials);
+                finalMesh.add(straightGroup);
             } else if (type === 'round_rack') {
-                finalMesh = createRoundRackGeometry(data, finalW, finalD, finalH);
-            } else if (type === 'grid_rack') { 
-                finalMesh = createGridRackGeometry(data, finalW, finalD, finalH);
-            } else if (type === 'wall_grid_rack') { 
-                finalMesh = createWallGridRackGeometry(data, finalW, finalD, finalH);
+                let roundGroup = createRoundRackGeometry(data, finalW, finalD, finalH);
+                let outerGeo = new THREE.BoxGeometry(finalW, finalH, finalD);
+                let materials = [];
+                for(let i=0; i<6; i++) materials.push(new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.6, transparent: true, opacity: 0.0 }));
+                finalMesh = new THREE.Mesh(outerGeo, materials);
+                finalMesh.add(roundGroup);
             } else if (type === 'fitting_room') {
-                finalMesh = createFittingRoomGeometry(data, finalW, finalD, finalH, hasTopLayer);
+                let fittingRoomGroup = createFittingRoomGeometry(data, finalW, finalD, finalH, hasTopLayer);
+                finalMesh = new THREE.Group();
+                finalMesh.add(fittingRoomGroup);
             } else if (type === 'folding_table') {
                 let group = new THREE.Group();
-                let topThick = 0.05, legThick = 0.04;
+                let topThick = 0.05; 
+                let legThick = 0.04; 
+
                 let matTop = new THREE.MeshStandardMaterial({ color: 0x2c3e50, roughness: 0.4 });
-                let matLeg = new THREE.MeshStandardMaterial({ color: 0x7f8c8d, metalness: 0.8 });
-                let topMesh = new THREE.Mesh(new THREE.BoxGeometry(finalW, topThick, finalD), matTop); topMesh.position.set(0, finalH / 2 - topThick / 2, 0); group.add(topMesh);
-                let legH = finalH - topThick, legGeo = new THREE.BoxGeometry(legThick, legH, legThick);
-                let offX = finalW / 2 - legThick / 2 - 0.02, offZ = finalD / 2 - legThick / 2 - 0.02, legY = -topThick / 2 - legH / 2;
-                group.add(new THREE.Mesh(legGeo, matLeg).translateX(-offX).translateY(legY + finalH / 2).translateZ(-offZ));
-                group.add(new THREE.Mesh(legGeo, matLeg).translateX(offX).translateY(legY + finalH / 2).translateZ(-offZ));
-                group.add(new THREE.Mesh(legGeo, matLeg).translateX(-offX).translateY(legY + finalH / 2).translateZ(offZ));
-                group.add(new THREE.Mesh(legGeo, matLeg).translateX(offX).translateY(legY + finalH / 2).translateZ(offZ));
-                finalMesh = group;
+                let matLeg = new THREE.MeshStandardMaterial({ color: 0x7f8c8d, metalness: 0.8, roughness: 0.2 });
+
+                let topGeo = new THREE.BoxGeometry(finalW, topThick, finalD);
+                let topMesh = new THREE.Mesh(topGeo, matTop);
+                topMesh.position.set(0, finalH / 2 - topThick / 2, 0);
+                group.add(topMesh);
+
+                let legH = finalH - topThick;
+                let legGeo = new THREE.BoxGeometry(legThick, legH, legThick);
+                let offX = finalW / 2 - legThick / 2 - 0.02;
+                let offZ = finalD / 2 - legThick / 2 - 0.02;
+                let legY = -topThick / 2 - legH / 2;
+
+                let leg1 = new THREE.Mesh(legGeo, matLeg); leg1.position.set(-offX, legY + finalH / 2, -offZ);
+                let leg2 = new THREE.Mesh(legGeo, matLeg); leg2.position.set(offX, legY + finalH / 2, -offZ);
+                let leg3 = new THREE.Mesh(legGeo, matLeg); leg3.position.set(-offX, legY + finalH / 2, offZ);
+                let leg4 = new THREE.Mesh(legGeo, matLeg); leg4.position.set(offX, legY + finalH / 2, offZ);
+                group.add(leg1, leg2, leg3, leg4);
+
+                let outerGeo = new THREE.BoxGeometry(finalW, finalH, finalD);
+                let materials = [];
+                for(let i=0; i<6; i++) {
+                    materials.push(new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.6, transparent: true, opacity: 0.0 }));
+                }
+                finalMesh = new THREE.Mesh(outerGeo, materials);
+                finalMesh.add(group);
             } else {
+                if (type === 'backdrop' && hasTopLayer) finalH = 4.0;
+                
+                let geometry = new THREE.BoxGeometry(finalW, finalH, finalD);
                 let materials = [];
                 let initColor = (type === 'backdrop') ? FIXED_WALL_COLOR_HEX : data.color;
-                for(let i=0; i<6; i++) materials.push(new THREE.MeshStandardMaterial({ color: initColor }));
-                finalMesh = new THREE.Mesh(new THREE.BoxGeometry(finalW, finalH, finalD), materials);
+
+                for(let i=0; i<6; i++) {
+                    materials.push(new THREE.MeshStandardMaterial({ color: initColor, roughness: 0.6 }));
+                }
+                finalMesh = new THREE.Mesh(geometry, materials);
             }
 
-            let posY = finalH / 2 + elevation;
+            let posY = finalH / 2;
+
             if (customPos) {
-                finalMesh.position.set(customPos.x, (customPos.y !== undefined ? customPos.y : posY), customPos.z);
+                finalMesh.position.set(customPos.x, posY, customPos.z);
             } else {
-                let initZ = (type === 'wall_grid_rack' || type === 'backdrop' || type === 'wall_shelf') ? -1.4 : 0;
-                finalMesh.position.set(0, posY, initZ);
+                finalMesh.position.set(0, posY, 0);
             }
             
-            if (customRot) finalMesh.rotation.set(customRot.x, customRot.y, customRot.z);
+            if (customRot) {
+                finalMesh.rotation.set(customRot.x, customRot.y, customRot.z);
+            }
+
+            let normalizedImages = { front: null, left: null, right: null };
+            if (savedImages) {
+                if (Array.isArray(savedImages)) {
+                    if (savedImages[4]) normalizedImages.front = savedImages[4];
+                    if (savedImages[1]) normalizedImages.left = savedImages[1];
+                    if (savedImages[0]) normalizedImages.right = savedImages[0];
+                } else {
+                    normalizedImages.front = savedImages.front || null;
+                    normalizedImages.left = savedImages.left || null;
+                    normalizedImages.right = savedImages.right || null;
+                }
+            }
 
             finalMesh.userData = { 
-                type: type, height: finalH, customW: finalW, customD: finalD, customH: finalH,
-                elevation: elevation, hasTopLayer: hasTopLayer, shelfLayers: shelfLayers, images: savedImages || {} 
+                type: type, 
+                height: finalH, 
+                customW: finalW,
+                customD: finalD,
+                customH: finalH,
+                hasTopLayer: hasTopLayer, 
+                shelfLayers: shelfLayers, 
+                images: normalizedImages 
             };
             
-            scene.add(finalMesh); draggableObjects.push(finalMesh); selectObject(finalMesh);
+            scene.add(finalMesh);
+            draggableObjects.push(finalMesh);
+
+            if (normalizedImages.front) applyTextureToFace(finalMesh, 'front', normalizedImages.front);
+            if (normalizedImages.left) applyTextureToFace(finalMesh, 'left', normalizedImages.left);
+            if (normalizedImages.right) applyTextureToFace(finalMesh, 'right', normalizedImages.right);
+
+            selectObject(finalMesh);
+
             if (shouldSave) saveToLocalStorage();
         }
 
         function updateSelectedDimensions() {
             if (!selectedObject || selectedObject.userData.type === 'booth_wall') return;
+
             let wInput = parseFloat(document.getElementById('dim-w').value) / 100; 
             let dInput = parseFloat(document.getElementById('dim-d').value) / 100;
             let hInput = parseFloat(document.getElementById('dim-h').value) / 100;
-            let elevInput = parseFloat(document.getElementById('dim-elevation').value) / 100 || 0;
 
             if (isNaN(wInput) || isNaN(dInput) || isNaN(hInput) || wInput <= 0 || dInput <= 0 || hInput <= 0) return;
 
             let type = selectedObject.userData.type;
-            let pos = { x: selectedObject.position.x, y: hInput / 2 + elevInput, z: selectedObject.position.z };
+            let pos = { x: selectedObject.position.x, y: selectedObject.position.y, z: selectedObject.position.z };
             let rot = { x: selectedObject.rotation.x, y: selectedObject.rotation.y, z: selectedObject.rotation.z };
             let imgs = selectedObject.userData.images;
+            let hasTop = selectedObject.userData.hasTopLayer;
+            let shelfLayers = selectedObject.userData.shelfLayers;
 
             scene.remove(selectedObject);
             draggableObjects = draggableObjects.filter(o => o !== selectedObject);
-            createObject(type, pos, rot, true, imgs, false, 3, { w: wInput, d: dInput, h: hInput }, elevInput);
+
+            createObject(type, pos, rot, true, imgs, hasTop, shelfLayers, { w: wInput, d: dInput, h: hInput });
         }
 
-        function updateSelectedElevation() {
-            if (!selectedObject || selectedObject.userData.type === 'booth_wall') return;
-            let elevInput = parseFloat(document.getElementById('dim-elevation').value) / 100 || 0;
-            let h = selectedObject.userData.customH || OBJECT_TYPES[selectedObject.userData.type].h;
-            selectedObject.userData.elevation = elevInput;
-            selectedObject.position.y = h / 2 + elevInput;
+        function adjustShelfLayers(delta) {
+            if (!selectedObject || selectedObject.userData.type !== 'wall_shelf') return;
+            let currentLayers = selectedObject.userData.shelfLayers || 3;
+            let newLayers = currentLayers + delta;
+            if (newLayers < 1 || newLayers > 6) return;
+
+            let type = selectedObject.userData.type;
+            let data = OBJECT_TYPES[type];
+            let curW = selectedObject.userData.customW || data.w;
+            let curD = selectedObject.userData.customD || data.d;
+            let curH = selectedObject.userData.customH || data.h;
+
+            while(selectedObject.children.length > 0){
+                selectedObject.remove(selectedObject.children[0]);
+            }
+
+            let newShelfGroup = createShelfGeometry(data, newLayers, curW, curD, curH);
+            selectedObject.add(newShelfGroup);
+            selectedObject.userData.shelfLayers = newLayers;
+
+            updateRightPanelUI();
             saveToLocalStorage();
+        }
+
+        function toggleBackdropLayer() {
+            if (!selectedObject) return;
+            let type = selectedObject.userData.type;
+            if (type !== 'backdrop' && type !== 'fitting_room') return;
+
+            let currentState = selectedObject.userData.hasTopLayer || false;
+            let newState = !currentState; 
+
+            let pos = { x: selectedObject.position.x, y: selectedObject.position.y, z: selectedObject.position.z };
+            let rot = { x: selectedObject.rotation.x, y: selectedObject.rotation.y, z: selectedObject.rotation.z };
+            let imgs = selectedObject.userData.images;
+            let shelfLayers = selectedObject.userData.shelfLayers;
+            let dims = {
+                w: selectedObject.userData.customW,
+                d: selectedObject.userData.customD,
+                h: selectedObject.userData.customH
+            };
+
+            scene.remove(selectedObject);
+            draggableObjects = draggableObjects.filter(o => o !== selectedObject);
+
+            createObject(type, pos, rot, true, imgs, newState, shelfLayers, dims);
         }
 
         function onPointerDown(event) {
@@ -873,7 +1763,10 @@
             if (isSpacePressed) return; 
 
             let raycaster = new THREE.Raycaster();
-            let mouse = new THREE.Vector2((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
+            let mouse = new THREE.Vector2(
+                (event.clientX / window.innerWidth) * 2 - 1,
+                -(event.clientY / window.innerHeight) * 2 + 1
+            );
             raycaster.setFromCamera(mouse, camera);
 
             let targets = [...draggableObjects, ...wallObjects];
@@ -881,129 +1774,1201 @@
 
             if (intersects.length > 0) {
                 let hitObject = intersects[0].object;
+                
                 while (hitObject.parent && hitObject.parent !== scene && !hitObject.userData.type) {
                     hitObject = hitObject.parent;
                 }
+
                 selectObject(hitObject);
+
                 if (hitObject.userData.type !== 'booth_wall' && hitObject.userData.type !== 'booth_wall_top') {
                     isDragging = true;
-                    previousPosition.copy(hitObject.position); previousRotation.copy(hitObject.rotation);
+                    previousPosition.copy(hitObject.position);
+                    previousRotation.copy(hitObject.rotation);
                     let intersectionPoint = new THREE.Vector3();
                     raycaster.ray.intersectPlane(planeHelper, intersectionPoint);
                     dragOffset.copy(hitObject.position).sub(intersectionPoint);
                 }
-            } else { selectObject(null); }
+            } else {
+                selectObject(null);
+            }
         }
 
         function onPointerMove(event) {
-            if (isSpacePressed || !isDragging || !selectedObject || selectedObject.userData.type === 'booth_wall') return;
+            if (isSpacePressed) return;
+            if (!isDragging || !selectedObject || selectedObject.userData.type === 'booth_wall' || selectedObject.userData.type === 'booth_wall_top') return;
+
             let raycaster = new THREE.Raycaster();
-            let mouse = new THREE.Vector2((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
+            let mouse = new THREE.Vector2(
+                (event.clientX / window.innerWidth) * 2 - 1,
+                -(event.clientY / window.innerHeight) * 2 + 1
+            );
             raycaster.setFromCamera(mouse, camera);
             let intersectionPoint = new THREE.Vector3();
             if (raycaster.ray.intersectPlane(planeHelper, intersectionPoint)) {
-                let elev = selectedObject.userData.elevation || 0;
                 selectedObject.position.copy(intersectionPoint.add(dragOffset));
-                selectedObject.position.y = selectedObject.userData.height / 2 + elev;
+                selectedObject.position.y = selectedObject.userData.height / 2;
             }
         }
 
         function onPointerUp() {
             orbitControls.mouseButtons.LEFT = THREE.MOUSE.NONE;
-            if (isSpacePressed || !isDragging) return;
+            if (isSpacePressed) return; 
+            if (!isDragging) return;
             isDragging = false; 
-            if (selectedObject) {
+
+            if (selectedObject && selectedObject.userData.type !== 'booth_wall' && selectedObject.userData.type !== 'booth_wall_top') {
                 selectedObject.position.x = Math.round(selectedObject.position.x / SNAP_UNIT) * SNAP_UNIT;
                 selectedObject.position.z = Math.round(selectedObject.position.z / SNAP_UNIT) * SNAP_UNIT;
+                
+                if (checkCollision(selectedObject)) {
+                    selectedObject.position.copy(previousPosition); 
+                } else {
+                    saveToLocalStorage(); 
+                }
+            }
+        }
+
+        function triggerFaceUpload(face) {
+            currentTargetUploadFace = face;
+            document.getElementById('face-image-upload').click();
+        }
+
+        function triggerCustomGroupUpload() {
+            currentTargetUploadFace = 'custom_group';
+            document.getElementById('face-image-upload').click();
+        }
+
+        function triggerGroupFittingUpload() {
+            currentTargetUploadFace = 'group_fitting';
+            document.getElementById('face-image-upload').click();
+        }
+
+        function triggerGroupCabinetUpload() {
+            currentTargetUploadFace = 'group_cabinet';
+            document.getElementById('face-image-upload').click();
+        }
+
+        function handleFaceUpload(event) {
+            let file = event.target.files[0];
+            if (!file || !selectedObject) return;
+            
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                let img = new Image();
+                img.onload = function() {
+                    let canvas = document.createElement('canvas');
+                    let ctx = canvas.getContext('2d');
+                    
+                    let maxDim = 1024; 
+                    let w = img.width;
+                    let h = img.height;
+                    
+                    if (w > maxDim || h > maxDim) {
+                        if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; } 
+                        else { w = Math.round((w * maxDim) / h); h = maxDim; }
+                    }
+                    
+                    canvas.width = w;
+                    canvas.height = h;
+                    ctx.fillStyle = '#ffffff'; 
+                    ctx.fillRect(0, 0, w, h);
+                    ctx.drawImage(img, 0, 0, w, h);
+                    
+                    let base64Data = canvas.toDataURL('image/jpeg', 0.8);
+
+                    if (currentTargetUploadFace === 'custom_group') {
+                        let checkboxes = document.querySelectorAll('.wall-custom-checkbox:checked');
+                        let selectedSegmentIds = Array.from(checkboxes).map(cb => cb.value);
+                        
+                        if (selectedSegmentIds.length > 0) {
+                            let wallModeElem = document.getElementById('booth-wall-mode-select');
+                            let wallMode = wallModeElem ? wallModeElem.value : 'full_span';
+
+                            let dir = selectedObject.userData.dir;
+                            let matchedBaseWalls = wallObjects.filter(w => selectedSegmentIds.includes(w.userData.segmentId) && w.userData.type === 'booth_wall');
+                            let matchedTopWalls = wallObjects.filter(w => selectedSegmentIds.includes(w.userData.segmentId) && w.userData.type === 'booth_wall_top');
+
+                            if (dir === 'back' || dir === 'front') {
+                                matchedBaseWalls.sort((a, b) => a.userData.c - b.userData.c);
+                                matchedTopWalls.sort((a, b) => a.userData.c - b.userData.c);
+                            } else {
+                                matchedBaseWalls.sort((a, b) => a.userData.r - b.userData.r);
+                                matchedTopWalls.sort((a, b) => a.userData.r - b.userData.r);
+                            }
+
+                            if (wallMode === 'full_span' && matchedTopWalls.length > 0) {
+                                applyCustomGroupTextureToWallsSpan(matchedBaseWalls, matchedTopWalls, base64Data);
+                            } else if (wallMode === 'top_only' && matchedTopWalls.length > 0) {
+                                applyCustomGroupTextureToWalls(matchedTopWalls, base64Data, true);
+                            } else {
+                                applyCustomGroupTextureToWalls(matchedBaseWalls, base64Data, false);
+                            }
+                        }
+                    } else if (currentTargetUploadFace === 'group_fitting') {
+                        let frObjects = draggableObjects.filter(o => o.userData.type === 'fitting_room');
+                        if (frObjects.length > 0) {
+                            let minX = Math.min(...frObjects.map(o => o.position.x));
+                            let maxX = Math.max(...frObjects.map(o => o.position.x));
+                            let minZ = Math.min(...frObjects.map(o => o.position.z));
+                            let maxZ = Math.max(...frObjects.map(o => o.position.z));
+
+                            if ((maxX - minX) >= (maxZ - minZ)) {
+                                frObjects.sort((a, b) => a.position.x - b.position.x);
+                            } else {
+                                frObjects.sort((a, b) => a.position.z - b.position.z);
+                            }
+                            applyGroupTextureToFittingRooms(frObjects, base64Data);
+                        }
+                    } else if (currentTargetUploadFace === 'group_cabinet') {
+                        let checkboxes = document.querySelectorAll('.cabinet-custom-checkbox:checked');
+                        let selectedIds = Array.from(checkboxes).map(cb => cb.value);
+
+                        let cabObjects = draggableObjects.filter(o => selectedIds.includes(o.id.toString()));
+                        
+                        if (cabObjects.length > 0) {
+                            let minX = Math.min(...cabObjects.map(o => o.position.x));
+                            let maxX = Math.max(...cabObjects.map(o => o.position.x));
+                            let minZ = Math.min(...cabObjects.map(o => o.position.z));
+                            let maxZ = Math.max(...cabObjects.map(o => o.position.z));
+
+                            if ((maxX - minX) >= (maxZ - minZ)) {
+                                cabObjects.sort((a, b) => a.position.x - b.position.x);
+                            } else {
+                                cabObjects.sort((a, b) => a.position.z - b.position.z);
+                            }
+                            applyGroupTextureToCabinets(cabObjects, base64Data);
+                        }
+                    } else if (selectedObject.userData.type === 'booth_wall' || selectedObject.userData.type === 'booth_wall_top') {
+                        let segId = selectedObject.userData.segmentId;
+                        let wallModeElem = document.getElementById('booth-wall-mode-select');
+                        let wallMode = wallModeElem ? wallModeElem.value : 'full_span';
+
+                        let baseObj = wallObjects.find(w => w.userData.type === 'booth_wall' && w.userData.segmentId === segId);
+                        let topObj = wallObjects.find(w => w.userData.type === 'booth_wall_top' && w.userData.segmentId === segId);
+
+                        if (wallMode === 'full_span' && topObj && baseObj) {
+                            applyWallSingleFullSpan(baseObj, topObj, base64Data);
+                        } else if (wallMode === 'top_only' && topObj) {
+                            if (segId) {
+                                if (!elevatedWallSegments[segId]) elevatedWallSegments[segId] = { hasTop: true, img: null, baseImg: null };
+                                elevatedWallSegments[segId].img = base64Data;
+                            }
+                            applyTextureToWallTop(topObj, base64Data);
+                        } else if (baseObj) {
+                            if (segId) {
+                                if (!elevatedWallSegments[segId]) elevatedWallSegments[segId] = { hasTop: !!topObj, img: null, baseImg: null };
+                                elevatedWallSegments[segId].baseImg = base64Data;
+                            }
+                            applyTextureToWallBase(baseObj, base64Data);
+                        }
+                    } else {
+                        if (selectedObject.userData.type === 'fitting_room' && currentTargetUploadFace === 'front' && !selectedObject.userData.hasTopLayer) {
+                            let pos = { x: selectedObject.position.x, y: selectedObject.position.y, z: selectedObject.position.z };
+                            let rot = { x: selectedObject.rotation.x, y: selectedObject.rotation.y, z: selectedObject.rotation.z };
+                            let shelfLayers = selectedObject.userData.shelfLayers;
+                            let dims = { w: selectedObject.userData.customW, d: selectedObject.userData.customD, h: selectedObject.userData.customH };
+                            
+                            if(!selectedObject.userData.images) selectedObject.userData.images = {};
+                            selectedObject.userData.images[currentTargetUploadFace] = base64Data; 
+
+                            scene.remove(selectedObject);
+                            draggableObjects = draggableObjects.filter(o => o !== selectedObject);
+                            createObject('fitting_room', pos, rot, true, selectedObject.userData.images, true, shelfLayers, dims);
+                        } else {
+                            if(!selectedObject.userData.images) selectedObject.userData.images = {};
+                            selectedObject.userData.images[currentTargetUploadFace] = base64Data; 
+                            applyTextureToFace(selectedObject, currentTargetUploadFace, base64Data);
+                        }
+                    }
+
+                    saveToLocalStorage(); 
+                    updateRightPanelUI();
+                    event.target.value = ''; 
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        /* 外圍單片牆面的整面跨高裁切 (400cm: 下 62.5%, 上 37.5%) */
+        function applyWallSingleFullSpan(baseObj, topObj, base64Data) {
+            let img = new Image();
+            img.onload = function() {
+                let segId = baseObj.userData.segmentId;
+                if (!elevatedWallSegments[segId]) elevatedWallSegments[segId] = { hasTop: true, img: null, baseImg: null };
+
+                // 下半部 250cm
+                let baseCanvas = document.createElement('canvas');
+                let baseCtx = baseCanvas.getContext('2d');
+                baseCanvas.width = 1024; baseCanvas.height = 1024;
+                baseCtx.fillStyle = '#545454'; baseCtx.fillRect(0, 0, 1024, 1024);
+                baseCtx.drawImage(img, 0, img.height * 0.375, img.width, img.height * 0.625, 0, 0, 1024, 1024);
+
+                let baseBase64 = baseCanvas.toDataURL('image/jpeg', 0.8);
+                elevatedWallSegments[segId].baseImg = baseBase64;
+                applyTextureToWallBase(baseObj, baseBase64);
+
+                // 上半部 150cm
+                let topCanvas = document.createElement('canvas');
+                let topCtx = topCanvas.getContext('2d');
+                topCanvas.width = 1024; topCanvas.height = 512;
+                topCtx.fillStyle = '#545454'; topCtx.fillRect(0, 0, 1024, 512);
+                topCtx.drawImage(img, 0, 0, img.width, img.height * 0.375, 0, 0, 1024, 512);
+
+                let topBase64 = topCanvas.toDataURL('image/jpeg', 0.8);
+                elevatedWallSegments[segId].img = topBase64;
+                applyTextureToWallTop(topObj, topBase64);
+
                 saveToLocalStorage();
+            };
+            img.src = base64Data;
+        }
+
+        /* 外圍多片選取牆面的整面跨高大圖裁切 */
+        function applyCustomGroupTextureToWallsSpan(baseWalls, topWalls, base64Data) {
+            let img = new Image();
+            img.onload = function() {
+                let totalCount = baseWalls.length;
+                let canvasW = 1024 * totalCount;
+                let canvasH = 1024;
+
+                let masterCanvas = document.createElement('canvas');
+                let masterCtx = masterCanvas.getContext('2d');
+                masterCanvas.width = canvasW; masterCanvas.height = canvasH;
+                masterCtx.fillStyle = '#545454'; masterCtx.fillRect(0, 0, canvasW, canvasH);
+                masterCtx.drawImage(img, 0, 0, canvasW, canvasH);
+
+                baseWalls.forEach((baseMesh, index) => {
+                    let segId = baseMesh.userData.segmentId;
+                    let topMesh = topWalls.find(t => t.userData.segmentId === segId);
+                    if (!elevatedWallSegments[segId]) elevatedWallSegments[segId] = { hasTop: true, img: null, baseImg: null };
+
+                    // 1. 切出單片牆的 400cm 垂直區域 (寬 1024, 高 1024)
+                    let colCanvas = document.createElement('canvas');
+                    let colCtx = colCanvas.getContext('2d');
+                    colCanvas.width = 1024; colCanvas.height = 1024;
+                    colCtx.drawImage(masterCanvas, index * 1024, 0, 1024, 1024, 0, 0, 1024, 1024);
+
+                    // 2. 切出基底 250cm (下半 62.5%)
+                    let baseCanvas = document.createElement('canvas');
+                    let baseCtx = baseCanvas.getContext('2d');
+                    baseCanvas.width = 1024; baseCanvas.height = 1024;
+                    baseCtx.drawImage(colCanvas, 0, 1024 * 0.375, 1024, 1024 * 0.625, 0, 0, 1024, 1024);
+
+                    let baseBase64 = baseCanvas.toDataURL('image/jpeg', 0.8);
+                    elevatedWallSegments[segId].baseImg = baseBase64;
+                    applyTextureToWallBase(baseMesh, baseBase64);
+
+                    // 3. 切出頂層 150cm (上半 37.5%)
+                    if (topMesh) {
+                        let topCanvas = document.createElement('canvas');
+                        let topCtx = topCanvas.getContext('2d');
+                        topCanvas.width = 1024; topCanvas.height = 512;
+                        topCtx.drawImage(colCanvas, 0, 0, 1024, 1024 * 0.375, 0, 0, 1024, 512);
+
+                        let topBase64 = topCanvas.toDataURL('image/jpeg', 0.8);
+                        elevatedWallSegments[segId].img = topBase64;
+                        applyTextureToWallTop(topMesh, topBase64);
+                    }
+                });
+                saveToLocalStorage();
+            };
+            img.src = base64Data;
+        }
+
+        function applyGroupTextureToCabinets(cabinets, base64Data) {
+            let img = new Image();
+            img.onload = function() {
+                let totalWidth = cabinets.reduce((sum, mesh) => sum + (mesh.userData.customW || 1.0), 0);
+                let canvasW = 1024 * cabinets.length; 
+                let canvasH = 1024; 
+
+                let masterCanvas = document.createElement('canvas');
+                let masterCtx = masterCanvas.getContext('2d');
+                masterCanvas.width = canvasW;
+                masterCanvas.height = canvasH;
+
+                masterCtx.fillStyle = '#545454';
+                masterCtx.fillRect(0, 0, canvasW, canvasH);
+                masterCtx.drawImage(img, 0, 0, canvasW, canvasH);
+
+                let currentXPixel = 0;
+                cabinets.forEach((mesh) => {
+                    let w = mesh.userData.customW || 1.0;
+                    let pixelWidth = (w / totalWidth) * canvasW;
+
+                    let subCanvas = document.createElement('canvas');
+                    let subCtx = subCanvas.getContext('2d');
+                    subCanvas.width = 1024;
+                    subCanvas.height = canvasH;
+
+                    subCtx.drawImage(masterCanvas, currentXPixel, 0, pixelWidth, canvasH, 0, 0, 1024, canvasH);
+                    let slicedBase64 = subCanvas.toDataURL('image/jpeg', 0.8);
+
+                    if(!mesh.userData.images) mesh.userData.images = {};
+                    mesh.userData.images['front'] = slicedBase64;
+                    applyTextureToFace(mesh, 'front', slicedBase64);
+
+                    currentXPixel += pixelWidth;
+                });
+                saveToLocalStorage();
+            };
+            img.src = base64Data;
+        }
+
+        function applyCustomGroupTextureToWalls(wallMeshes, base64Data, isTopLayer) {
+            let img = new Image();
+            img.onload = function() {
+                let totalCount = wallMeshes.length;
+                let canvasW = 1024 * totalCount; 
+                let canvasH = isTopLayer ? 512 : 1024;
+
+                let masterCanvas = document.createElement('canvas');
+                let masterCtx = masterCanvas.getContext('2d');
+                masterCanvas.width = canvasW;
+                masterCanvas.height = canvasH;
+
+                masterCtx.fillStyle = '#545454';
+                masterCtx.fillRect(0, 0, canvasW, canvasH);
+                masterCtx.drawImage(img, 0, 0, canvasW, canvasH);
+
+                wallMeshes.forEach((mesh, index) => {
+                    let subCanvas = document.createElement('canvas');
+                    let subCtx = subCanvas.getContext('2d');
+                    subCanvas.width = 1024;
+                    subCanvas.height = canvasH;
+
+                    subCtx.drawImage(masterCanvas, index * 1024, 0, 1024, canvasH, 0, 0, 1024, canvasH);
+
+                    let texture = new THREE.CanvasTexture(subCanvas);
+                    texture.encoding = THREE.sRGBEncoding;
+
+                    if (Array.isArray(mesh.material)) {
+                        let faceIdx = getWallInnerFaceIndex(mesh);
+                        mesh.material[faceIdx].map = texture;
+                        mesh.material[faceIdx].color.setHex(0xffffff);
+                        mesh.material[faceIdx].needsUpdate = true;
+                    }
+
+                    let segId = mesh.userData.segmentId;
+                    if (segId) {
+                        if (!elevatedWallSegments[segId]) elevatedWallSegments[segId] = { hasTop: true, img: null, baseImg: null };
+                        if (isTopLayer) {
+                            elevatedWallSegments[segId].img = subCanvas.toDataURL('image/jpeg', 0.8);
+                        } else {
+                            elevatedWallSegments[segId].baseImg = subCanvas.toDataURL('image/jpeg', 0.8);
+                        }
+                    }
+                });
+                saveToLocalStorage();
+            };
+            img.src = base64Data;
+        }
+
+        function applyGroupTextureToFittingRooms(fittingRooms, base64Data) {
+            let img = new Image();
+            img.onload = function() {
+                let totalCount = fittingRooms.length;
+                let canvasW = 1024 * totalCount; 
+                let canvasH = 512; 
+
+                let masterCanvas = document.createElement('canvas');
+                let masterCtx = masterCanvas.getContext('2d');
+                masterCanvas.width = canvasW;
+                masterCanvas.height = canvasH;
+
+                masterCtx.fillStyle = '#545454';
+                masterCtx.fillRect(0, 0, canvasW, canvasH);
+                masterCtx.drawImage(img, 0, 0, canvasW, canvasH);
+
+                fittingRooms.forEach((mesh, index) => {
+                    let subCanvas = document.createElement('canvas');
+                    let subCtx = subCanvas.getContext('2d');
+                    subCanvas.width = 1024;
+                    subCanvas.height = canvasH;
+
+                    subCtx.drawImage(masterCanvas, index * 1024, 0, 1024, canvasH, 0, 0, 1024, canvasH);
+                    let slicedBase64 = subCanvas.toDataURL('image/jpeg', 0.8);
+
+                    if(!mesh.userData.images) mesh.userData.images = {};
+                    mesh.userData.images['front'] = slicedBase64;
+
+                    if (!mesh.userData.hasTopLayer) {
+                        let pos = { x: mesh.position.x, y: mesh.position.y, z: mesh.position.z };
+                        let rot = { x: mesh.rotation.x, y: mesh.rotation.y, z: mesh.rotation.z };
+                        let shelfLayers = mesh.userData.shelfLayers;
+                        let dims = { w: mesh.userData.customW, d: mesh.userData.customD, h: mesh.userData.customH };
+                        
+                        scene.remove(mesh);
+                        draggableObjects = draggableObjects.filter(o => o !== mesh);
+                        createObject('fitting_room', pos, rot, false, mesh.userData.images, true, shelfLayers, dims);
+                    } else {
+                        applyTextureToFace(mesh, 'front', slicedBase64);
+                    }
+                });
+                saveToLocalStorage();
+            };
+            img.src = base64Data;
+        }
+
+        function getWallInnerFaceIndex(mesh) {
+            let segId = mesh.userData.segmentId || '';
+            let dir = mesh.userData.dir || '';
+            if (dir === 'left' || segId.endsWith('-left')) return 0;
+            if (dir === 'right' || segId.endsWith('-right')) return 1;
+            if (dir === 'front' || segId.endsWith('-front')) return 5;
+            return 4; // 後牆
+        }
+
+        function applyTextureToWallBase(mesh, base64Data) {
+            let img = new Image();
+            img.onload = function() {
+                let canvas = document.createElement('canvas');
+                let ctx = canvas.getContext('2d');
+                canvas.width = 1024;
+                canvas.height = 1024; 
+
+                ctx.fillStyle = '#545454';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                let texture = new THREE.CanvasTexture(canvas);
+                texture.encoding = THREE.sRGBEncoding;
+
+                if (Array.isArray(mesh.material)) {
+                    let faceIdx = getWallInnerFaceIndex(mesh);
+                    mesh.material[faceIdx].map = texture;
+                    mesh.material[faceIdx].color.setHex(0xffffff);
+                    mesh.material[faceIdx].needsUpdate = true;
+                }
+            };
+            img.src = base64Data;
+        }
+
+        function applyTextureToWallTop(mesh, base64Data) {
+            let img = new Image();
+            img.onload = function() {
+                let canvas = document.createElement('canvas');
+                let ctx = canvas.getContext('2d');
+                canvas.width = 1024;
+                canvas.height = 512; 
+
+                ctx.fillStyle = '#545454';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                let texture = new THREE.CanvasTexture(canvas);
+                texture.encoding = THREE.sRGBEncoding;
+
+                if (Array.isArray(mesh.material)) {
+                    let faceIdx = getWallInnerFaceIndex(mesh);
+                    mesh.material[faceIdx].map = texture; 
+                    mesh.material[faceIdx].color.setHex(0xffffff);
+                    mesh.material[faceIdx].needsUpdate = true;
+                }
+            };
+            img.src = base64Data;
+        }
+
+        function getWallInnerFaceIndexAndDimensions(mesh) {
+            let type = mesh.userData.type;
+            let faceWidth = mesh.userData.customW || 1.0;
+            let faceHeight = mesh.userData.customH || 2.5;
+            let faceIndex = 4; 
+
+            if (type === 'booth_wall' || type === 'booth_wall_top') {
+                let segId = mesh.userData.segmentId || '';
+                let dir = mesh.userData.dir || '';
+                let params = mesh.geometry.parameters;
+                faceWidth = params.width;
+                faceHeight = params.height;
+
+                if (dir === 'left' || segId.endsWith('-left')) {
+                    faceIndex = 0; faceWidth = params.depth;
+                } else if (dir === 'right' || segId.endsWith('-right')) {
+                    faceIndex = 1; faceWidth = params.depth;
+                } else if (dir === 'front' || segId.endsWith('-front')) {
+                    faceIndex = 5; faceWidth = params.width;
+                } else {
+                    faceIndex = 4; faceWidth = params.width;
+                }
+            } else {
+                if (currentTargetUploadFace === 'left') {
+                    faceIndex = 1;
+                    faceWidth = mesh.userData.customD || 1.0;
+                } else if (currentTargetUploadFace === 'right') {
+                    faceIndex = 0;
+                    faceWidth = mesh.userData.customD || 1.0;
+                }
+            }
+
+            return { faceIndex, faceWidth, faceHeight };
+        }
+
+        function applyTextureToFace(mesh, face, base64Data) {
+            if (!mesh) return;
+
+            let oldTarget = currentTargetUploadFace;
+            currentTargetUploadFace = face;
+            let { faceIndex, faceWidth, faceHeight } = getWallInnerFaceIndexAndDimensions(mesh);
+            currentTargetUploadFace = oldTarget;
+
+            let type = mesh.userData.type;
+            let selectElem = document.getElementById('top-layer-mode-select');
+            let textureMode = selectElem ? selectElem.value : 'full_span';
+
+            let img = new Image();
+            img.onload = function() {
+                let hasTop = mesh.userData.hasTopLayer || false;
+
+                if (type === 'fitting_room') {
+                    let targetWallName = (face === 'left') ? 'leftWallMesh' : (face === 'right') ? 'rightWallMesh' : null;
+                    let targetWall = targetWallName ? mesh.getObjectByName(targetWallName) : null;
+                    let topBanner = mesh.getObjectByName('topBannerMesh');
+
+                    if (face === 'front') {
+                        if (topBanner) {
+                            let canvas = document.createElement('canvas');
+                            let ctx = canvas.getContext('2d');
+                            canvas.width = 1024;
+                            canvas.height = 512;
+                            ctx.fillStyle = '#545454';
+                            ctx.fillRect(0, 0, 1024, 512);
+                            ctx.drawImage(img, 0, 0, 1024, 512);
+
+                            let texture = new THREE.CanvasTexture(canvas);
+                            texture.encoding = THREE.sRGBEncoding;
+
+                            topBanner.material[4].map = texture;
+                            topBanner.material[4].color.setHex(0xffffff);
+                            topBanner.material[4].needsUpdate = true;
+                        }
+                    } else if (targetWall) {
+                        let sideFaceIdx = (face === 'left') ? 1 : 0;
+
+                        if (hasTop && textureMode === 'full_span' && topBanner) {
+                            let baseCanvas = document.createElement('canvas');
+                            let baseCtx = baseCanvas.getContext('2d');
+                            baseCanvas.width = 1024; baseCanvas.height = 1024;
+                            baseCtx.fillStyle = '#545454'; baseCtx.fillRect(0, 0, 1024, 1024);
+                            baseCtx.drawImage(img, 0, img.height * 0.375, img.width, img.height * 0.625, 0, 0, 1024, 1024);
+
+                            let baseTexture = new THREE.CanvasTexture(baseCanvas);
+                            baseTexture.encoding = THREE.sRGBEncoding;
+                            targetWall.material.map = baseTexture;
+                            targetWall.material.color.setHex(0xffffff);
+                            targetWall.material.needsUpdate = true;
+
+                            let topCanvas = document.createElement('canvas');
+                            let topCtx = topCanvas.getContext('2d');
+                            topCanvas.width = 1024; topCanvas.height = 512;
+                            topCtx.fillStyle = '#545454'; topCtx.fillRect(0, 0, 1024, 512);
+                            topCtx.drawImage(img, 0, 0, img.width, img.height * 0.375, 0, 0, 1024, 512);
+
+                            let topTexture = new THREE.CanvasTexture(topCanvas);
+                            topTexture.encoding = THREE.sRGBEncoding;
+
+                            topBanner.material[sideFaceIdx].map = topTexture;
+                            topBanner.material[sideFaceIdx].color.setHex(0xffffff);
+                            topBanner.material[sideFaceIdx].needsUpdate = true;
+
+                        } else if (hasTop && textureMode === 'top_only' && topBanner) {
+                            let topCanvas = document.createElement('canvas');
+                            let topCtx = topCanvas.getContext('2d');
+                            topCanvas.width = 1024; topCanvas.height = 512;
+                            topCtx.fillStyle = '#545454'; topCtx.fillRect(0, 0, 1024, 512);
+                            topCtx.drawImage(img, 0, 0, 1024, 512);
+
+                            let topTexture = new THREE.CanvasTexture(topCanvas);
+                            topTexture.encoding = THREE.sRGBEncoding;
+
+                            topBanner.material[sideFaceIdx].map = topTexture;
+                            topBanner.material[sideFaceIdx].color.setHex(0xffffff);
+                            topBanner.material[sideFaceIdx].needsUpdate = true;
+
+                            targetWall.material.map = null;
+                            targetWall.material.color.setHex(FIXED_WALL_COLOR_HEX);
+                            targetWall.material.needsUpdate = true;
+
+                        } else {
+                            let canvas = document.createElement('canvas');
+                            let ctx = canvas.getContext('2d');
+                            canvas.width = 1024; canvas.height = 1024;
+                            ctx.fillStyle = '#545454'; ctx.fillRect(0, 0, 1024, 1024);
+                            ctx.drawImage(img, 0, 0, 1024, 1024);
+
+                            let texture = new THREE.CanvasTexture(canvas);
+                            texture.encoding = THREE.sRGBEncoding;
+                            targetWall.material.map = texture;
+                            targetWall.material.color.setHex(0xffffff);
+                            targetWall.material.needsUpdate = true;
+
+                            if (topBanner) {
+                                topBanner.material[sideFaceIdx].map = null;
+                                topBanner.material[sideFaceIdx].color.setHex(FIXED_WALL_COLOR_HEX);
+                                topBanner.material[sideFaceIdx].needsUpdate = true;
+                            }
+                        }
+                    }
+                } else if (Array.isArray(mesh.material)) {
+                    let canvasWidth = 1024;
+                    let canvasHeight = Math.min(4096, Math.max(128, Math.round(canvasWidth * (faceHeight / faceWidth))));
+                    let canvas = document.createElement('canvas');
+                    let ctx = canvas.getContext('2d');
+                    canvas.width = canvasWidth; canvas.height = canvasHeight;
+
+                    ctx.fillStyle = '#545454'; ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+                    ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+
+                    let texture = new THREE.CanvasTexture(canvas);
+                    texture.encoding = THREE.sRGBEncoding;
+
+                    mesh.material[faceIndex].map = texture;
+                    mesh.material[faceIndex].color.setHex(0xffffff); 
+                    mesh.material[faceIndex].needsUpdate = true;
+                }
+            };
+
+            img.src = base64Data;
+        }
+
+        function clearFaceTexture(face) {
+            if (!selectedObject) return;
+
+            if (selectedObject.userData.type === 'booth_wall') {
+                let segId = selectedObject.userData.segmentId;
+                if (segId && elevatedWallSegments[segId]) elevatedWallSegments[segId].baseImg = null;
+                let faceIdx = getWallInnerFaceIndex(selectedObject);
+                if (Array.isArray(selectedObject.material)) {
+                    selectedObject.material[faceIdx].map = null;
+                    selectedObject.material[faceIdx].color.setHex(FIXED_WALL_COLOR_HEX);
+                    selectedObject.material[faceIdx].needsUpdate = true;
+                }
+            } else if (selectedObject.userData.type === 'booth_wall_top') {
+                let segId = selectedObject.userData.segmentId;
+                if (segId && elevatedWallSegments[segId]) elevatedWallSegments[segId].img = null;
+                let topObj = wallObjects.find(w => w.userData.type === 'booth_wall_top' && w.userData.segmentId === segId);
+                let faceIdx = getWallInnerFaceIndex(topObj);
+                if (topObj && Array.isArray(topObj.material)) {
+                    topObj.material[faceIdx].map = null;
+                    topObj.material[faceIdx].color.setHex(FIXED_WALL_COLOR_HEX);
+                    topObj.material[faceIdx].needsUpdate = true;
+                }
+            } else {
+                if (selectedObject.userData.images) selectedObject.userData.images[face] = null;
+                
+                let oldTarget = currentTargetUploadFace;
+                currentTargetUploadFace = face;
+                let { faceIndex } = getWallInnerFaceIndexAndDimensions(selectedObject);
+                currentTargetUploadFace = oldTarget;
+
+                let type = selectedObject.userData.type;
+
+                if (type === 'fitting_room') {
+                    if (face === 'front') {
+                        let topBanner = selectedObject.getObjectByName('topBannerMesh');
+                        if (topBanner) {
+                            topBanner.material[4].map = null;
+                            topBanner.material[4].color.setHex(FIXED_WALL_COLOR_HEX);
+                            topBanner.material[4].needsUpdate = true;
+                        }
+                    } else if (face === 'left' || face === 'right') {
+                        let targetWallName = (face === 'left') ? 'leftWallMesh' : 'rightWallMesh';
+                        let targetWall = selectedObject.getObjectByName(targetWallName);
+                        if (targetWall) {
+                            targetWall.material.map = null;
+                            targetWall.material.color.setHex(FIXED_WALL_COLOR_HEX);
+                            targetWall.material.needsUpdate = true;
+                        }
+
+                        let topBanner = selectedObject.getObjectByName('topBannerMesh');
+                        if (topBanner) {
+                            let sideFaceIdx = (face === 'left') ? 1 : 0;
+                            topBanner.material[sideFaceIdx].map = null;
+                            topBanner.material[sideFaceIdx].color.setHex(FIXED_WALL_COLOR_HEX);
+                            topBanner.material[sideFaceIdx].needsUpdate = true;
+                        }
+                    }
+                } else if (Array.isArray(selectedObject.material)) {
+                    selectedObject.material[faceIndex].map = null;
+                    selectedObject.material[faceIndex].color.setHex(FIXED_WALL_COLOR_HEX);
+                    selectedObject.material[faceIndex].needsUpdate = true;
+                }
+            }
+
+            updateRightPanelUI();
+            saveToLocalStorage();
+        }
+
+        function checkCollision(targetObj) {
+            targetObj.updateMatrixWorld(true);
+            let targetBox = new THREE.Box3().setFromObject(targetObj);
+
+            let epsilon = 0.01;
+            targetBox.min.x += epsilon;
+            targetBox.min.z += epsilon;
+            targetBox.max.x -= epsilon;
+            targetBox.max.z -= epsilon;
+
+            for (let i = 0; i < draggableObjects.length; i++) {
+                let otherObj = draggableObjects[i];
+                if (otherObj === targetObj) continue; 
+                otherObj.updateMatrixWorld(true);
+                let otherBox = new THREE.Box3().setFromObject(otherObj);
+
+                if (targetBox.intersectsBox(otherBox)) return true; 
+            }
+            return false; 
+        }
+
+        function resetObjectMaterials(obj) {
+            if (!obj) return;
+            let type = obj.userData.type;
+
+            if (type === 'fitting_room') {
+                let topBanner = obj.getObjectByName('topBannerMesh');
+                if (topBanner) {
+                    for(let i=0; i<6; i++) {
+                        let hasImg = (i === 4 && obj.userData.images?.front) ||
+                                     (i === 1 && obj.userData.images?.left) ||
+                                     (i === 0 && obj.userData.images?.right);
+                        if (hasImg) topBanner.material[i].color.setHex(0xffffff);
+                        else topBanner.material[i].color.setHex(FIXED_WALL_COLOR_HEX);
+                    }
+                }
+                
+                let leftWall = obj.getObjectByName('leftWallMesh');
+                if (leftWall) {
+                    leftWall.material.color.setHex(obj.userData.images?.left ? 0xffffff : FIXED_WALL_COLOR_HEX);
+                }
+                let rightWall = obj.getObjectByName('rightWallMesh');
+                if (rightWall) {
+                    rightWall.material.color.setHex(obj.userData.images?.right ? 0xffffff : FIXED_WALL_COLOR_HEX);
+                }
+                let backWall = obj.getObjectByName('backWallMesh');
+                if (backWall) {
+                    backWall.material.color.setHex(FIXED_WALL_COLOR_HEX);
+                }
+                let curtain = obj.getObjectByName('curtainMesh');
+                if (curtain) {
+                    curtain.material.color.setHex(0x222222);
+                }
+                return;
+            }
+
+            if (type === 'booth_wall' || type === 'booth_wall_top') {
+                for(let i=0; i<6; i++) {
+                    obj.material[i].color.setHex(FIXED_WALL_COLOR_HEX);
+                }
+            } else if (Array.isArray(obj.material)) {
+                let baseColor = (type === 'backdrop') ? FIXED_WALL_COLOR_HEX : (OBJECT_TYPES[type]?.color || 0x0084ff);
+                for(let i=0; i<6; i++) {
+                    let isFrontWithImg = (i === 4 && obj.userData.images?.front);
+                    let isLeftWithImg = (i === 1 && obj.userData.images?.left);
+                    let isRightWithImg = (i === 0 && obj.userData.images?.right);
+                    if (isFrontWithImg || isLeftWithImg || isRightWithImg) {
+                        obj.material[i].color.setHex(0xffffff);
+                    } else {
+                        obj.material[i].color.setHex(baseColor);
+                    }
+                }
             }
         }
 
         function selectObject(obj) {
+            if (selectedObject && selectedObject !== obj) {
+                resetObjectMaterials(selectedObject);
+            }
+
             selectedObject = obj;
             let rightPanel = document.getElementById('ui-panel-right');
+
             if (selectedObject) {
+                if (selectedObject.userData.type === 'booth_wall' || selectedObject.userData.type === 'booth_wall_top') {
+                    for(let i=0; i<6; i++) selectedObject.material[i].color.setHex(0xff9f0a); 
+                } else if (selectedObject.userData.type === 'fitting_room') {
+                    let leftWall = selectedObject.getObjectByName('leftWallMesh');
+                    if (leftWall && !selectedObject.userData.images?.left) leftWall.material.color.setHex(0xff9f0a);
+                    
+                    let rightWall = selectedObject.getObjectByName('rightWallMesh');
+                    if (rightWall && !selectedObject.userData.images?.right) rightWall.material.color.setHex(0xff9f0a);
+
+                    let backWall = selectedObject.getObjectByName('backWallMesh');
+                    if (backWall) backWall.material.color.setHex(0xff9f0a);
+
+                    let topHeader = selectedObject.getObjectByName('topHeaderMesh');
+                    if (topHeader) topHeader.material.color.setHex(0xff9f0a);
+
+                    let topBanner = selectedObject.getObjectByName('topBannerMesh');
+                    if (topBanner) {
+                        for(let i=0; i<6; i++) {
+                            let hasImg = (i === 4 && selectedObject.userData.images?.front) ||
+                                         (i === 1 && selectedObject.userData.images?.left) ||
+                                         (i === 0 && selectedObject.userData.images?.right);
+                            if (!hasImg) topBanner.material[i].color.setHex(0xff9f0a);
+                        }
+                    }
+                } else if (selectedObject.material && Array.isArray(selectedObject.material)) {
+                    for(let i=0; i<6; i++) {
+                        let hasImg = (i === 4 && selectedObject.userData.images?.front) ||
+                                     (i === 1 && selectedObject.userData.images?.left) ||
+                                     (i === 0 && selectedObject.userData.images?.right);
+                        if (!hasImg) selectedObject.material[i].color.setHex(0xff9f0a); 
+                    }
+                }
                 rightPanel.style.display = 'block';
                 updateRightPanelUI();
-            } else { rightPanel.style.display = 'none'; }
+            } else {
+                rightPanel.style.display = 'none';
+            }
         }
 
         function updateRightPanelUI() {
             if(!selectedObject) return;
             let type = selectedObject.userData.type;
-            document.getElementById('right-obj-title').innerText = `目前選取：${OBJECT_TYPES[type]?.name || '展具'}`;
+            
+            let wallSegmentControl = document.getElementById('wall-segment-control');
+            let backdropControl = document.getElementById('backdrop-layer-control');
+            let shelfControl = document.getElementById('shelf-layer-control');
+            let normalControls = document.getElementById('normal-object-controls');
+            let imageSection = document.getElementById('image-management-section');
+            let includeTopBox = document.getElementById('include-top-box');
+            let btnGroupFitting = document.getElementById('btn-group-fitting');
+            let cabinetGroupBox = document.getElementById('cabinet-group-box');
+            let wallTopModeBox = document.getElementById('wall-top-mode-box');
 
-            document.getElementById('dim-w').value = Math.round((selectedObject.userData.customW || OBJECT_TYPES[type].w) * 100);
-            document.getElementById('dim-d').value = Math.round((selectedObject.userData.customD || OBJECT_TYPES[type].d) * 100);
-            document.getElementById('dim-h').value = Math.round((selectedObject.userData.customH || OBJECT_TYPES[type].h) * 100);
-            document.getElementById('dim-elevation').value = Math.round((selectedObject.userData.elevation || 0) * 100);
+            if (type === 'booth_wall' || type === 'booth_wall_top') {
+                document.getElementById('right-obj-title').innerText = selectedObject.userData.name || '目前選取：單段牆面';
+                wallSegmentControl.style.display = 'block';
+                backdropControl.style.display = 'none';
+                shelfControl.style.display = 'none';
+                normalControls.style.display = 'none';
+
+                let toggleWallBtn = document.getElementById('toggle-wall-height-btn');
+                let uploadArea = document.getElementById('wall-upload-area');
+                let rmWallFront = document.getElementById('rm-wall-front');
+
+                let segId = selectedObject.userData.segmentId;
+                let wallState = elevatedWallSegments[segId] || {};
+                let hasTop = wallState.hasTop || false;
+                let isTopLayer = (type === 'booth_wall_top');
+
+                if (wallTopModeBox) {
+                    wallTopModeBox.style.display = hasTop ? 'block' : 'none';
+                }
+
+                if (type === 'booth_wall') {
+                    toggleWallBtn.innerText = hasTop ? '❌ 取消此牆追加（回復 250cm）' : '🧱 雙層加高：追加 150cm 頂層看板';
+                    toggleWallBtn.style.backgroundColor = hasTop ? 'rgba(255,255,255,0.1)' : 'var(--accent)';
+                    toggleWallBtn.style.color = hasTop ? '#fff' : '#111';
+                    uploadArea.style.display = 'block';
+                    rmWallFront.style.display = wallState.baseImg ? 'block' : 'none';
+                } else {
+                    toggleWallBtn.innerText = '❌ 取消此牆追加（回復 250cm）';
+                    toggleWallBtn.style.backgroundColor = 'rgba(255,255,255,0.1)';
+                    toggleWallBtn.style.color = '#fff';
+                    uploadArea.style.display = 'block';
+                    rmWallFront.style.display = wallState.img ? 'block' : 'none';
+                }
+
+                let dir = selectedObject.userData.dir;
+                let sameDirWalls = wallObjects.filter(w => {
+                    let wIsTop = (w.userData.type === 'booth_wall_top');
+                    return w.userData.dir === dir && wIsTop === isTopLayer;
+                });
+
+                if (dir === 'back' || dir === 'front') {
+                    sameDirWalls.sort((a, b) => a.userData.c - b.userData.c);
+                } else {
+                    sameDirWalls.sort((a, b) => a.userData.r - b.userData.r);
+                }
+
+                let groupTitle = document.getElementById('wall-group-title');
+                if (groupTitle) {
+                    groupTitle.innerText = hasTop ? '🔗 自選相鄰牆面跨圖大圖 (400cm/150cm)' : '🔗 自選 250cm 基底牆跨圖大圖';
+                }
+
+                let container = document.getElementById('wall-multiselect-container');
+                container.innerHTML = '';
+                sameDirWalls.forEach(w => {
+                    let sId = w.userData.segmentId;
+                    let labelName = `格子 (${w.userData.r+1},${w.userData.c+1}) 的${dir === 'back' ? '後牆' : dir === 'front' ? '前牆' : dir === 'left' ? '左牆' : '右牆'}`;
+                    
+                    let div = document.createElement('div');
+                    div.style.display = 'flex';
+                    div.style.alignItems = 'center';
+                    div.style.gap = '6px';
+
+                    let cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.className = 'wall-custom-checkbox';
+                    cb.value = sId;
+                    if (sId === segId) cb.checked = true; 
+
+                    let lbl = document.createElement('span');
+                    lbl.style.fontSize = '11px';
+                    lbl.style.color = '#fff';
+                    lbl.innerText = labelName;
+
+                    div.appendChild(cb);
+                    div.appendChild(lbl);
+                    container.appendChild(div);
+                });
+
+            } else {
+                normalControls.style.display = 'block';
+                wallSegmentControl.style.display = 'none';
+
+                let typeName = OBJECT_TYPES[type]?.name || '展具';
+                document.getElementById('right-obj-title').innerText = `目前選取：${typeName}`;
+
+                let curW = selectedObject.userData.customW || OBJECT_TYPES[type].w;
+                let curD = selectedObject.userData.customD || OBJECT_TYPES[type].d;
+                let curH = selectedObject.userData.customH || OBJECT_TYPES[type].h;
+
+                let lblW = document.getElementById('lbl-dim-w');
+                let lblD = document.getElementById('lbl-dim-d');
+                if (type === 'round_rack') {
+                    if (lblW) lblW.innerText = '直徑 (W)';
+                    if (lblD) lblD.innerText = '直徑 (D)';
+                } else {
+                    if (lblW) lblW.innerText = '寬度 W';
+                    if (lblD) lblD.innerText = '深度 D';
+                }
+
+                document.getElementById('dim-w').value = Math.round(curW * 100);
+                document.getElementById('dim-d').value = Math.round(curD * 100);
+                document.getElementById('dim-h').value = Math.round(curH * 100);
+
+                let noImageTypes = ['straight_rack', 'round_rack', 'folding_table', 'human'];
+                if (noImageTypes.includes(type)) {
+                    if (imageSection) imageSection.style.display = 'none';
+                } else {
+                    if (imageSection) imageSection.style.display = 'block';
+                }
+
+                let toggleBtn = document.getElementById('toggle-layer-btn');
+                let frontLabel = document.getElementById('front-label');
+                let cabinetTypes = ['cabinet', 'table'];
+
+                let hasTopLayer = selectedObject.userData.hasTopLayer || false;
+                if (includeTopBox) {
+                    includeTopBox.style.display = (hasTopLayer && (type === 'fitting_room' || type === 'backdrop')) ? 'block' : 'none';
+                }
+
+                if (type === 'backdrop' || type === 'fitting_room') {
+                    backdropControl.style.display = 'block';
+                    shelfControl.style.display = 'none';
+                    if (hasTopLayer) {
+                        toggleBtn.innerText = '❌ 取消頂層追加（回復 250cm）';
+                        toggleBtn.style.backgroundColor = 'rgba(255,255,255,0.1)';
+                        toggleBtn.style.color = '#fff';
+                        frontLabel.innerText = '▶ 頂層追加區輸出 (150cm)';
+                    } else {
+                        toggleBtn.innerText = '🧱 雙層加高：追加 150cm 頂層獨立招牌';
+                        toggleBtn.style.backgroundColor = 'var(--accent)';
+                        toggleBtn.style.color = '#111';
+                        frontLabel.innerText = '▶ 正面輸出';
+                    }
+                    if (btnGroupFitting) btnGroupFitting.style.display = (type === 'fitting_room') ? 'block' : 'none';
+                    if (cabinetGroupBox) cabinetGroupBox.style.display = 'none';
+                } else if (type === 'wall_shelf') {
+                    backdropControl.style.display = 'none';
+                    shelfControl.style.display = 'block';
+                    let layers = selectedObject.userData.shelfLayers || 3;
+                    document.getElementById('shelf-count-display').innerText = `目前層數：${layers} 層板`;
+                    frontLabel.innerText = '▶ 正面輸出';
+                    if (btnGroupFitting) btnGroupFitting.style.display = 'none';
+                    if (cabinetGroupBox) cabinetGroupBox.style.display = 'none';
+                } else {
+                    backdropControl.style.display = 'none';
+                    shelfControl.style.display = 'none';
+                    if (frontLabel) frontLabel.innerText = '▶ 正面輸出';
+                    if (btnGroupFitting) btnGroupFitting.style.display = 'none';
+                    
+                    if (cabinetTypes.includes(type)) {
+                        if (cabinetGroupBox) {
+                            cabinetGroupBox.style.display = 'block';
+                            let container = document.getElementById('cabinet-multiselect-container');
+                            container.innerHTML = '';
+
+                            let allCabinets = draggableObjects.filter(o => cabinetTypes.includes(o.userData.type));
+                            allCabinets.sort((a, b) => a.position.x - b.position.x);
+
+                            allCabinets.forEach(cab => {
+                                let div = document.createElement('div');
+                                div.style.display = 'flex';
+                                div.style.alignItems = 'center';
+                                div.style.gap = '6px';
+
+                                let cb = document.createElement('input');
+                                cb.type = 'checkbox';
+                                cb.className = 'cabinet-custom-checkbox';
+                                cb.value = cab.id.toString();
+                                if (cab === selectedObject) cb.checked = true;
+
+                                let name = OBJECT_TYPES[cab.userData.type]?.name || '展櫃';
+                                let lbl = document.createElement('span');
+                                lbl.style.fontSize = '11px';
+                                lbl.style.color = '#fff';
+                                lbl.innerText = `${name} (位置 X:${cab.position.x.toFixed(1)}, Z:${cab.position.z.toFixed(1)})`;
+
+                                div.appendChild(cb);
+                                div.appendChild(lbl);
+                                container.appendChild(div);
+                            });
+                        }
+                    } else {
+                        if (cabinetGroupBox) cabinetGroupBox.style.display = 'none';
+                    }
+                }
+
+                let imgs = selectedObject.userData.images || {};
+                document.getElementById('rm-front').style.display = imgs.front ? 'block' : 'none';
+                document.getElementById('rm-left').style.display = imgs.left ? 'block' : 'none';
+                document.getElementById('rm-right').style.display = imgs.right ? 'block' : 'none';
+            }
         }
 
         function onGlobalKeyDown(event) {
             if (document.activeElement.tagName === 'INPUT') return;
-            if (event.key === " " || event.keyCode === 32) { isSpacePressed = true; setOrbitControlsMode(true); event.preventDefault(); }
-            else { onKeyDown(event); }
+            if (event.key === " " || event.keyCode === 32) {
+                if (!isSpacePressed) {
+                    isSpacePressed = true;
+                    setOrbitControlsMode(true); 
+                }
+                event.preventDefault(); 
+            } else {
+                onKeyDown(event);
+            }
         }
 
         function onGlobalKeyUp(event) {
             if (document.activeElement.tagName === 'INPUT') return;
-            if (event.key === " " || event.keyCode === 32) { isSpacePressed = false; setOrbitControlsMode(false); event.preventDefault(); }
+            if (event.key === " " || event.keyCode === 32) {
+                isSpacePressed = false;
+                setOrbitControlsMode(false); 
+                event.preventDefault();
+            }
         }
 
         function onKeyDown(event) {
             if (!selectedObject) return;
-            let key = event.key.toLowerCase();
-            let currentElev = selectedObject.userData.elevation || 0;
-            let h = selectedObject.userData.customH || OBJECT_TYPES[selectedObject.userData.type].h;
 
-            switch (key) {
-                case 'w':
-                    currentElev += 0.1; selectedObject.userData.elevation = currentElev;
-                    selectedObject.position.y = h / 2 + currentElev; updateRightPanelUI(); saveToLocalStorage(); break;
-                case 's':
-                    currentElev = Math.max(0, currentElev - 0.1); selectedObject.userData.elevation = currentElev;
-                    selectedObject.position.y = h / 2 + currentElev; updateRightPanelUI(); saveToLocalStorage(); break;
-                case 'r': selectedObject.rotation.y += Math.PI / 2; saveToLocalStorage(); break;
-                case 'q': selectedObject.rotation.y -= Math.PI / 12; saveToLocalStorage(); break;
-                case 'e': selectedObject.rotation.y += Math.PI / 12; saveToLocalStorage(); break;
-                case 'delete': case 'backspace':
-                    scene.remove(selectedObject); draggableObjects = draggableObjects.filter(o => o !== selectedObject);
-                    selectObject(null); saveToLocalStorage(); break;
+            if (selectedObject.userData.type === 'booth_wall' || selectedObject.userData.type === 'booth_wall_top') {
+                if (event.key === 'Delete' || event.key === 'Backspace') {
+                    removeSelectedWallSegment();
+                }
+                return;
+            }
+
+            previousRotation.copy(selectedObject.rotation);
+
+            switch (event.key.toLowerCase()) {
+                case 'r':
+                    selectedObject.rotation.y += Math.PI / 2;
+                    if(checkCollision(selectedObject)) selectedObject.rotation.copy(previousRotation);
+                    else saveToLocalStorage();
+                    break;
+                case 'e':
+                    selectedObject.rotation.y += Math.PI / 12;
+                    if(checkCollision(selectedObject)) selectedObject.rotation.copy(previousRotation);
+                    else saveToLocalStorage();
+                    break;
+                case 'q':
+                    selectedObject.rotation.y -= Math.PI / 12;
+                    if(checkCollision(selectedObject)) selectedObject.rotation.copy(previousRotation);
+                    else saveToLocalStorage();
+                    break;
+                case 'delete': 
+                case 'backspace':
+                    scene.remove(selectedObject);
+                    draggableObjects = draggableObjects.filter(o => o !== selectedObject);
+                    selectObject(null);
+                    saveToLocalStorage();
+                    break;
+                case 'c': 
+                    let type = selectedObject.userData.type;
+                    let pos = { x: selectedObject.position.x + 0.3, y: selectedObject.position.y, z: selectedObject.position.z };
+                    let rot = { x: selectedObject.rotation.x, y: selectedObject.rotation.y, z: selectedObject.rotation.z };
+                    let dims = {
+                        w: selectedObject.userData.customW,
+                        d: selectedObject.userData.customD,
+                        h: selectedObject.userData.customH
+                    };
+                    createObject(type, pos, rot, true, selectedObject.userData.images, selectedObject.userData.hasTopLayer, selectedObject.userData.shelfLayers, dims);
+                    break;
             }
         }
 
         function exportJSON() {
+            let titleValue = document.getElementById('expo-title-input').value;
             let layoutData = projectsData[currentProjectId]?.data || {};
-            let blob = new Blob([JSON.stringify(layoutData, null, 2)], { type: "application/json" });
+            
+            let dataStr = JSON.stringify(layoutData, null, 2);
+            let blob = new Blob([dataStr], { type: "application/json" });
+            let url = URL.createObjectURL(blob);
+            
             let downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", URL.createObjectURL(blob));
-            downloadAnchor.setAttribute("download", `EXPO_Layout.json`);
-            document.body.appendChild(downloadAnchor); downloadAnchor.click(); downloadAnchor.remove();
+            downloadAnchor.setAttribute("href", url);
+            let fileName = titleValue ? `EXPO_${titleValue}` : `EXPO_Layout_${new Date().toISOString().slice(0,10)}`;
+            downloadAnchor.setAttribute("download", `${fileName}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            document.body.removeChild(downloadAnchor);
+            URL.revokeObjectURL(url); 
         }
 
         function importJSON(event) {
-            let file = event.target.files[0]; if (!file) return;
+            let file = event.target.files[0];
+            if (!file) return;
             let reader = new FileReader();
             reader.onload = function(e) {
                 let data = JSON.parse(e.target.result);
+                
                 let pid = 'proj_' + Date.now();
-                projectsData[pid] = { id: pid, title: data.expoTitle || '匯入方案', data: data };
+                let title = data.expoTitle || '匯入的展位方案';
+                projectsData[pid] = {
+                    id: pid,
+                    title: title,
+                    data: data
+                };
                 currentProjectId = pid;
-                updateProjectSelectUI(); applyProjectDataToScene(data); saveToLocalStorage();
+
+                updateProjectSelectUI();
+                applyProjectDataToScene(data);
+                saveToLocalStorage();
             };
             reader.readAsText(file);
         }
 
         function exportImage() {
+            let currentSelected = selectedObject;
+            if (currentSelected) {
+                resetObjectMaterials(currentSelected);
+            }
+
             renderer.render(scene, camera);
-            let downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", renderer.domElement.toDataURL("image/png"));
-            downloadAnchor.setAttribute("download", `EXPO_Snapshot.png`);
-            document.body.appendChild(downloadAnchor); downloadAnchor.click(); downloadAnchor.remove();
+            let imgData = renderer.domElement.toDataURL("image/png");
+
+            if (currentSelected) {
+                selectObject(currentSelected);
+            }
+
+            let downloadAnchor2 = document.createElement('a');
+            downloadAnchor2.setAttribute("href", imgData);
+            let titleValue = document.getElementById('expo-title-input').value;
+            let imgName = titleValue ? `Snapshot_${titleValue}` : `EXPO_Snapshot_${new Date().toISOString().slice(0,10)}`;
+            downloadAnchor2.setAttribute("download", `${imgName}.png`);
+            document.body.appendChild(downloadAnchor2);
+            downloadAnchor2.click();
+            downloadAnchor2.remove();
         }
 
         function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
@@ -1011,7 +2976,15 @@
             requestAnimationFrame(animate);
             if (targetCameraPosition) camera.position.lerp(targetCameraPosition, ANIMATION_SPEED);
             if (targetControlsTarget) orbitControls.target.lerp(targetControlsTarget, ANIMATION_SPEED);
-            orbitControls.update(); renderer.render(scene, camera);
+            if (targetCameraPosition && targetControlsTarget) {
+                if (camera.position.distanceTo(targetCameraPosition) < 0.01 && orbitControls.target.distanceTo(targetControlsTarget) < 0.01) {
+                    camera.position.copy(targetCameraPosition);
+                    orbitControls.target.copy(targetControlsTarget);
+                    targetCameraPosition = null; targetControlsTarget = null;
+                }
+            }
+            orbitControls.update();
+            renderer.render(scene, camera);
         }
 
         window.onload = init;

@@ -536,7 +536,6 @@
                     <input type="checkbox" id="show-frame-check" checked onchange="updateStructureUI()">
                 </div>
 
-                <!-- 新增：攤位上方招牌開關 -->
                 <div class="struct-row" style="margin-top:6px;">
                     <span style="font-size: 11px; color: var(--text-main);">🪧 顯示攤位上方招牌</span>
                     <input type="checkbox" id="show-fascia-check" checked onchange="updateStructureUI()">
@@ -773,7 +772,7 @@
             wall_shelf:    { name: '牆面層架',   w: 1.0,  d: 0.35, h: 1.8,  color: 0x34c759 }, 
             floor_mesh:    { name: '落地鐵網',   w: 0.9,  d: 0.35, h: 1.5,  color: 0x333333 }, 
             wall_mesh:     { name: '掛牆鐵網',   w: 0.9,  d: 0.08, h: 1.5,  color: 0x333333 }, 
-            storage:       { name: '🏪 倉儲區',     w: 1.5,  d: 1.50, h: 2.0,  color: 0x485460 }
+            storage:       { name: '倉儲區',     w: 1.5,  d: 1.50, h: 2.0,  color: 0x485460 }
         };
 
         let FACE_INDEX_MAP = { right: 0, left: 1, front: 4 };
@@ -1266,26 +1265,7 @@
                 let fasciaH = 0.5; // 招牌高度
                 let fasciaY = FRAME_HEIGHT - fasciaH / 2;
                 let fasciaMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.6 });
-                let borderMat = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.4 });
 
-                // 檢查四個邊緣是否有外露（沒有相鄰格子）
-                // 前方 (maxZGrid)
-                let hasFrontOpen = false;
-                for (let c = 0; c < GRID_MAP_SIZE; c++) {
-                    let r = GRID_MAP_SIZE - 1;
-                    while(r >= 0 && !gridMap[r][c]) r--;
-                    if (r >= 0 && gridMap[r][c]) {
-                        // 檢查該欄的最前方
-                        let maxR = r;
-                        for(let checkR=0; checkR<GRID_MAP_SIZE; checkR++) {
-                            if(gridMap[checkR][c]) maxR = Math.max(maxR, checkR);
-                        }
-                        // 若這個格子的前方沒有格子，或者剛好是邊界
-                    }
-                }
-
-                // 為了簡化並完美呈現如圖所示的招牌外框，我們對所有外圍開放邊或依整體外框產生上方橫梁招牌
-                // 這裡以整體攤位外圍輪廓建立 4 面招牌帶
                 let totalW = maxXGrid - minXGrid;
                 let totalD = maxZGrid - minZGrid;
 
@@ -1484,7 +1464,6 @@
             return group;
         }
 
-        /* 完美整合：帶工字底座與 10cm 間距金屬網格的落地鐵網函式 */
         function createMeshGridGeometry(data, customW = null, customD = null, customH = null) {
             let group = new THREE.Group();
             let w = customW || data.w; 
@@ -1497,7 +1476,6 @@
             let matMetal = new THREE.MeshStandardMaterial({ color: 0x424242, metalness: 0.7, roughness: 0.3 });
             let matWire = new THREE.MeshStandardMaterial({ color: 0x7f8c8d, metalness: 0.8, roughness: 0.2 });
 
-            // 底座工字型金屬支架
             let botLegGeo = new THREE.BoxGeometry(0.03, 0.03, d);
             let leftLeg = new THREE.Mesh(botLegGeo, matMetal);
             leftLeg.position.set(-w/2 + 0.02, -h/2 + 0.015, 0);
@@ -1510,7 +1488,6 @@
             botCrossBar.position.set(0, -h/2 + 0.015, 0);
             group.add(botCrossBar);
 
-            // 立柱與外框
             let sidePostGeo = new THREE.CylinderGeometry(frameRadius, frameRadius, h - 0.03, 16);
             let leftPost = new THREE.Mesh(sidePostGeo, matMetal);
             leftPost.position.set(-w/2 + 0.015, 0.015, 0);
@@ -1524,7 +1501,6 @@
             topBar.position.set(0, h/2 - 0.012, 0);
             group.add(topBar);
 
-            // 網格細線 (10cm 間距)
             let gridStep = 0.1; 
             let vertWireGeo = new THREE.CylinderGeometry(wireRadius, wireRadius, h - 0.08, 8);
             for (let x = -w/2 + gridStep; x < w/2 - 0.02; x += gridStep) {
@@ -2504,7 +2480,7 @@
                             let topCanvas = document.createElement('canvas');
                             let topCtx = topCanvas.getContext('2d');
                             topCanvas.width = 1024; topCanvas.height = 512;
-                            topCanvas.fillStyle = '#545454'; topCanvas.fillRect(0, 0, 1024, 512);
+                            topCtx.fillStyle = '#545454'; topCtx.fillRect(0, 0, 1024, 512);
                             topCtx.drawImage(img, 0, 0, img.width, img.height * 0.375, 0, 0, 1024, 512);
 
                             let topTexture = new THREE.CanvasTexture(topCanvas);
@@ -2518,7 +2494,7 @@
                             let topCanvas = document.createElement('canvas');
                             let topCtx = topCanvas.getContext('2d');
                             topCanvas.width = 1024; topCanvas.height = 512;
-                            topCanvas.fillStyle = '#545454'; topCanvas.fillRect(0, 0, 1024, 512);
+                            topCtx.fillStyle = '#545454'; topCtx.fillRect(0, 0, 1024, 512);
                             topCtx.drawImage(img, 0, 0, 1024, 512);
 
                             let topTexture = new THREE.CanvasTexture(topCanvas);
@@ -3101,7 +3077,7 @@
             downloadAnchor2.setAttribute("href", imgData);
             let titleValue = document.getElementById('expo-title-input').value;
             let imgName = titleValue ? `Snapshot_${titleValue}` : `EXPO_Snapshot_${new Date().toISOString().slice(0,10)}`;
-            downloadAnchor2.setAttribute("download`, `${imgName}.png`);
+            downloadAnchor2.setAttribute("download", `${imgName}.png`);
             document.body.appendChild(downloadAnchor2);
             downloadAnchor2.click();
             downloadAnchor2.remove();

@@ -121,7 +121,6 @@
         .wall-checkboxes { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; padding-top: 6px; border-top: 1px dashed rgba(255, 255, 255, 0.08); }
         .wall-checkboxes label { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-secondary); cursor: pointer; margin: 0; }
 
-        /* 地板顏色快速選色球樣式 */
         .color-picker-row { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
         .color-picker-row input[type="color"] { border: none; width: 28px; height: 22px; border-radius: 4px; cursor: pointer; background: transparent; }
         .quick-colors { display: flex; gap: 6px; }
@@ -170,7 +169,6 @@
             <button onclick="clearAllFloors()" style="background-color: rgba(255,255,255,0.04); font-size: 11px; padding: 5px; color: var(--text-secondary);">重設所有格子</button>
 
             <div class="struct-box">
-                <!-- 地板顏色選擇與快速色票 -->
                 <div class="color-picker-row">
                     <span style="font-size:11px; color:var(--text-main); font-weight:500;">🎨 地板顏色</span>
                     <div style="display:flex; align-items:center; gap:8px;">
@@ -216,7 +214,7 @@
             <button class="action-btn" onclick="createObject('wall_grid_rack')" style="background-color: rgba(0, 168, 255, 0.2); color: #00a8ff;">🖼️ 新增壁掛鐵網片 (90x5x150)</button>
             <button class="action-btn" onclick="createObject('fitting_room')">🚪 新增更衣室/試衣間 (100x100x250)</button>
             <button class="action-btn" onclick="createObject('backdrop')">🧱 新增背板 (300x30x250)</button>
-            <button class="action-btn" onclick="createObject('wall_shelf')">🪜 新導牆面層架 (100x35x180)</button>
+            <button class="action-btn" onclick="createObject('wall_shelf')">🪜 新增牆面層架 (100x35x180)</button>
             <button class="action-btn" onclick="createObject('storage')">🏪 新增倉儲區 (150x150x200)</button>
         </div>
 
@@ -332,7 +330,7 @@
             fitting_room:   { name: '更衣室/試衣間', w: 1.0,  d: 1.00, h: 2.5,  color: FIXED_WALL_COLOR_HEX }, 
             backdrop:       { name: '背板',       w: 3.0,  d: 0.30, h: 2.5,  color: FIXED_WALL_COLOR_HEX }, 
             wall_shelf:     { name: '牆面層架',   w: 1.0,  d: 0.35, h: 1.8,  color: 0x34c759 }, 
-            storage:        { name: '🏪 倉儲區',  w: 1.5,  d: 1.50, h: 2.0,  color: 0x485460 }
+            storage:        { name: '倉儲區',     w: 1.5,  d: 1.50, h: 2.0,  color: 0x485460 }
         };
 
         function hardResetApp() {
@@ -356,7 +354,7 @@
 
         function loadProjectsFromStorage() {
             try {
-                let stored = localStorage.getItem('expo_simulator_projects_v3');
+                let stored = localStorage.getItem('expo_simulator_projects_v4');
                 if (stored) {
                     let parsed = JSON.parse(stored);
                     projectsData = parsed.projects || {};
@@ -377,7 +375,7 @@
                 updateProjectSelectUI();
                 applyProjectDataToScene(projectsData[currentProjectId].data);
             } catch (e) {
-                localStorage.removeItem('expo_simulator_projects_v3');
+                localStorage.removeItem('expo_simulator_projects_v4');
                 let pid = 'proj_' + Date.now();
                 projectsData = {};
                 projectsData[pid] = { id: pid, title: '展位配置方案 A', data: getEmptyLayoutData('展位配置方案 A') };
@@ -538,7 +536,7 @@
                 projectsData[currentProjectId].title = titleVal;
                 projectsData[currentProjectId].data = currentLayout;
 
-                localStorage.setItem('expo_simulator_projects_v3', JSON.stringify({
+                localStorage.setItem('expo_simulator_projects_v4', JSON.stringify({
                     currentProjectId: currentProjectId,
                     projects: projectsData
                 }));
@@ -869,6 +867,18 @@
             return group;
         }
 
+        function createHumanGeometry(finalW, finalD, finalH) {
+            let group = new THREE.Group();
+            let skinMat = new THREE.MeshStandardMaterial({ color: 0xff7043, roughness: 0.5 }); 
+            let head = new THREE.Mesh(new THREE.SphereGeometry(0.11, 16, 16), skinMat); head.position.set(0, finalH / 2 - 0.11, 0);
+            let torso = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.65, 0.18), skinMat); torso.position.set(0, finalH / 2 - 0.22 - 0.325, 0);
+            let legGeo = new THREE.BoxGeometry(0.12, 0.83, 0.15);
+            let leftLeg = new THREE.Mesh(legGeo, skinMat); leftLeg.position.set(-0.08, -finalH / 2 + 0.415, 0);
+            let rightLeg = new THREE.Mesh(legGeo, skinMat); rightLeg.position.set(0.08, -finalH / 2 + 0.415, 0);
+            group.add(head, torso, leftLeg, rightLeg);
+            return group;
+        }
+
         function createObject(type, customPos = null, customRot = null, shouldSave = true, savedImages = null, hasTopLayer = false, shelfLayers = 3, customDims = null, elevation = 0) {
             let data = OBJECT_TYPES[type];
             if (!data) return;
@@ -908,6 +918,20 @@
             } else if (type === 'fitting_room') {
                 let fittingRoomGroup = createFittingRoomGeometry(data, finalW, finalD, finalH, hasTopLayer);
                 finalMesh = new THREE.Group(); finalMesh.add(fittingRoomGroup);
+            } else if (type === 'folding_table') {
+                let group = new THREE.Group();
+                let topThick = 0.05, legThick = 0.04;
+                let matTop = new THREE.MeshStandardMaterial({ color: 0x2c3e50, roughness: 0.4 });
+                let matLeg = new THREE.MeshStandardMaterial({ color: 0x7f8c8d, metalness: 0.8 });
+                let topMesh = new THREE.Mesh(new THREE.BoxGeometry(finalW, topThick, finalD), matTop); topMesh.position.set(0, finalH / 2 - topThick / 2, 0); group.add(topMesh);
+                let legH = finalH - topThick, legGeo = new THREE.BoxGeometry(legThick, legH, legThick);
+                let offX = finalW / 2 - legThick / 2 - 0.02, offZ = finalD / 2 - legThick / 2 - 0.02, legY = -topThick / 2 - legH / 2;
+                group.add(new THREE.Mesh(legGeo, matLeg).translateX(-offX).translateY(legY + finalH / 2).translateZ(-offZ));
+                group.add(new THREE.Mesh(legGeo, matLeg).translateX(offX).translateY(legY + finalH / 2).translateZ(-offZ));
+                group.add(new THREE.Mesh(legGeo, matLeg).translateX(-offX).translateY(legY + finalH / 2).translateZ(offZ));
+                group.add(new THREE.Mesh(legGeo, matLeg).translateX(offX).translateY(legY + finalH / 2).translateZ(offZ));
+                finalMesh = new THREE.Mesh(new THREE.BoxGeometry(finalW, finalH, finalD), new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.0 }));
+                finalMesh.add(group);
             } else {
                 let materials = [];
                 let initColor = (type === 'backdrop') ? FIXED_WALL_COLOR_HEX : data.color;

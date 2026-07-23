@@ -558,6 +558,8 @@
             <button class="action-btn" onclick="createObject('fitting_room')">🚪 新增更衣室/試衣間 (100x100x250)</button>
             <button class="action-btn" onclick="createObject('backdrop')">🧱 新增背板 (300x30x250)</button>
             <button class="action-btn" onclick="createObject('wall_shelf')">🪜 新增牆面層架 (100x35x180)</button>
+            <button class="action-btn" onclick="createObject('floor_mesh')">🥅 新增落地鐵網 (90x30x150)</button>
+            <button class="action-btn" onclick="createObject('wall_mesh')">🖼️ 新增掛牆鐵網 (90x10x150)</button>
             <button class="action-btn" onclick="createObject('storage')">🏪 新增倉儲區 (150x150x200)</button>
         </div>
 
@@ -756,13 +758,15 @@
         let OBJECT_TYPES = {
             human:         { name: '比例模特兒', w: 0.4,  d: 0.3, h: 1.7,  color: 0xff7043 },
             table:         { name: '收銀桌',     w: 1.0,  d: 0.70, h: 1.0, color: 0x32ade6 },
-            cabinet:       { name: '中島',       w: 1.5,  d: 0.6, h: 1.6,  color: 0x0084ff },
+            cabinet:       { name: '中島',        w: 1.5,  d: 0.6, h: 1.6,  color: 0x0084ff },
             folding_table: { name: '摺疊桌',     w: 1.2,  d: 0.6, h: 0.6,  color: 0x0084ff },
             straight_rack: { name: '直桿吊衣架', w: 1.0,  d: 0.40, h: 1.6,  color: 0xaf52de }, 
             round_rack:    { name: '圓盤環形衣架', w: 0.8,  d: 0.80, h: 1.6,  color: 0xaf52de }, 
             fitting_room:  { name: '更衣室/試衣間', w: 1.0,  d: 1.00, h: 2.5,  color: FIXED_WALL_COLOR_HEX }, 
-            backdrop:      { name: '背板',       w: 3.0,  d: 0.30, h: 2.5,  color: FIXED_WALL_COLOR_HEX }, 
+            backdrop:      { name: '背板',        w: 3.0,  d: 0.30, h: 2.5,  color: FIXED_WALL_COLOR_HEX }, 
             wall_shelf:    { name: '牆面層架',   w: 1.0,  d: 0.35, h: 1.8,  color: 0x34c759 }, 
+            floor_mesh:    { name: '落地鐵網',   w: 0.9,  d: 0.30, h: 1.5,  color: 0x333333 }, 
+            wall_mesh:     { name: '掛牆鐵網',   w: 0.9,  d: 0.08, h: 1.5,  color: 0x333333 }, 
             storage:       { name: '倉儲區',     w: 1.5,  d: 1.50, h: 2.0,  color: 0x485460 }
         };
 
@@ -796,7 +800,6 @@
                 }
             }
 
-            // 自動相容單場次舊版本存檔
             let oldSave = localStorage.getItem('expo_simulator_autosave_v47');
             if (oldSave && Object.keys(projectsData).length === 0) {
                 try {
@@ -845,7 +848,7 @@
 
         function switchProject(newPid) {
             if (!projectsData[newPid] || newPid === currentProjectId) return;
-            saveToLocalStorage(); // 先存檔當前場次
+            saveToLocalStorage();
 
             currentProjectId = newPid;
             updateProjectSelectUI();
@@ -868,7 +871,7 @@
             currentProjectId = pid;
             updateProjectSelectUI();
             applyProjectDataToScene(projectsData[currentProjectId].data);
-            createObject('cabinet'); // 給一個初始中島展櫃
+            createObject('cabinet');
             saveToLocalStorage();
         }
 
@@ -921,7 +924,6 @@
         }
 
         function applyProjectDataToScene(data) {
-            // 清空目前的 3D 物件
             draggableObjects.forEach(obj => scene.remove(obj));
             draggableObjects.length = 0;
             selectObject(null);
@@ -1411,6 +1413,57 @@
             return group;
         }
 
+        // 新增：鐵網幾何模型建立函數（適用於落地鐵網與掛牆鐵網）
+        function createMeshGridGeometry(data, customW = null, customD = null, customH = null) {
+            let group = new THREE.Group();
+            let w = customW || data.w;
+            let d = customD || data.d;
+            let h = customH || data.h;
+            let color = data.color;
+
+            let frameMat = new THREE.MeshStandardMaterial({ color: color, metalness: 0.6, roughness: 0.4 });
+            let wireMat = new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 0.5, roughness: 0.5 });
+
+            let thickness = 0.02;
+            let leftBar = new THREE.Mesh(new THREE.BoxGeometry(thickness, h, thickness), frameMat);
+            leftBar.position.set(-w/2 + thickness/2, 0, 0);
+            let rightBar = new THREE.Mesh(new THREE.BoxGeometry(thickness, h, thickness), frameMat);
+            rightBar.position.set(w/2 - thickness/2, 0, 0);
+            let topBar = new THREE.Mesh(new THREE.BoxGeometry(w, thickness, thickness), frameMat);
+            topBar.position.set(0, h/2 - thickness/2, 0);
+            let botBar = new THREE.Mesh(new THREE.BoxGeometry(w, thickness, thickness), frameMat);
+            botBar.position.set(0, -h/2 + thickness/2, 0);
+            group.add(leftBar, rightBar, topBar, botBar);
+
+            // 網格橫條與豎條
+            let gridRows = 6;
+            let gridCols = 4;
+            for (let i = 1; i < gridRows; i++) {
+                let yPos = -h/2 + (h / gridRows) * i;
+                let hWire = new THREE.Mesh(new THREE.BoxGeometry(w - thickness*2, 0.008, 0.008), wireMat);
+                hWire.position.set(0, yPos, 0);
+                group.add(hWire);
+            }
+            for (let i = 1; i < gridCols; i++) {
+                let xPos = -w/2 + (w / gridCols) * i;
+                let vWire = new THREE.Mesh(new THREE.BoxGeometry(0.008, h - thickness*2, 0.008), wireMat);
+                vWire.position.set(xPos, 0, 0);
+                group.add(vWire);
+            }
+
+            // 如果是落地鐵網，增加底部支撐腳
+            if (data.type === 'floor_mesh') {
+                let footMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8 });
+                let leftFoot = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.02, d), footMat);
+                leftFoot.position.set(-w/3, -h/2, 0);
+                let rightFoot = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.02, d), footMat);
+                rightFoot.position.set(w/3, -h/2, 0);
+                group.add(leftFoot, rightFoot);
+            }
+
+            return group;
+        }
+
         function createStraightRackGeometry(data, customW = null, customD = null, customH = null) {
             let group = new THREE.Group();
             let w = customW || data.w; 
@@ -1577,6 +1630,13 @@
                 for(let i=0; i<6; i++) materials.push(new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.6 }));
                 finalMesh = new THREE.Mesh(outerGeo, materials);
                 finalMesh.add(shelfGroup);
+            } else if (type === 'floor_mesh' || type === 'wall_mesh') {
+                let meshGroup = createMeshGridGeometry(data, finalW, finalD, finalH);
+                let outerGeo = new THREE.BoxGeometry(finalW, finalH, finalD);
+                let materials = [];
+                for(let i=0; i<6; i++) materials.push(new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.6, transparent: true, opacity: 0.0 }));
+                finalMesh = new THREE.Mesh(outerGeo, materials);
+                finalMesh.add(meshGroup);
             } else if (type === 'straight_rack') {
                 let straightGroup = createStraightRackGeometry(data, finalW, finalD, finalH);
                 let outerGeo = new THREE.BoxGeometry(finalW, finalH, finalD);
@@ -1991,14 +2051,12 @@
             reader.readAsDataURL(file);
         }
 
-        /* 外圍單片牆面的整面跨高裁切 (400cm: 下 62.5%, 上 37.5%) */
         function applyWallSingleFullSpan(baseObj, topObj, base64Data) {
             let img = new Image();
             img.onload = function() {
                 let segId = baseObj.userData.segmentId;
                 if (!elevatedWallSegments[segId]) elevatedWallSegments[segId] = { hasTop: true, img: null, baseImg: null };
 
-                // 下半部 250cm
                 let baseCanvas = document.createElement('canvas');
                 let baseCtx = baseCanvas.getContext('2d');
                 baseCanvas.width = 1024; baseCanvas.height = 1024;
@@ -2009,7 +2067,6 @@
                 elevatedWallSegments[segId].baseImg = baseBase64;
                 applyTextureToWallBase(baseObj, baseBase64);
 
-                // 上半部 150cm
                 let topCanvas = document.createElement('canvas');
                 let topCtx = topCanvas.getContext('2d');
                 topCanvas.width = 1024; topCanvas.height = 512;
@@ -2025,7 +2082,6 @@
             img.src = base64Data;
         }
 
-        /* 外圍多片選取牆面的整面跨高大圖裁切 */
         function applyCustomGroupTextureToWallsSpan(baseWalls, topWalls, base64Data) {
             let img = new Image();
             img.onload = function() {
@@ -2044,13 +2100,11 @@
                     let topMesh = topWalls.find(t => t.userData.segmentId === segId);
                     if (!elevatedWallSegments[segId]) elevatedWallSegments[segId] = { hasTop: true, img: null, baseImg: null };
 
-                    // 1. 切出單片牆的 400cm 垂直區域 (寬 1024, 高 1024)
                     let colCanvas = document.createElement('canvas');
                     let colCtx = colCanvas.getContext('2d');
                     colCanvas.width = 1024; colCanvas.height = 1024;
                     colCtx.drawImage(masterCanvas, index * 1024, 0, 1024, 1024, 0, 0, 1024, 1024);
 
-                    // 2. 切出基底 250cm (下半 62.5%)
                     let baseCanvas = document.createElement('canvas');
                     let baseCtx = baseCanvas.getContext('2d');
                     baseCanvas.width = 1024; baseCanvas.height = 1024;
@@ -2060,7 +2114,6 @@
                     elevatedWallSegments[segId].baseImg = baseBase64;
                     applyTextureToWallBase(baseMesh, baseBase64);
 
-                    // 3. 切出頂層 150cm (上半 37.5%)
                     if (topMesh) {
                         let topCanvas = document.createElement('canvas');
                         let topCtx = topCanvas.getContext('2d');
@@ -2741,7 +2794,7 @@
                 document.getElementById('dim-d').value = Math.round(curD * 100);
                 document.getElementById('dim-h').value = Math.round(curH * 100);
 
-                let noImageTypes = ['straight_rack', 'round_rack', 'folding_table', 'human'];
+                let noImageTypes = ['straight_rack', 'round_rack', 'folding_table', 'human', 'floor_mesh', 'wall_mesh'];
                 if (noImageTypes.includes(type)) {
                     if (imageSection) imageSection.style.display = 'none';
                 } else {

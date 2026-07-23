@@ -422,7 +422,6 @@
             transform: scale(1.15);
         }
 
-        /* 擴充：4 欄尺寸與高度輸入框網格 */
         .dim-input-group {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr 1fr;
@@ -556,7 +555,11 @@
             <button class="action-btn" onclick="createObject('folding_table')">🏷️ 新增摺疊桌 (120x60x60)</button>
             <button class="action-btn" onclick="createObject('straight_rack')">👗 新增直桿吊衣架 (100x40x160)</button>
             <button class="action-btn" onclick="createObject('round_rack')">⭕ 新增圓盤環形衣架 (80x80x160)</button>
-            <button class="action-btn" onclick="createObject('grid_rack')" style="background-color: rgba(127, 140, 141, 0.15); border-color: rgba(127, 140, 141, 0.4); color: #bdc3c7;">🕸️ 新增鐵網展架 (90x35x150)</button>
+            
+            <!-- 拆分為：落地型帶腳底座 vs 壁掛型純網片 -->
+            <button class="action-btn" onclick="createObject('grid_rack')" style="background-color: rgba(127, 140, 141, 0.15); border-color: rgba(127, 140, 141, 0.4); color: #bdc3c7;">🕸️ 新增落地鐵網展架 (90x35x150)</button>
+            <button class="action-btn" onclick="createObject('wall_grid_rack')" style="background-color: rgba(0, 168, 255, 0.15); border-color: rgba(0, 168, 255, 0.4); color: #00a8ff;">🖼️ 新增壁掛鐵網片 (90x5x150)</button>
+
             <button class="action-btn" onclick="createObject('fitting_room')">🚪 新增更衣室/試衣間 (100x100x250)</button>
             <button class="action-btn" onclick="createObject('backdrop')">🧱 新增背板 (300x30x250)</button>
             <button class="action-btn" onclick="createObject('wall_shelf')">🪜 新增牆面層架 (100x35x180)</button>
@@ -656,13 +659,13 @@
                     </div>
                     <div class="dim-input-box">
                         <label id="lbl-dim-d">深度 D</label>
-                        <input type="number" id="dim-d" step="5" min="10" onchange="updateSelectedDimensions()">
+                        <input type="number" id="dim-d" step="5" min="1" onchange="updateSelectedDimensions()">
                     </div>
                     <div class="dim-input-box">
                         <label>高度 H</label>
                         <input type="number" id="dim-h" step="5" min="10" onchange="updateSelectedDimensions()">
                     </div>
-                    <!-- 新增：離地 Y 軸高度輸入框 -->
+                    <!-- 離地 Y 軸高度輸入框 -->
                     <div class="dim-input-box" style="border-color: rgba(0, 132, 255, 0.4); background: rgba(0, 132, 255, 0.1);">
                         <label style="color:#4da6ff;">離地 Y</label>
                         <input type="number" id="dim-elevation" step="5" min="0" value="0" onchange="updateSelectedElevation()">
@@ -765,17 +768,18 @@
         let currentProjectId = null;
 
         let OBJECT_TYPES = {
-            human:         { name: '比例模特兒', w: 0.4,  d: 0.3, h: 1.7,  color: 0xff7043 },
-            table:         { name: '收銀桌',     w: 1.0,  d: 0.70, h: 1.0, color: 0x32ade6 },
-            cabinet:       { name: '中島',       w: 1.5,  d: 0.6, h: 1.6,  color: 0x0084ff },
-            folding_table: { name: '摺疊桌',     w: 1.2,  d: 0.6, h: 0.6,  color: 0x0084ff },
-            straight_rack: { name: '直桿吊衣架', w: 1.0,  d: 0.40, h: 1.6,  color: 0xaf52de }, 
-            round_rack:    { name: '圓盤環形衣架', w: 0.8,  d: 0.80, h: 1.6,  color: 0xaf52de }, 
-            grid_rack:     { name: '鐵網展架',   w: 0.9,  d: 0.35, h: 1.5,  color: 0x7f8c8d },
-            fitting_room:  { name: '更衣室/試衣間', w: 1.0,  d: 1.00, h: 2.5,  color: FIXED_WALL_COLOR_HEX }, 
-            backdrop:      { name: '背板',       w: 3.0,  d: 0.30, h: 2.5,  color: FIXED_WALL_COLOR_HEX }, 
-            wall_shelf:    { name: '牆面層架',   w: 1.0,  d: 0.35, h: 1.8,  color: 0x34c759 }, 
-            storage:       { name: '倉儲區',     w: 1.5,  d: 1.50, h: 2.0,  color: 0x485460 }
+            human:          { name: '比例模特兒', w: 0.4,  d: 0.3, h: 1.7,  color: 0xff7043 },
+            table:          { name: '收銀桌',     w: 1.0,  d: 0.70, h: 1.0, color: 0x32ade6 },
+            cabinet:        { name: '中島',       w: 1.5,  d: 0.6, h: 1.6,  color: 0x0084ff },
+            folding_table:  { name: '摺疊桌',     w: 1.2,  d: 0.6, h: 0.6,  color: 0x0084ff },
+            straight_rack:  { name: '直桿吊衣架', w: 1.0,  d: 0.40, h: 1.6,  color: 0xaf52de }, 
+            round_rack:     { name: '圓盤環形衣架', w: 0.8,  d: 0.80, h: 1.6,  color: 0xaf52de }, 
+            grid_rack:      { name: '落地鐵網展架', w: 0.9,  d: 0.35, h: 1.5,  color: 0x7f8c8d },
+            wall_grid_rack: { name: '壁掛鐵網片',   w: 0.9,  d: 0.05, h: 1.5,  color: 0x00a8ff },
+            fitting_room:   { name: '更衣室/試衣間', w: 1.0,  d: 1.00, h: 2.5,  color: FIXED_WALL_COLOR_HEX }, 
+            backdrop:       { name: '背板',       w: 3.0,  d: 0.30, h: 2.5,  color: FIXED_WALL_COLOR_HEX }, 
+            wall_shelf:     { name: '牆面層架',   w: 1.0,  d: 0.35, h: 1.8,  color: 0x34c759 }, 
+            storage:        { name: '倉儲區',     w: 1.5,  d: 1.50, h: 2.0,  color: 0x485460 }
         };
 
         let FACE_INDEX_MAP = { right: 0, left: 1, front: 4 };
@@ -1486,12 +1490,12 @@
             return group;
         }
 
-        /* 鐵網展架 (90x35x150cm) 精細 3D 模型建立 */
+        /* 1. 落地型鐵網展架 (90x35x150cm，帶工字底座) */
         function createGridRackGeometry(data, customW = null, customD = null, customH = null) {
             let group = new THREE.Group();
-            let w = customW || data.w; // 預設 0.9m
-            let d = customD || data.d; // 預設 0.35m
-            let h = customH || data.h; // 預設 1.5m
+            let w = customW || data.w; 
+            let d = customD || data.d; 
+            let h = customH || data.h; 
 
             let frameRadius = 0.012; 
             let wireRadius = 0.003;  
@@ -1499,7 +1503,7 @@
             let matMetal = new THREE.MeshStandardMaterial({ color: 0x424242, metalness: 0.7, roughness: 0.3 });
             let matWire = new THREE.MeshStandardMaterial({ color: 0x7f8c8d, metalness: 0.8, roughness: 0.2 });
 
-            // 1. 底座工字型金屬支架
+            // 底座工字型金屬支架
             let botLegGeo = new THREE.BoxGeometry(0.03, 0.03, d);
             let leftLeg = new THREE.Mesh(botLegGeo, matMetal);
             leftLeg.position.set(-w/2 + 0.02, -h/2 + 0.015, 0);
@@ -1512,7 +1516,7 @@
             botCrossBar.position.set(0, -h/2 + 0.015, 0);
             group.add(botCrossBar);
 
-            // 2. 鐵網立柱與外框
+            // 立柱與外框
             let sidePostGeo = new THREE.CylinderGeometry(frameRadius, frameRadius, h - 0.03, 16);
             let leftPost = new THREE.Mesh(sidePostGeo, matMetal);
             leftPost.position.set(-w/2 + 0.015, 0.015, 0);
@@ -1526,10 +1530,8 @@
             topBar.position.set(0, h/2 - 0.012, 0);
             group.add(topBar);
 
-            // 3. 網格細線 (10cm 間距)
+            // 網格細線 (10cm 間距)
             let gridStep = 0.1; 
-            
-            // 垂直線
             let vertWireGeo = new THREE.CylinderGeometry(wireRadius, wireRadius, h - 0.08, 8);
             for (let x = -w/2 + gridStep; x < w/2 - 0.02; x += gridStep) {
                 let vWire = new THREE.Mesh(vertWireGeo, matWire);
@@ -1537,9 +1539,57 @@
                 group.add(vWire);
             }
 
-            // 水平線
             let horizWireGeo = new THREE.CylinderGeometry(wireRadius, wireRadius, w - 0.04, 8);
             for (let y = -h/2 + gridStep; y < h/2 - 0.05; y += gridStep) {
+                let hWire = new THREE.Mesh(horizWireGeo, matWire);
+                hWire.rotation.z = Math.PI / 2;
+                hWire.position.set(0, y, 0);
+                group.add(hWire);
+            }
+
+            return group;
+        }
+
+        /* 2. 壁掛型鐵網片 (90x5x150cm，無腳架無厚框) */
+        function createWallGridRackGeometry(data, customW = null, customD = null, customH = null) {
+            let group = new THREE.Group();
+            let w = customW || data.w; 
+            let h = customH || data.h; 
+
+            let frameRadius = 0.008; 
+            let wireRadius = 0.003;  
+
+            let matMetal = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8, roughness: 0.2 });
+            let matWire = new THREE.MeshStandardMaterial({ color: 0x95a5a6, metalness: 0.8, roughness: 0.2 });
+
+            // 輕量四方金屬細外框
+            let sidePostGeo = new THREE.CylinderGeometry(frameRadius, frameRadius, h, 12);
+            let leftPost = new THREE.Mesh(sidePostGeo, matMetal);
+            leftPost.position.set(-w/2 + frameRadius, 0, 0);
+            let rightPost = new THREE.Mesh(sidePostGeo, matMetal);
+            rightPost.position.set(w/2 - frameRadius, 0, 0);
+            group.add(leftPost, rightPost);
+
+            let horizPostGeo = new THREE.CylinderGeometry(frameRadius, frameRadius, w, 12);
+            let topPost = new THREE.Mesh(horizPostGeo, matMetal);
+            topPost.rotation.z = Math.PI / 2;
+            topPost.position.set(0, h/2 - frameRadius, 0);
+            let botPost = new THREE.Mesh(horizPostGeo, matMetal);
+            botPost.rotation.z = Math.PI / 2;
+            botPost.position.set(0, -h/2 + frameRadius, 0);
+            group.add(topPost, botPost);
+
+            // 網格細線 (10cm 間距)
+            let gridStep = 0.1; 
+            let vertWireGeo = new THREE.CylinderGeometry(wireRadius, wireRadius, h - 0.02, 8);
+            for (let x = -w/2 + gridStep; x < w/2 - 0.02; x += gridStep) {
+                let vWire = new THREE.Mesh(vertWireGeo, matWire);
+                vWire.position.set(x, 0, 0);
+                group.add(vWire);
+            }
+
+            let horizWireGeo = new THREE.CylinderGeometry(wireRadius, wireRadius, w - 0.02, 8);
+            for (let y = -h/2 + gridStep; y < h/2 - 0.02; y += gridStep) {
                 let hWire = new THREE.Mesh(horizWireGeo, matWire);
                 hWire.rotation.z = Math.PI / 2;
                 hWire.position.set(0, y, 0);
@@ -1624,7 +1674,6 @@
             return group;
         }
 
-        /* 升級：新增 elevation (離地高度) 變數處理 */
         function createObject(type, customPos = null, customRot = null, shouldSave = true, savedImages = null, hasTopLayer = false, shelfLayers = 3, customDims = null, elevation = 0) {
             let data = OBJECT_TYPES[type];
             if (!data) return;
@@ -1633,15 +1682,18 @@
             let finalD = customDims?.d || data.d;
             let finalH = customDims?.h || data.h;
 
+            // 如果是新創建的壁掛鐵網，預設賦予 0.8m (80cm) 的離地高度
+            if (type === 'wall_grid_rack' && customPos === null && elevation === 0) {
+                elevation = 0.8;
+            }
+
             let finalMesh;
 
             if (type === 'human') {
                 let humanGroup = createHumanGeometry(finalW, finalD, finalH);
                 let outerGeo = new THREE.BoxGeometry(finalW, finalH, finalD);
                 let materials = [];
-                for(let i=0; i<6; i++) {
-                    materials.push(new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.6, transparent: true, opacity: 0.0 }));
-                }
+                for(let i=0; i<6; i++) materials.push(new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.6, transparent: true, opacity: 0.0 }));
                 finalMesh = new THREE.Mesh(outerGeo, materials);
                 finalMesh.add(humanGroup);
             } else if (type === 'wall_shelf') {
@@ -1672,6 +1724,13 @@
                 for(let i=0; i<6; i++) materials.push(new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.6, transparent: true, opacity: 0.0 }));
                 finalMesh = new THREE.Mesh(outerGeo, materials);
                 finalMesh.add(gridGroup);
+            } else if (type === 'wall_grid_rack') { // 壁掛鐵網片
+                let wallGridGroup = createWallGridRackGeometry(data, finalW, finalD, finalH);
+                let outerGeo = new THREE.BoxGeometry(finalW, finalH, finalD);
+                let materials = [];
+                for(let i=0; i<6; i++) materials.push(new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.6, transparent: true, opacity: 0.0 }));
+                finalMesh = new THREE.Mesh(outerGeo, materials);
+                finalMesh.add(wallGridGroup);
             } else if (type === 'fitting_room') {
                 let fittingRoomGroup = createFittingRoomGeometry(data, finalW, finalD, finalH, hasTopLayer);
                 finalMesh = new THREE.Group();
@@ -1726,7 +1785,8 @@
             if (customPos) {
                 finalMesh.position.set(customPos.x, (customPos.y !== undefined ? customPos.y : posY), customPos.z);
             } else {
-                finalMesh.position.set(0, posY, 0);
+                let initZ = (type === 'wall_grid_rack' || type === 'backdrop' || type === 'wall_shelf') ? -1.4 : 0;
+                finalMesh.position.set(0, posY, initZ);
             }
             
             if (customRot) {
@@ -1793,7 +1853,6 @@
             createObject(type, pos, rot, true, imgs, hasTop, shelfLayers, { w: wInput, d: dInput, h: hInput }, elevInput);
         }
 
-        /* 離地高度調整反應函式 */
         function updateSelectedElevation() {
             if (!selectedObject || selectedObject.userData.type === 'booth_wall') return;
 
@@ -1905,7 +1964,7 @@
             if (raycaster.ray.intersectPlane(planeHelper, intersectionPoint)) {
                 let elev = selectedObject.userData.elevation || 0;
                 selectedObject.position.copy(intersectionPoint.add(dragOffset));
-                selectedObject.position.y = selectedObject.userData.height / 2 + elev; // 拖曳時維持原本的離地高度
+                selectedObject.position.y = selectedObject.userData.height / 2 + elev;
             }
         }
 
@@ -2836,7 +2895,7 @@
                 document.getElementById('dim-h').value = Math.round(curH * 100);
                 document.getElementById('dim-elevation').value = Math.round(curElev * 100);
 
-                let noImageTypes = ['straight_rack', 'round_rack', 'grid_rack', 'folding_table', 'human'];
+                let noImageTypes = ['straight_rack', 'round_rack', 'grid_rack', 'wall_grid_rack', 'folding_table', 'human'];
                 if (noImageTypes.includes(type)) {
                     if (imageSection) imageSection.style.display = 'none';
                 } else {
@@ -2948,7 +3007,6 @@
             }
         }
 
-        /* 升級：按鍵 W (上升 10cm) 與 S (下降 10cm) 控制離地高度 */
         function onKeyDown(event) {
             if (!selectedObject) return;
 
@@ -2974,7 +3032,7 @@
                     saveToLocalStorage();
                     break;
                 case 's':
-                    currentElev = Math.max(0, currentElev - 0.1); // 下降 10cm，最低到地面 0
+                    currentElev = Math.max(0, currentElev - 0.1); // 下降 10cm
                     selectedObject.userData.elevation = currentElev;
                     selectedObject.position.y = h / 2 + currentElev;
                     updateRightPanelUI();

@@ -800,10 +800,10 @@
                 });
                 render3DFloor();
 
-// ✅ 修正後的程式碼
-data.objects.forEach(objData => {
-    createObject(objData.type, objData.position, objData.rotation, false, objData.images, objData.hasTopLayer, objData.shelfLayers, objData.customDims);
-});
+                if (data.objects && data.objects.length > 0) {
+                    data.objects.forEach(objData => {
+                        createObject(objData.type, objData.position, objData.rotation, false, objData.images, objData.hasTopLayer, objData.shelfLayers, objData.customDims);
+                    });
                 }
                 selectObject(null);
             } catch (e) {
@@ -2554,7 +2554,7 @@ data.objects.forEach(objData => {
 
                 render3DFloor();
                 data.objects.forEach(objData => {
-                    createObject(objData.type, objData.position, objData.rotation, false, objData.images, objData.hasTopLayer, objdata.shelfLayers, objData.customDims);
+                    createObject(objData.type, objData.position, objData.rotation, false, objData.images, objData.hasTopLayer, objData.shelfLayers, objData.customDims);
                 });
                 selectObject(null);
                 saveToLocalStorage();

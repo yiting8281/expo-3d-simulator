@@ -551,14 +551,10 @@
                     </div>
                 </div>
 
-                <!-- 招牌文字與 Logo 自訂設定區塊 -->
+                <!-- 招牌文字自訂設定區塊 -->
                 <div id="fascia-custom-box" style="margin-top:8px; background: rgba(0, 132, 255, 0.08); padding: 8px; border-radius: 6px; border: 1px solid rgba(0, 132, 255, 0.2);">
                     <label style="color:#4da6ff; font-size:11px; margin:0 0 4px 0; font-weight:600;">✍️ 招牌文字內容</label>
-                    <input type="text" id="fascia-text-input" placeholder="例如：MIO SPORTS" value="COMPRESSPORT" oninput="updateFasciaTexture()" style="width:100%; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); color:#fff; padding:6px; font-size:11px; border-radius:4px; outline:none; margin-bottom:6px;">
-
-                    <input type="file" id="fascia-logo-upload" accept="image/*" style="display:none;" onchange="handleFasciaLogoUpload(event)">
-                    <button class="upload-face-btn" onclick="document.getElementById('fascia-logo-upload').click()" style="margin-bottom:4px; font-size:11px; padding:6px;">🖼️ 上傳招牌 LOGO 圖片</button>
-                    <button id="rm-fascia-logo" class="remove-face-btn" onclick="clearFasciaLogo()" style="display:none; margin-bottom:0; font-size:10px; padding:4px;">❌ 移除 LOGO</button>
+                    <input type="text" id="fascia-text-input" placeholder="例如：COMPRESSPORT" value="COMPRESSPORT" oninput="updateFasciaTexture()" style="width:100%; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); color:#fff; padding:6px; font-size:11px; border-radius:4px; outline:none; margin-bottom:0;">
                 </div>
                 
                 <div style="font-size: 11px; color: var(--accent); font-weight: 500; margin-top: 10px;">🧱 自選外圍背板牆面</div>
@@ -752,8 +748,6 @@
         let elevatedWallSegments = {}; 
         let currentFloorColorHex = '#2d2d2d'; 
 
-        let fasciaLogoImageBase64 = null;
-
         let isDragging = false;
         let isSpacePressed = false; 
         let planeHelper; 
@@ -813,7 +807,6 @@
                 showMainGrid: true,
                 showSubGrid: true,
                 fasciaText: 'COMPRESSPORT',
-                fasciaLogo: null,
                 walls: { back: true, left: true, right: false, front: false },
                 disabledWallSegments: [],
                 elevatedWallSegments: {},
@@ -978,9 +971,6 @@
             if (textInput) {
                 textInput.value = (data.fasciaText !== undefined) ? data.fasciaText : 'COMPRESSPORT';
             }
-            fasciaLogoImageBase64 = data.fasciaLogo || null;
-            let rmBtn = document.getElementById('rm-fascia-logo');
-            if (rmBtn) rmBtn.style.display = fasciaLogoImageBase64 ? 'block' : 'none';
 
             let fasciaBox = document.getElementById('fascia-custom-box');
             let fasciaDirsBox = document.getElementById('fascia-directions-box');
@@ -1049,7 +1039,6 @@
                     showMainGrid: document.getElementById('show-main-grid-check').checked,
                     showSubGrid: document.getElementById('show-sub-grid-check').checked,
                     fasciaText: textVal,
-                    fasciaLogo: fasciaLogoImageBase64,
                     walls: {
                         back: document.getElementById('wall-back-check').checked,
                         left: document.getElementById('wall-left-check').checked,
@@ -1250,7 +1239,7 @@
             updateStructureUI();
         }
 
-        function createFasciaTexture(text, logoBase64) {
+        function createFasciaTexture(text) {
             let canvas = document.createElement('canvas');
             let ctx = canvas.getContext('2d');
             canvas.width = 1024;
@@ -1259,27 +1248,9 @@
             ctx.fillStyle = '#333333';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            if (logoBase64) {
-                let img = new Image();
-                img.onload = function() {
-                    let h = canvas.height * 0.65;
-                    let w = (img.width * h) / img.height;
-                    ctx.drawImage(img, (canvas.width - w) / 2, 30, w, h);
-                    
-                    if (text) {
-                        ctx.fillStyle = '#ffffff';
-                        ctx.font = 'bold 36px sans-serif';
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'bottom';
-                        ctx.fillText(text, canvas.width / 2, canvas.height - 15);
-                    }
-                    // 強制更新貼圖
-                    render3DFloor();
-                };
-                img.src = logoBase64;
-            } else if (text) {
+            if (text) {
                 ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 64px sans-serif';
+                ctx.font = 'bold 56px sans-serif';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(text, canvas.width / 2, canvas.height / 2);
@@ -1291,47 +1262,6 @@
         }
 
         function updateFasciaTexture() {
-            render3DFloor();
-            saveToLocalStorage();
-        }
-
-        function handleFasciaLogoUpload(event) {
-            let file = event.target.files[0];
-            if (!file) return;
-            let reader = new FileReader();
-            reader.onload = function(e) {
-                let img = new Image();
-                img.onload = function() {
-                    let canvas = document.createElement('canvas');
-                    let ctx = canvas.getContext('2d');
-                    
-                    let maxDim = 512;
-                    let w = img.width;
-                    let h = img.height;
-                    if (w > maxDim || h > maxDim) {
-                        if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
-                        else { w = Math.round((w * maxDim) / h); h = maxDim; }
-                    }
-                    canvas.width = w; canvas.height = h;
-                    ctx.drawImage(img, 0, 0, w, h);
-                    
-                    fasciaLogoImageBase64 = canvas.toDataURL('image/png', 0.9);
-                    
-                    let rmBtn = document.getElementById('rm-fascia-logo');
-                    if (rmBtn) rmBtn.style.display = 'block';
-
-                    render3DFloor();
-                    saveToLocalStorage();
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function clearFasciaLogo() {
-            fasciaLogoImageBase64 = null;
-            let rmBtn = document.getElementById('rm-fascia-logo');
-            if (rmBtn) rmBtn.style.display = 'none';
             render3DFloor();
             saveToLocalStorage();
         }
@@ -1424,7 +1354,7 @@
                 let fasciaY = FRAME_HEIGHT - fasciaH / 2;
                 
                 let textVal = document.getElementById('fascia-text-input')?.value || '';
-                let fasciaTexture = createFasciaTexture(textVal, fasciaLogoImageBase64);
+                let fasciaTexture = createFasciaTexture(textVal);
 
                 let matListFront = [
                     new THREE.MeshStandardMaterial({ color: 0x333333 }),
@@ -2677,7 +2607,7 @@
                             let topCtx = topCanvas.getContext('2d');
                             topCanvas.width = 1024; topCanvas.height = 512;
                             topCanvas.fillStyle = '#545454'; topCanvas.fillRect(0, 0, 1024, 512);
-                            topCanvas.drawImage(img, 0, 0, 1024, 512);
+                            topCtx.drawImage(img, 0, 0, 1024, 512);
 
                             let topTexture = new THREE.CanvasTexture(topCanvas);
                             topTexture.encoding = THREE.sRGBEncoding;

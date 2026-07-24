@@ -536,9 +536,20 @@
                     <input type="checkbox" id="show-frame-check" checked onchange="updateStructureUI()">
                 </div>
 
+                <!-- 招牌整體與四面獨立控制開關 -->
                 <div class="struct-row" style="margin-top:6px;">
                     <span style="font-size: 11px; color: var(--text-main);">🪧 顯示攤位上方招牌</span>
                     <input type="checkbox" id="show-fascia-check" checked onchange="onFasciaToggle()">
+                </div>
+
+                <div id="fascia-directions-box" style="margin-top:6px; background: rgba(0, 132, 255, 0.05); padding: 8px; border-radius: 6px; border: 1px solid rgba(0, 132, 255, 0.15);">
+                    <div style="font-size: 11px; color: var(--accent); font-weight: 500; margin-bottom: 4px;">🎯 自選顯示哪幾面招牌</div>
+                    <div class="wall-checkboxes" style="margin-top:0; border-top:none; padding-top:0;">
+                        <label><input type="checkbox" id="fascia-front-check" checked onchange="updateStructureUI()"> 前方招牌</label>
+                        <label><input type="checkbox" id="fascia-back-check" checked onchange="updateStructureUI()"> 後方招牌</label>
+                        <label><input type="checkbox" id="fascia-left-check" checked onchange="updateStructureUI()"> 左側招牌</label>
+                        <label><input type="checkbox" id="fascia-right-check" checked onchange="updateStructureUI()"> 右側招牌</label>
+                    </div>
                 </div>
 
                 <!-- 招牌文字與 Logo 自訂設定區塊 -->
@@ -742,7 +753,7 @@
         let elevatedWallSegments = {}; 
         let currentFloorColorHex = '#2d2d2d'; 
 
-        let fasciaLogoImageBase64 = null; // 招牌自訂 Logo 暫存
+        let fasciaLogoImageBase64 = null;
 
         let isDragging = false;
         let isSpacePressed = false; 
@@ -796,6 +807,10 @@
                 floorColor: '#2d2d2d',
                 showFrame: true,
                 showFascia: true,
+                showFasciaFront: true,
+                showFasciaBack: true,
+                showFasciaLeft: true,
+                showFasciaRight: true,
                 showMainGrid: true,
                 showSubGrid: true,
                 fasciaText: 'COMPRESSPORT',
@@ -951,6 +966,12 @@
             document.getElementById('expo-title-input').value = data.expoTitle || '';
             document.getElementById('show-frame-check').checked = (data.showFrame !== undefined) ? data.showFrame : true;
             document.getElementById('show-fascia-check').checked = (data.showFascia !== undefined) ? data.showFascia : true;
+            
+            document.getElementById('fascia-front-check').checked = (data.showFasciaFront !== undefined) ? data.showFasciaFront : true;
+            document.getElementById('fascia-back-check').checked = (data.showFasciaBack !== undefined) ? data.showFasciaBack : true;
+            document.getElementById('fascia-left-check').checked = (data.showFasciaLeft !== undefined) ? data.showFasciaLeft : true;
+            document.getElementById('fascia-right-check').checked = (data.showFasciaRight !== undefined) ? data.showFasciaRight : true;
+
             document.getElementById('show-main-grid-check').checked = (data.showMainGrid !== undefined) ? data.showMainGrid : true;
             document.getElementById('show-sub-grid-check').checked = (data.showSubGrid !== undefined) ? data.showSubGrid : true;
 
@@ -963,9 +984,11 @@
             if (rmBtn) rmBtn.style.display = fasciaLogoImageBase64 ? 'block' : 'none';
 
             let fasciaBox = document.getElementById('fascia-custom-box');
+            let fasciaDirsBox = document.getElementById('fascia-directions-box');
             let fasciaCheck = document.getElementById('show-fascia-check');
-            if (fasciaBox && fasciaCheck) {
+            if (fasciaBox && fasciaDirsBox && fasciaCheck) {
                 fasciaBox.style.display = fasciaCheck.checked ? 'block' : 'none';
+                fasciaDirsBox.style.display = fasciaCheck.checked ? 'block' : 'none';
             }
 
             if (data.floorColor) {
@@ -1020,6 +1043,10 @@
                     floorColor: currentFloorColorHex,
                     showFrame: document.getElementById('show-frame-check').checked,
                     showFascia: document.getElementById('show-fascia-check').checked,
+                    showFasciaFront: document.getElementById('fascia-front-check').checked,
+                    showFasciaBack: document.getElementById('fascia-back-check').checked,
+                    showFasciaLeft: document.getElementById('fascia-left-check').checked,
+                    showFasciaRight: document.getElementById('fascia-right-check').checked,
                     showMainGrid: document.getElementById('show-main-grid-check').checked,
                     showSubGrid: document.getElementById('show-sub-grid-check').checked,
                     fasciaText: textVal,
@@ -1210,9 +1237,11 @@
 
         function updateStructureUI() {
             let fasciaBox = document.getElementById('fascia-custom-box');
+            let fasciaDirsBox = document.getElementById('fascia-directions-box');
             let fasciaCheck = document.getElementById('show-fascia-check');
-            if (fasciaBox && fasciaCheck) {
+            if (fasciaBox && fasciaDirsBox && fasciaCheck) {
                 fasciaBox.style.display = fasciaCheck.checked ? 'block' : 'none';
+                fasciaDirsBox.style.display = fasciaCheck.checked ? 'block' : 'none';
             }
             render3DFloor();
             saveToLocalStorage();
@@ -1340,6 +1369,12 @@
 
             let showFrame = document.getElementById('show-frame-check').checked;
             let showFascia = document.getElementById('show-fascia-check').checked;
+            
+            let showFasciaFront = document.getElementById('fascia-front-check')?.checked ?? true;
+            let showFasciaBack = document.getElementById('fascia-back-check')?.checked ?? true;
+            let showFasciaLeft = document.getElementById('fascia-left-check')?.checked ?? true;
+            let showFasciaRight = document.getElementById('fascia-right-check')?.checked ?? true;
+
             let checkBack = document.getElementById('wall-back-check').checked;
             let checkLeft = document.getElementById('wall-left-check').checked;
             let checkRight = document.getElementById('wall-right-check').checked;
@@ -1386,7 +1421,7 @@
                     new THREE.MeshStandardMaterial({ color: 0x333333 }),
                     new THREE.MeshStandardMaterial({ color: 0x333333 }),
                     new THREE.MeshStandardMaterial({ color: 0x333333 }),
-                    new THREE.MeshStandardMaterial({ map: fasciaTexture }), // 正面帶貼圖
+                    new THREE.MeshStandardMaterial({ map: fasciaTexture }),
                     new THREE.MeshStandardMaterial({ color: 0x333333 })
                 ];
 
@@ -1396,27 +1431,35 @@
                     new THREE.MeshStandardMaterial({ color: 0x333333 }),
                     new THREE.MeshStandardMaterial({ color: 0x333333 }),
                     new THREE.MeshStandardMaterial({ color: 0x333333 }),
-                    new THREE.MeshStandardMaterial({ map: fasciaTexture }) // 背面帶貼圖
+                    new THREE.MeshStandardMaterial({ map: fasciaTexture })
                 ];
 
                 let totalW = maxXGrid - minXGrid;
                 let totalD = maxZGrid - minZGrid;
 
-                let frontFascia = new THREE.Mesh(new THREE.BoxGeometry(totalW, fasciaH, 0.08), matListFront);
-                frontFascia.position.set((minXGrid + maxXGrid)/2, fasciaY, maxZGrid + 0.04);
-                structureGroup.add(frontFascia);
+                if (showFasciaFront) {
+                    let frontFascia = new THREE.Mesh(new THREE.BoxGeometry(totalW, fasciaH, 0.08), matListFront);
+                    frontFascia.position.set((minXGrid + maxXGrid)/2, fasciaY, maxZGrid + 0.04);
+                    structureGroup.add(frontFascia);
+                }
 
-                let backFascia = new THREE.Mesh(new THREE.BoxGeometry(totalW, fasciaH, 0.08), matListBack);
-                backFascia.position.set((minXGrid + maxXGrid)/2, fasciaY, minZGrid - 0.04);
-                structureGroup.add(backFascia);
+                if (showFasciaBack) {
+                    let backFascia = new THREE.Mesh(new THREE.BoxGeometry(totalW, fasciaH, 0.08), matListBack);
+                    backFascia.position.set((minXGrid + maxXGrid)/2, fasciaY, minZGrid - 0.04);
+                    structureGroup.add(backFascia);
+                }
 
-                let leftFascia = new THREE.Mesh(new THREE.BoxGeometry(0.08, fasciaH, totalD), fasciaMat = new THREE.MeshStandardMaterial({ color: 0x333333 }));
-                leftFascia.position.set(minXGrid - 0.04, fasciaY, (minZGrid + maxZGrid)/2);
-                structureGroup.add(leftFascia);
+                if (showFasciaLeft) {
+                    let leftFascia = new THREE.Mesh(new THREE.BoxGeometry(0.08, fasciaH, totalD), new THREE.MeshStandardMaterial({ color: 0x333333 }));
+                    leftFascia.position.set(minXGrid - 0.04, fasciaY, (minZGrid + maxZGrid)/2);
+                    structureGroup.add(leftFascia);
+                }
 
-                let rightFascia = new THREE.Mesh(new THREE.BoxGeometry(0.08, fasciaH, totalD), new THREE.MeshStandardMaterial({ color: 0x333333 }));
-                rightFascia.position.set(maxXGrid + 0.04, fasciaY, (minZGrid + maxZGrid)/2);
-                structureGroup.add(rightFascia);
+                if (showFasciaRight) {
+                    let rightFascia = new THREE.Mesh(new THREE.BoxGeometry(0.08, fasciaH, totalD), new THREE.MeshStandardMaterial({ color: 0x333333 }));
+                    rightFascia.position.set(maxXGrid + 0.04, fasciaY, (minZGrid + maxZGrid)/2);
+                    structureGroup.add(rightFascia);
+                }
             }
 
             function createWallSegment(w, d, px, pz, segmentId, dirLabel) {
@@ -2623,7 +2666,7 @@
                             let topCanvas = document.createElement('canvas');
                             let topCtx = topCanvas.getContext('2d');
                             topCanvas.width = 1024; topCanvas.height = 512;
-                            topCtx.fillStyle = '#545454'; topCtx.fillRect(0, 0, 1024, 512);
+                            topCanvas.fillStyle = '#545454'; topCanvas.fillRect(0, 0, 1024, 512);
                             topCtx.drawImage(img, 0, 0, 1024, 512);
 
                             let topTexture = new THREE.CanvasTexture(topCanvas);

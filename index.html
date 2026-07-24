@@ -536,7 +536,6 @@
                     <input type="checkbox" id="show-frame-check" checked onchange="updateStructureUI()">
                 </div>
 
-                <!-- 招牌整體與四面獨立控制開關 -->
                 <div class="struct-row" style="margin-top:6px;">
                     <span style="font-size: 11px; color: var(--text-main);">🪧 顯示攤位上方招牌</span>
                     <input type="checkbox" id="show-fascia-check" checked onchange="onFasciaToggle()">
@@ -1263,9 +1262,9 @@
             if (logoBase64) {
                 let img = new Image();
                 img.onload = function() {
-                    let h = canvas.height * 0.7;
+                    let h = canvas.height * 0.65;
                     let w = (img.width * h) / img.height;
-                    ctx.drawImage(img, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
+                    ctx.drawImage(img, (canvas.width - w) / 2, 30, w, h);
                     
                     if (text) {
                         ctx.fillStyle = '#ffffff';
@@ -1274,6 +1273,8 @@
                         ctx.textBaseline = 'bottom';
                         ctx.fillText(text, canvas.width / 2, canvas.height - 15);
                     }
+                    // 強制更新貼圖
+                    render3DFloor();
                 };
                 img.src = logoBase64;
             } else if (text) {
@@ -1303,9 +1304,18 @@
                 img.onload = function() {
                     let canvas = document.createElement('canvas');
                     let ctx = canvas.getContext('2d');
-                    canvas.width = 512; canvas.height = 512;
-                    ctx.drawImage(img, 0, 0, 512, 512);
-                    fasciaLogoImageBase64 = canvas.toDataURL('image/jpeg', 0.8);
+                    
+                    let maxDim = 512;
+                    let w = img.width;
+                    let h = img.height;
+                    if (w > maxDim || h > maxDim) {
+                        if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+                        else { w = Math.round((w * maxDim) / h); h = maxDim; }
+                    }
+                    canvas.width = w; canvas.height = h;
+                    ctx.drawImage(img, 0, 0, w, h);
+                    
+                    fasciaLogoImageBase64 = canvas.toDataURL('image/png', 0.9);
                     
                     let rmBtn = document.getElementById('rm-fascia-logo');
                     if (rmBtn) rmBtn.style.display = 'block';
@@ -2667,7 +2677,7 @@
                             let topCtx = topCanvas.getContext('2d');
                             topCanvas.width = 1024; topCanvas.height = 512;
                             topCanvas.fillStyle = '#545454'; topCanvas.fillRect(0, 0, 1024, 512);
-                            topCtx.drawImage(img, 0, 0, 1024, 512);
+                            topCanvas.drawImage(img, 0, 0, 1024, 512);
 
                             let topTexture = new THREE.CanvasTexture(topCanvas);
                             topTexture.encoding = THREE.sRGBEncoding;

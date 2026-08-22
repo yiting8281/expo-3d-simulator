@@ -6,8 +6,8 @@
     <title>EXPO 展場配置模擬器 - 手機版</title>
     <style>
         :root {
-            --bg-glass: rgba(22, 22, 25, 0.94);
-            --bg-glass-card: rgba(35, 35, 40, 0.8);
+            --bg-glass: rgba(22, 22, 25, 0.95);
+            --bg-glass-card: rgba(35, 35, 40, 0.85);
             --border-glass: rgba(255, 255, 255, 0.12);
             --border-glass-focus: rgba(0, 149, 255, 0.6);
             --primary: #0084ff;
@@ -51,7 +51,7 @@
             top: 12px;
             left: 12px;
             right: 12px;
-            z-index: 10;
+            z-index: 20;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -82,7 +82,7 @@
             position: absolute;
             top: 60px;
             right: 12px;
-            z-index: 10;
+            z-index: 20;
             display: none;
             flex-direction: column;
             gap: 6px;
@@ -97,16 +97,16 @@
             display: flex;
             align-items: center;
             gap: 4px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
         }
 
-        /* 底部抽屜面板 */
+        /* 底部抽屜面板 (最高圖層，完全攔截觸控) */
         #mobile-drawer {
             position: absolute;
             bottom: 0;
             left: 0;
             right: 0;
-            z-index: 50;
+            z-index: 999;
             background: var(--bg-glass);
             backdrop-filter: blur(25px);
             -webkit-backdrop-filter: blur(25px);
@@ -364,8 +364,8 @@
         <button class="quick-btn" onclick="onKeyDown({key:'Delete'})" style="color:var(--danger)">🗑️ 刪除</button>
     </div>
 
-    <!-- 底部抽屜面板 (完全隔離點擊與觸控) -->
-    <div id="mobile-drawer" onpointerdown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onclick="event.stopPropagation()">
+    <!-- 底部抽屜面板 -->
+    <div id="mobile-drawer">
         <div class="drawer-header" onclick="toggleDrawer()">
             <div class="drawer-handle"></div>
             <div class="drawer-tabs" onclick="event.stopPropagation()">
@@ -614,10 +614,17 @@
             buildGridMapUI();
             initProjects();
 
-            window.addEventListener('pointerdown', onPointerDown);
-            window.addEventListener('pointermove', onPointerMove);
-            window.addEventListener('pointerup', onPointerUp);
+            // 只在 3D 渲染畫布上監聽事件，徹底隔離抽屜點擊
+            renderer.domElement.addEventListener('pointerdown', onCanvasPointerDown);
+            renderer.domElement.addEventListener('pointermove', onCanvasPointerMove);
+            renderer.domElement.addEventListener('pointerup', onCanvasPointerUp);
             window.addEventListener('resize', onWindowResize);
+
+            // 抽屜容器攔截所有指標與點擊事件傳遞
+            let drawerEl = document.getElementById('mobile-drawer');
+            ['pointerdown', 'pointermove', 'pointerup', 'touchstart', 'touchmove', 'touchend', 'click'].forEach(evtName => {
+                drawerEl.addEventListener(evtName, e => e.stopPropagation(), { passive: false });
+            });
 
             animate();
         }
@@ -905,7 +912,7 @@
                     }
                     if (c === 0 || !gridMap[r][c - 1]) {
                         if (checkLeft) createWallSegment(wallThick, CELL_SIZE, minX - wallThick/2, posZ, `${r}-${c}-left`, '左牆');
-                        if (showFrame) { addFrameLine(minX, minZ, minX, maxZ, 0, FRAME_HEIGHT); addVerticalPost(minX, minZ); addVerticalPost(maxX, minZ); }
+                        if (showFrame) { addFrameLine(minX, minZ, minX, maxZ, 0, FRAME_HEIGHT); addVerticalPost(minX, minZ); addVerticalPost(minX, maxZ); }
                     }
                     if (c === GRID_MAP_SIZE - 1 || !gridMap[r][c + 1]) {
                         if (checkRight) createWallSegment(wallThick, CELL_SIZE, maxX + wallThick/2, posZ, `${r}-${c}-right`, '右牆');
@@ -1522,11 +1529,13 @@
             saveToLocalStorage();
         }
 
-        /* 射線選取物件與牆段 (防抽屜點擊穿透) */
-        function onPointerDown(event) {
+        /* 3D 畫布專屬觸控事件 (解決穿透) */
+        function onCanvasPointerDown(event) {
             let drawer = document.getElementById('mobile-drawer');
             let rect = drawer.getBoundingClientRect();
-            if (event.clientY >= rect.top) return; // 點擊在抽屜範圍內完全不觸發 3D 選取
+            if (!drawer.classList.contains('collapsed') && event.clientY >= rect.top) {
+                return; // 如果抽屜展開且點擊在抽屜區域，直接忽略
+            }
 
             let raycaster = new THREE.Raycaster();
             let mouse = new THREE.Vector2(
@@ -1556,7 +1565,7 @@
             }
         }
 
-        function onPointerMove(event) {
+        function onCanvasPointerMove(event) {
             if (!isDragging || !selectedObject) return;
             let raycaster = new THREE.Raycaster();
             let mouse = new THREE.Vector2(
@@ -1571,7 +1580,7 @@
             }
         }
 
-        function onPointerUp() {
+        function onCanvasPointerUp() {
             isDragging = false;
             orbitControls.enabled = true;
             saveToLocalStorage();

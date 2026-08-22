@@ -357,8 +357,9 @@
         </div>
     </div>
 
-    <!-- 選中物件時的懸浮快捷列 -->
+    <!-- 選中物件時的懸浮快捷列 (點擊齒輪才開啟編輯面板) -->
     <div id="mobile-quick-actions">
+        <button class="quick-btn" onclick="openPropsDrawer()" style="background:var(--primary); color:#fff; border-color:var(--primary);">⚙️ 編輯屬性</button>
         <button class="quick-btn" onclick="onKeyDown({key:'r'})">🔄 轉 90°</button>
         <button class="quick-btn" onclick="onKeyDown({key:'c'})">📋 複製</button>
         <button class="quick-btn" onclick="onKeyDown({key:'Delete'})" style="color:var(--danger)">🗑️ 刪除</button>
@@ -474,7 +475,6 @@
 
                     <button class="app-btn upload-face-btn" onclick="triggerFaceUpload('front')">🖼️ 上傳單片牆面圖片</button>
 
-                    <!-- 自選相鄰牆面跨圖區塊 -->
                     <div style="background: rgba(0, 132, 255, 0.12); padding: 8px; border-radius: 6px; border: 1px solid rgba(0, 132, 255, 0.3); margin-top: 8px;">
                         <div id="wall-group-title" style="font-size:11px; color:#4da6ff; font-weight:600; margin-bottom:6px;">🔗 自選相鄰牆面跨圖輸出</div>
                         <div id="wall-multiselect-container" style="display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto; margin-bottom: 6px; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 4px;"></div>
@@ -520,7 +520,6 @@
                         <button class="app-btn upload-face-btn" onclick="triggerFaceUpload('front')">🖼️ 上傳正面圖片</button>
                         <button id="btn-group-fitting" class="app-btn upload-face-btn" onclick="triggerGroupFittingUpload()" style="display:none; margin-top:6px; background-color: rgba(0, 132, 255, 0.15); border:1px solid rgba(0, 132, 255, 0.4); color:#4da6ff;">✨ 上傳多間更衣室「招牌跨圖大圖」</button>
 
-                        <!-- 展櫃自選跨圖區塊 -->
                         <div id="cabinet-group-box" style="display:none; background: rgba(0, 132, 255, 0.12); padding: 8px; border-radius: 6px; border: 1px solid rgba(0, 132, 255, 0.3); margin-top: 8px;">
                             <div style="font-size:11px; color:#4da6ff; font-weight:600; margin-bottom:6px;">🔗 自選相鄰展櫃/中島正面跨圖</div>
                             <div id="cabinet-multiselect-container" style="display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto; margin-bottom: 6px; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 4px;"></div>
@@ -652,6 +651,12 @@
             btn.innerText = drawer.classList.contains('collapsed') ? '展開選單 ⬆️' : '收合選單 ⬇️';
         }
 
+        function openPropsDrawer() {
+            switchTab('tab-props');
+            let drawer = document.getElementById('mobile-drawer');
+            if (drawer.classList.contains('collapsed')) toggleDrawer();
+        }
+
         function closeDrawerAfterAdd() {
             let drawer = document.getElementById('mobile-drawer');
             if (!drawer.classList.contains('collapsed')) toggleDrawer();
@@ -666,9 +671,6 @@
 
             let targetBtn = document.getElementById(tabId + '-btn');
             if (targetBtn) targetBtn.classList.add('active');
-
-            let drawer = document.getElementById('mobile-drawer');
-            if (drawer && drawer.classList.contains('collapsed')) toggleDrawer();
         }
 
         /* 3D 基礎格局 */
@@ -1248,7 +1250,6 @@
                     wallTopModeBox.style.display = hasTop ? 'block' : 'none';
                     rmWallFront.style.display = (wallState.baseImg || wallState.img) ? 'block' : 'none';
 
-                    // 產生相鄰同方向牆面的跨圖多選核取方塊
                     let dir = obj.userData.dir;
                     let sameDirWalls = wallObjects.filter(w => w.userData.type === 'booth_wall' && w.userData.dir === dir);
                     if (dir === 'back' || dir === 'front') sameDirWalls.sort((a, b) => a.userData.c - b.userData.c);
@@ -1831,7 +1832,6 @@
                     hit = hit.parent;
                 }
                 selectObject(hit);
-                switchTab('tab-props');
                 if (hit.userData.type !== 'booth_wall' && hit.userData.type !== 'booth_wall_top') {
                     isDragging = true;
                     orbitControls.enabled = false;

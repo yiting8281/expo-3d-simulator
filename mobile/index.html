@@ -614,7 +614,7 @@
             animate();
         }
 
-        /* 介面抽屜切換 (安全切換) */
+        /* 介面抽屜切換 */
         function toggleDrawer() {
             let drawer = document.getElementById('mobile-drawer');
             let btn = document.getElementById('drawer-toggle-btn');
@@ -830,6 +830,7 @@
                 }
             }
 
+            /* 隔牆生成（完全保留加高看板建構） */
             function createWallSegment(w, d, px, pz, segmentId, dirLabel) {
                 if (disabledWallSegments.includes(segmentId)) return;
 
@@ -1110,7 +1111,7 @@
             }
 
             let posY = (type === 'wall_mesh') ? 1.1 : (finalH / 2);
-            if (type === 'fitting_room') posY = 1.25; // 更衣室底座永遠站在地面 (Y=1.25)
+            if (type === 'fitting_room') posY = 1.25;
 
             finalMesh.position.set(
                 customPos ? customPos.x : 0,
@@ -1241,7 +1242,7 @@
             }
         }
 
-        /* 隔牆加高控制 */
+        /* 隔牆加高控制 (修復字典狀態寫入) */
         function toggleWallSegmentHeight() {
             if (!selectedObject) return;
             let segId = selectedObject.userData.segmentId;
@@ -1270,7 +1271,7 @@
             saveToLocalStorage();
         }
 
-        /* 背板 / 更衣室加高控制 (重新校正 Y 軸高度) */
+        /* 背板 / 更衣室加高控制 */
         function toggleBackdropLayer() {
             if (!selectedObject) return;
             let type = selectedObject.userData.type;
@@ -1481,6 +1482,7 @@
             saveToLocalStorage();
         }
 
+        /* 射線選取物件與牆段 */
         function onPointerDown(event) {
             if (event.clientY > window.innerHeight - 70) return;
             let raycaster = new THREE.Raycaster();
@@ -1548,7 +1550,7 @@
                 }
             } else if (event.key.toLowerCase() === 'c') {
                 let type = selectedObject.userData.type;
-                createObject(type, { x: selectedObject.position.x + 0.5, y: selectedObject.position.y, z: selectedObject.position.z + 0.5 });
+                createObject(type, { x: selectedObject.position.x + 0.5, z: selectedObject.position.z + 0.5 });
             }
         }
 

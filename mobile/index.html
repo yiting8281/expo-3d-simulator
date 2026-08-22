@@ -69,7 +69,7 @@
             pointer-events: auto;
         }
         .top-btn-group button {
-            padding: 6px 8px;
+            padding: 6px 10px;
             font-size: 11px;
             background: transparent;
             border: none;
@@ -100,7 +100,7 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
 
-        /* 底部抽屜面板 (Bottom Sheet) */
+        /* 底部抽屜面板 */
         #mobile-drawer {
             position: absolute;
             bottom: 0;
@@ -119,14 +119,14 @@
         }
 
         #mobile-drawer.collapsed {
-            transform: translateY(calc(100% - 50px));
+            transform: translateY(calc(100% - 52px));
         }
 
         .drawer-header {
             padding: 8px 16px;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: space-between;
             cursor: pointer;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
@@ -135,16 +135,18 @@
             height: 4px;
             background: rgba(255, 255, 255, 0.3);
             border-radius: 2px;
-            margin: 0 auto 6px auto;
+            margin-bottom: 8px;
         }
 
         .drawer-tabs {
             display: flex;
             gap: 6px;
             overflow-x: auto;
-            padding-bottom: 4px;
             width: 100%;
+            scrollbar-width: none;
         }
+        .drawer-tabs::-webkit-scrollbar { display: none; }
+
         .tab-btn {
             padding: 6px 12px;
             font-size: 12px;
@@ -174,7 +176,64 @@
             display: block;
         }
 
-        /* 通用表單與元件 */
+        /* 結構區塊與按鈕 */
+        .struct-box {
+            background: var(--bg-glass-card);
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            margin-top: 10px;
+        }
+        .struct-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: var(--text-main);
+        }
+        .wall-checkboxes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 6px;
+        }
+        .wall-checkboxes label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+        .wall-checkboxes label:hover {
+            color: var(--text-main);
+        }
+
+        .color-picker-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .quick-colors {
+            display: flex;
+            gap: 8px;
+        }
+        .color-dot {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        input[type="checkbox"] {
+            accent-color: var(--primary);
+            width: 16px;
+            height: 16px;
+        }
+
         h3 {
             font-size: 13px;
             color: var(--text-secondary);
@@ -190,12 +249,12 @@
         }
         button.app-btn {
             width: 100%;
-            padding: 11px 12px;
+            padding: 10px 12px;
             background: rgba(255, 255, 255, 0.06);
             color: var(--text-main);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: var(--radius-sm);
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 500;
             margin-bottom: 8px;
             display: flex;
@@ -261,8 +320,8 @@
             border: 1px solid var(--border-glass);
             border-radius: var(--radius-sm);
             color: var(--text-main);
-            padding: 10px;
-            font-size: 13px;
+            padding: 8px;
+            font-size: 12px;
             outline: none;
             margin-bottom: 8px;
         }
@@ -295,31 +354,77 @@
     <!-- 底部抽屜面板 -->
     <div id="mobile-drawer">
         <div class="drawer-header" onclick="toggleDrawer()">
-            <div style="width:100%;">
-                <div class="drawer-handle"></div>
-                <div class="drawer-tabs" onclick="event.stopPropagation()">
-                    <button class="tab-btn active" onclick="switchTab('tab-booth')">📐 展位格局</button>
-                    <button class="tab-btn" onclick="switchTab('tab-items')">📦 展具庫</button>
-                    <button class="tab-btn" onclick="switchTab('tab-props')" id="tab-props-btn">⚙️ 屬性編輯</button>
-                    <button class="tab-btn" onclick="switchTab('tab-project')">📂 方案/檔案</button>
-                </div>
+            <div class="drawer-handle"></div>
+            <div class="drawer-tabs" onclick="event.stopPropagation()">
+                <button class="tab-btn active" onclick="switchTab('tab-booth')">📐 展位格局</button>
+                <button class="tab-btn" onclick="switchTab('tab-items')">📦 展具庫</button>
+                <button class="tab-btn" onclick="switchTab('tab-props')" id="tab-props-btn">⚙️ 屬性編輯</button>
+                <button class="tab-btn" onclick="switchTab('tab-project')">📂 方案/檔案</button>
             </div>
         </div>
 
         <div class="drawer-content">
-            <!-- 分頁 1: 格局設置 -->
+            <!-- 分頁 1: 格局設置與背板/招牌 -->
             <div id="tab-booth" class="tab-pane active">
                 <h3>展位範圍點選 (5x5)</h3>
                 <div class="grid-map" id="grid-map"></div>
-                <button class="app-btn" onclick="clearAllFloors()">重設所有格子</button>
-                <div style="margin-top:12px;">
-                    <label>外圍隔牆設定</label>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-                        <label><input type="checkbox" id="wall-back-check" checked onchange="updateStructureUI()"> 後方牆</label>
-                        <label><input type="checkbox" id="wall-left-check" checked onchange="updateStructureUI()"> 左側牆</label>
-                        <label><input type="checkbox" id="wall-right-check" onchange="updateStructureUI()"> 右側牆</label>
-                        <label><input type="checkbox" id="wall-front-check" onchange="updateStructureUI()"> 前方牆</label>
+                <button class="app-btn" onclick="clearAllFloors()" style="margin-bottom:12px;">重設所有格子</button>
+
+                <div class="struct-box">
+                    <!-- 地板顏色選擇 -->
+                    <div class="color-picker-row">
+                        <span style="font-size:12px; color:var(--text-main); font-weight:500;">🎨 展位地板顏色</span>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <div class="quick-colors">
+                                <div class="color-dot" style="background:#2d2d2d;" onclick="setFloorColor('#2d2d2d')"></div>
+                                <div class="color-dot" style="background:#111111;" onclick="setFloorColor('#111111')"></div>
+                                <div class="color-dot" style="background:#dcdde1;" onclick="setFloorColor('#dcdde1')"></div>
+                                <div class="color-dot" style="background:#c0392b;" onclick="setFloorColor('#c0392b')"></div>
+                            </div>
+                            <input type="color" id="floor-color-input" value="#2d2d2d" onchange="setFloorColor(this.value)" style="border:none; width:26px; height:24px; background:transparent; cursor:pointer;">
+                        </div>
                     </div>
+
+                    <!-- 網格線控制 -->
+                    <div class="wall-checkboxes" style="border-top: 1px dashed rgba(255,255,255,0.08); padding-top:8px;">
+                        <label><input type="checkbox" id="show-main-grid-check" checked onchange="updateStructureUI()"> 3m 主紅框線</label>
+                        <label><input type="checkbox" id="show-sub-grid-check" checked onchange="updateStructureUI()"> 1m 網格細線</label>
+                    </div>
+
+                    <!-- 外框架與招牌 -->
+                    <div class="struct-row" style="margin-top:10px; border-top: 1px dashed rgba(255,255,255,0.08); padding-top:8px;">
+                        <span>🔲 顯示攤位 3D 外框架</span>
+                        <input type="checkbox" id="show-frame-check" checked onchange="updateStructureUI()">
+                    </div>
+                    <div class="struct-row">
+                        <span>🪧 顯示攤位上方招牌</span>
+                        <input type="checkbox" id="show-fascia-check" checked onchange="onFasciaToggle()">
+                    </div>
+
+                    <!-- 招牌四向與文字內容 -->
+                    <div id="fascia-directions-box" style="background: rgba(0, 132, 255, 0.05); padding: 8px; border-radius: 6px; border: 1px solid rgba(0, 132, 255, 0.15); margin-bottom:8px;">
+                        <div style="font-size: 11px; color: var(--accent); font-weight: 500; margin-bottom: 4px;">🎯 自選顯示哪幾面招牌</div>
+                        <div class="wall-checkboxes">
+                            <label><input type="checkbox" id="fascia-front-check" checked onchange="updateStructureUI()"> 前方招牌</label>
+                            <label><input type="checkbox" id="fascia-back-check" checked onchange="updateStructureUI()"> 後方招牌</label>
+                            <label><input type="checkbox" id="fascia-left-check" checked onchange="updateStructureUI()"> 左側招牌</label>
+                            <label><input type="checkbox" id="fascia-right-check" checked onchange="updateStructureUI()"> 右側招牌</label>
+                        </div>
+                    </div>
+                    <div id="fascia-custom-box" style="background: rgba(0, 132, 255, 0.08); padding: 8px; border-radius: 6px; border: 1px solid rgba(0, 132, 255, 0.2); margin-bottom:10px;">
+                        <label style="color:#4da6ff; font-size:11px; margin:0 0 4px 0; font-weight:600;">✍️ 招牌文字內容</label>
+                        <input type="text" id="fascia-text-input" value="COMPRESSPORT" oninput="updateFasciaTexture()" style="margin-bottom:0;">
+                    </div>
+
+                    <!-- 外圍隔牆設定 -->
+                    <div style="font-size: 12px; color: var(--accent); font-weight: 500; border-top: 1px dashed rgba(255,255,255,0.08); padding-top:8px;">🧱 自選外圍背板牆面</div>
+                    <div class="wall-checkboxes">
+                        <label><input type="checkbox" id="wall-back-check" checked onchange="updateStructureUI()"> 後方牆 (Back)</label>
+                        <label><input type="checkbox" id="wall-left-check" checked onchange="updateStructureUI()"> 左側牆 (Left)</label>
+                        <label><input type="checkbox" id="wall-right-check" onchange="updateStructureUI()"> 右側牆 (Right)</label>
+                        <label><input type="checkbox" id="wall-front-check" onchange="updateStructureUI()"> 前方牆 (Front)</label>
+                    </div>
+                    <button class="app-btn" onclick="resetDisabledWalls()" style="margin-top: 8px; font-size: 11px;">🔄 還原隱藏牆面</button>
                 </div>
             </div>
 
@@ -330,9 +435,11 @@
                     <button class="app-btn action-btn" onclick="createObject('human'); closeDrawerAfterAdd();">🧍 模特兒</button>
                     <button class="app-btn action-btn" onclick="createObject('table'); closeDrawerAfterAdd();">🪑 收銀桌</button>
                     <button class="app-btn action-btn" onclick="createObject('cabinet'); closeDrawerAfterAdd();">📦 中島展櫃</button>
-                    <button class="app-btn action-btn" onclick="createObject('straight_rack'); closeDrawerAfterAdd();">👗 吊衣架</button>
-                    <button class="app-btn action-btn" onclick="createObject('backdrop'); closeDrawerAfterAdd();">🧱 主背板</button>
+                    <button class="app-btn action-btn" onclick="createObject('folding_table'); closeDrawerAfterAdd();">🏷️ 摺疊桌</button>
+                    <button class="app-btn action-btn" onclick="createObject('straight_rack'); closeDrawerAfterAdd();">👗 直桿衣架</button>
+                    <button class="app-btn action-btn" onclick="createObject('round_rack'); closeDrawerAfterAdd();">⭕ 圓盤衣架</button>
                     <button class="app-btn action-btn" onclick="createObject('fitting_room'); closeDrawerAfterAdd();">🚪 更衣室</button>
+                    <button class="app-btn action-btn" onclick="createObject('backdrop'); closeDrawerAfterAdd();">🧱 主背板</button>
                     <button class="app-btn action-btn" onclick="createObject('wall_shelf'); closeDrawerAfterAdd();">🪜 牆面層架</button>
                     <button class="app-btn action-btn" onclick="createObject('storage'); closeDrawerAfterAdd();">🏪 倉儲區</button>
                 </div>
@@ -403,7 +510,9 @@
             human: { name: '比例模特兒', w: 0.4, d: 0.3, h: 1.7, color: 0xff7043 },
             table: { name: '收銀桌', w: 1.0, d: 0.7, h: 1.0, color: 0x32ade6 },
             cabinet: { name: '中島展櫃', w: 1.5, d: 0.6, h: 1.6, color: 0x0084ff },
-            straight_rack: { name: '吊衣架', w: 1.0, d: 0.4, h: 1.6, color: 0xaf52de },
+            folding_table: { name: '摺疊桌', w: 1.2, d: 0.6, h: 0.6, color: 0x0084ff },
+            straight_rack: { name: '直桿衣架', w: 1.0, d: 0.4, h: 1.6, color: 0xaf52de },
+            round_rack: { name: '圓盤衣架', w: 0.8, d: 0.8, h: 1.6, color: 0xaf52de },
             fitting_room: { name: '更衣室', w: 1.0, d: 1.0, h: 2.5, color: FIXED_WALL_COLOR_HEX },
             backdrop: { name: '背板', w: 3.0, d: 0.3, h: 2.5, color: FIXED_WALL_COLOR_HEX },
             wall_shelf: { name: '牆面層架', w: 1.0, d: 0.35, h: 1.8, color: 0x34c759 },
@@ -500,8 +609,53 @@
         function clearAllFloors() {
             activeFloorGrid = [];
             document.querySelectorAll('.grid-cell').forEach(c => c.classList.remove('active'));
+            disabledWallSegments = [];
+            elevatedWallSegments = {};
             render3DFloor();
             saveToLocalStorage();
+        }
+
+        function resetDisabledWalls() {
+            disabledWallSegments = [];
+            render3DFloor();
+            saveToLocalStorage();
+        }
+
+        function setFloorColor(hexColor) {
+            currentFloorColorHex = hexColor;
+            document.getElementById('floor-color-input').value = hexColor;
+            render3DFloor();
+            saveToLocalStorage();
+        }
+
+        function onFasciaToggle() {
+            let fasciaCheck = document.getElementById('show-fascia-check').checked;
+            document.getElementById('fascia-directions-box').style.display = fasciaCheck ? 'block' : 'none';
+            document.getElementById('fascia-custom-box').style.display = fasciaCheck ? 'block' : 'none';
+            updateStructureUI();
+        }
+
+        function updateFasciaTexture() {
+            render3DFloor();
+            saveToLocalStorage();
+        }
+
+        function createFasciaTexture(text) {
+            let canvas = document.createElement('canvas');
+            let ctx = canvas.getContext('2d');
+            canvas.width = 1024; canvas.height = 512;
+            ctx.fillStyle = '#333333';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            if (text) {
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 56px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+            }
+            let texture = new THREE.CanvasTexture(canvas);
+            texture.encoding = THREE.sRGBEncoding;
+            return texture;
         }
 
         function render3DFloor() {
@@ -510,23 +664,148 @@
             wallObjects.length = 0;
 
             let offset = (GRID_MAP_SIZE * CELL_SIZE) / 2 - (CELL_SIZE / 2);
+            let gridMap = Array(GRID_MAP_SIZE).fill(false).map(() => Array(GRID_MAP_SIZE).fill(false));
+
+            let showMainGrid = document.getElementById('show-main-grid-check')?.checked ?? true;
+            let showSubGrid = document.getElementById('show-sub-grid-check')?.checked ?? true;
+
             activeFloorGrid.forEach(gridId => {
                 let [r, c] = gridId.split('-').map(Number);
+                gridMap[r][c] = true;
                 let posX = c * CELL_SIZE - offset;
                 let posZ = r * CELL_SIZE - offset;
 
                 let tile = new THREE.Mesh(
                     new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE),
-                    new THREE.MeshBasicMaterial({ color: 0x2d2d2d, side: THREE.DoubleSide })
+                    new THREE.MeshBasicMaterial({ color: parseInt(currentFloorColorHex.replace('#', '0x')), side: THREE.DoubleSide })
                 );
                 tile.rotation.x = -Math.PI / 2;
                 tile.position.set(posX, 0, posZ);
                 floorGroup.add(tile);
 
-                let gridHelper = new THREE.GridHelper(CELL_SIZE, 3, 0x0084ff, 0x333333);
-                gridHelper.position.set(posX, 0.002, posZ);
-                floorGroup.add(gridHelper);
+                if (showSubGrid) {
+                    let fineGrid = new THREE.GridHelper(CELL_SIZE, 3, 0x444444, 0x333333);
+                    fineGrid.position.set(posX, 0.002, posZ);
+                    floorGroup.add(fineGrid);
+                }
+                if (showMainGrid) {
+                    let mainGrid = new THREE.GridHelper(CELL_SIZE, 1, 0x0084ff, 0x0084ff);
+                    mainGrid.position.set(posX, 0.004, posZ);
+                    floorGroup.add(mainGrid);
+                }
             });
+
+            let showFrame = document.getElementById('show-frame-check')?.checked ?? true;
+            let showFascia = document.getElementById('show-fascia-check')?.checked ?? true;
+            let showFasciaFront = document.getElementById('fascia-front-check')?.checked ?? true;
+            let showFasciaBack = document.getElementById('fascia-back-check')?.checked ?? true;
+            let showFasciaLeft = document.getElementById('fascia-left-check')?.checked ?? true;
+            let showFasciaRight = document.getElementById('fascia-right-check')?.checked ?? true;
+
+            let checkBack = document.getElementById('wall-back-check')?.checked ?? true;
+            let checkLeft = document.getElementById('wall-left-check')?.checked ?? true;
+            let checkRight = document.getElementById('wall-right-check')?.checked ?? false;
+            let checkFront = document.getElementById('wall-front-check')?.checked ?? false;
+
+            let lineMat = new THREE.LineBasicMaterial({ color: 0x0084ff, linewidth: 2 });
+            let wallThick = 0.05;
+
+            function addFrameLine(x1, z1, x2, z2, y1, y2) {
+                let points = [new THREE.Vector3(x1, y1, z1), new THREE.Vector3(x2, y1, z2), new THREE.Vector3(x1, y2, z1), new THREE.Vector3(x2, y2, z2)];
+                let geo = new THREE.BufferGeometry().setFromPoints(points);
+                structureGroup.add(new THREE.LineSegments(geo, lineMat));
+            }
+
+            function addVerticalPost(x, z) {
+                let points = [new THREE.Vector3(x, 0, z), new THREE.Vector3(x, FRAME_HEIGHT, z)];
+                let geo = new THREE.BufferGeometry().setFromPoints(points);
+                structureGroup.add(new THREE.LineSegments(geo, lineMat));
+            }
+
+            let minXGrid = 999, maxXGrid = -999, minZGrid = 999, maxZGrid = -999;
+            activeFloorGrid.forEach(gridId => {
+                let [r, c] = gridId.split('-').map(Number);
+                let px = c * CELL_SIZE - offset;
+                let pz = r * CELL_SIZE - offset;
+                minXGrid = Math.min(minXGrid, px - CELL_SIZE/2);
+                maxXGrid = Math.max(maxXGrid, px + CELL_SIZE/2);
+                minZGrid = Math.min(minZGrid, pz - CELL_SIZE/2);
+                maxZGrid = Math.max(maxZGrid, pz + CELL_SIZE/2);
+            });
+
+            if (showFascia && activeFloorGrid.length > 0) {
+                let fasciaH = 0.5;
+                let fasciaY = FRAME_HEIGHT - fasciaH / 2;
+                let textVal = document.getElementById('fascia-text-input')?.value || '';
+                let fasciaTexture = createFasciaTexture(textVal);
+
+                let matList = [];
+                for(let i=0; i<6; i++) matList.push(new THREE.MeshStandardMaterial({ color: 0x333333 }));
+                matList[4] = new THREE.MeshStandardMaterial({ map: fasciaTexture });
+
+                let totalW = maxXGrid - minXGrid;
+                let totalD = maxZGrid - minZGrid;
+
+                if (showFasciaFront) {
+                    let frontFascia = new THREE.Mesh(new THREE.BoxGeometry(totalW, fasciaH, 0.08), matList);
+                    frontFascia.position.set((minXGrid + maxXGrid)/2, fasciaY, maxZGrid + 0.04);
+                    structureGroup.add(frontFascia);
+                }
+                if (showFasciaBack) {
+                    let backFascia = new THREE.Mesh(new THREE.BoxGeometry(totalW, fasciaH, 0.08), matList);
+                    backFascia.position.set((minXGrid + maxXGrid)/2, fasciaY, minZGrid - 0.04);
+                    structureGroup.add(backFascia);
+                }
+                if (showFasciaLeft) {
+                    let leftFascia = new THREE.Mesh(new THREE.BoxGeometry(0.08, fasciaH, totalD), new THREE.MeshStandardMaterial({ color: 0x333333 }));
+                    leftFascia.position.set(minXGrid - 0.04, fasciaY, (minZGrid + maxZGrid)/2);
+                    structureGroup.add(leftFascia);
+                }
+                if (showFasciaRight) {
+                    let rightFascia = new THREE.Mesh(new THREE.BoxGeometry(0.08, fasciaH, totalD), new THREE.MeshStandardMaterial({ color: 0x333333 }));
+                    rightFascia.position.set(maxXGrid + 0.04, fasciaY, (minZGrid + maxZGrid)/2);
+                    structureGroup.add(rightFascia);
+                }
+            }
+
+            function createWallSegment(w, d, px, pz, segmentId) {
+                if (disabledWallSegments.includes(segmentId)) return;
+                let baseGeo = new THREE.BoxGeometry(w, FRAME_HEIGHT, d);
+                let baseMesh = new THREE.Mesh(baseGeo, new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX, roughness: 0.6 }));
+                baseMesh.position.set(px, FRAME_HEIGHT / 2, pz);
+                baseMesh.userData = { type: 'booth_wall', segmentId: segmentId };
+                structureGroup.add(baseMesh);
+                wallObjects.push(baseMesh);
+            }
+
+            for (let r = 0; r < GRID_MAP_SIZE; r++) {
+                for (let c = 0; c < GRID_MAP_SIZE; c++) {
+                    if (!gridMap[r][c]) continue;
+                    let posX = c * CELL_SIZE - offset;
+                    let posZ = r * CELL_SIZE - offset;
+                    let minX = posX - CELL_SIZE / 2;
+                    let maxX = posX + CELL_SIZE / 2;
+                    let minZ = posZ - CELL_SIZE / 2;
+                    let maxZ = posZ + CELL_SIZE / 2;
+
+                    if (r === 0 || !gridMap[r - 1][c]) {
+                        if (checkBack) createWallSegment(CELL_SIZE, wallThick, posX, minZ - wallThick/2, `${r}-${c}-back`);
+                        if (showFrame) { addFrameLine(minX, minZ, maxX, minZ, 0, FRAME_HEIGHT); addVerticalPost(minX, minZ); addVerticalPost(maxX, minZ); }
+                    }
+                    if (r === GRID_MAP_SIZE - 1 || !gridMap[r + 1][c]) {
+                        if (checkFront) createWallSegment(CELL_SIZE, wallThick, posX, maxZ + wallThick/2, `${r}-${c}-front`);
+                        if (showFrame) { addFrameLine(minX, maxZ, maxX, maxZ, 0, FRAME_HEIGHT); addVerticalPost(minX, maxZ); addVerticalPost(maxX, maxZ); }
+                    }
+                    if (c === 0 || !gridMap[r][c - 1]) {
+                        if (checkLeft) createWallSegment(wallThick, CELL_SIZE, minX - wallThick/2, posZ, `${r}-${c}-left`);
+                        if (showFrame) { addFrameLine(minX, minZ, minX, maxZ, 0, FRAME_HEIGHT); addVerticalPost(minX, minZ); addVerticalPost(minX, maxZ); }
+                    }
+                    if (c === GRID_MAP_SIZE - 1 || !gridMap[r][c + 1]) {
+                        if (checkRight) createWallSegment(wallThick, CELL_SIZE, maxX + wallThick/2, posZ, `${r}-${c}-right`);
+                        if (showFrame) { addFrameLine(maxX, minZ, maxX, maxZ, 0, FRAME_HEIGHT); addVerticalPost(maxX, minZ); addVerticalPost(maxX, maxZ); }
+                    }
+                }
+            }
         }
 
         /* 物件生成與互動 */
@@ -570,7 +849,7 @@
         }
 
         function onPointerDown(event) {
-            if (event.clientY > window.innerHeight - 70) return; // 點擊到底部導覽列不觸發選取
+            if (event.clientY > window.innerHeight - 70) return;
             let raycaster = new THREE.Raycaster();
             let mouse = new THREE.Vector2(
                 (event.clientX / window.innerWidth) * 2 - 1,
@@ -672,7 +951,6 @@
             orbitControls.target.set(0, 0, 0);
         }
 
-        /* 多場次與儲存邏輯 */
         function initProjects() {
             let stored = localStorage.getItem('expo_mobile_save');
             if (stored) {

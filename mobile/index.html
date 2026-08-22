@@ -206,9 +206,6 @@
             color: var(--text-secondary);
             margin: 0;
         }
-        .wall-checkboxes label:hover {
-            color: var(--text-main);
-        }
 
         .color-picker-row {
             display: flex;
@@ -371,7 +368,6 @@
                 <button class="app-btn" onclick="clearAllFloors()" style="margin-bottom:12px;">重設所有格子</button>
 
                 <div class="struct-box">
-                    <!-- 地板顏色選擇 -->
                     <div class="color-picker-row">
                         <span style="font-size:12px; color:var(--text-main); font-weight:500;">🎨 展位地板顏色</span>
                         <div style="display:flex; align-items:center; gap:8px;">
@@ -385,13 +381,11 @@
                         </div>
                     </div>
 
-                    <!-- 網格線控制 -->
                     <div class="wall-checkboxes" style="border-top: 1px dashed rgba(255,255,255,0.08); padding-top:8px;">
                         <label><input type="checkbox" id="show-main-grid-check" checked onchange="updateStructureUI()"> 3m 主紅框線</label>
                         <label><input type="checkbox" id="show-sub-grid-check" checked onchange="updateStructureUI()"> 1m 網格細線</label>
                     </div>
 
-                    <!-- 外框架與招牌 -->
                     <div class="struct-row" style="margin-top:10px; border-top: 1px dashed rgba(255,255,255,0.08); padding-top:8px;">
                         <span>🔲 顯示攤位 3D 外框架</span>
                         <input type="checkbox" id="show-frame-check" checked onchange="updateStructureUI()">
@@ -401,7 +395,6 @@
                         <input type="checkbox" id="show-fascia-check" checked onchange="onFasciaToggle()">
                     </div>
 
-                    <!-- 招牌四向與文字內容 -->
                     <div id="fascia-directions-box" style="background: rgba(0, 132, 255, 0.05); padding: 8px; border-radius: 6px; border: 1px solid rgba(0, 132, 255, 0.15); margin-bottom:8px;">
                         <div style="font-size: 11px; color: var(--accent); font-weight: 500; margin-bottom: 4px;">🎯 自選顯示哪幾面招牌</div>
                         <div class="wall-checkboxes">
@@ -416,7 +409,6 @@
                         <input type="text" id="fascia-text-input" value="COMPRESSPORT" oninput="updateFasciaTexture()" style="margin-bottom:0;">
                     </div>
 
-                    <!-- 外圍隔牆設定 -->
                     <div style="font-size: 12px; color: var(--accent); font-weight: 500; border-top: 1px dashed rgba(255,255,255,0.08); padding-top:8px;">🧱 自選外圍背板牆面</div>
                     <div class="wall-checkboxes">
                         <label><input type="checkbox" id="wall-back-check" checked onchange="updateStructureUI()"> 後方牆 (Back)</label>
@@ -428,19 +420,21 @@
                 </div>
             </div>
 
-            <!-- 分頁 2: 展具新增庫 -->
+            <!-- 分頁 2: 完整展具新增庫 -->
             <div id="tab-items" class="tab-pane">
                 <h3>點擊新增展具</h3>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-                    <button class="app-btn action-btn" onclick="createObject('human'); closeDrawerAfterAdd();">🧍 模特兒</button>
+                    <button class="app-btn action-btn" onclick="createObject('human'); closeDrawerAfterAdd();">🧍 模特兒 (170cm)</button>
                     <button class="app-btn action-btn" onclick="createObject('table'); closeDrawerAfterAdd();">🪑 收銀桌</button>
                     <button class="app-btn action-btn" onclick="createObject('cabinet'); closeDrawerAfterAdd();">📦 中島展櫃</button>
                     <button class="app-btn action-btn" onclick="createObject('folding_table'); closeDrawerAfterAdd();">🏷️ 摺疊桌</button>
-                    <button class="app-btn action-btn" onclick="createObject('straight_rack'); closeDrawerAfterAdd();">👗 直桿衣架</button>
+                    <button class="app-btn action-btn" onclick="createObject('straight_rack'); closeDrawerAfterAdd();">👗 直桿吊衣架</button>
                     <button class="app-btn action-btn" onclick="createObject('round_rack'); closeDrawerAfterAdd();">⭕ 圓盤衣架</button>
-                    <button class="app-btn action-btn" onclick="createObject('fitting_room'); closeDrawerAfterAdd();">🚪 更衣室</button>
+                    <button class="app-btn action-btn" onclick="createObject('fitting_room'); closeDrawerAfterAdd();">🚪 更衣試衣間</button>
                     <button class="app-btn action-btn" onclick="createObject('backdrop'); closeDrawerAfterAdd();">🧱 主背板</button>
                     <button class="app-btn action-btn" onclick="createObject('wall_shelf'); closeDrawerAfterAdd();">🪜 牆面層架</button>
+                    <button class="app-btn action-btn" onclick="createObject('floor_mesh'); closeDrawerAfterAdd();">🥅 落地鐵網</button>
+                    <button class="app-btn action-btn" onclick="createObject('wall_mesh'); closeDrawerAfterAdd();">🖼️ 掛牆鐵網</button>
                     <button class="app-btn action-btn" onclick="createObject('storage'); closeDrawerAfterAdd();">🏪 倉儲區</button>
                 </div>
             </div>
@@ -507,16 +501,18 @@
         let currentProjectId = null;
 
         const OBJECT_TYPES = {
-            human: { name: '比例模特兒', w: 0.4, d: 0.3, h: 1.7, color: 0xff7043 },
-            table: { name: '收銀桌', w: 1.0, d: 0.7, h: 1.0, color: 0x32ade6 },
-            cabinet: { name: '中島展櫃', w: 1.5, d: 0.6, h: 1.6, color: 0x0084ff },
-            folding_table: { name: '摺疊桌', w: 1.2, d: 0.6, h: 0.6, color: 0x0084ff },
-            straight_rack: { name: '直桿衣架', w: 1.0, d: 0.4, h: 1.6, color: 0xaf52de },
-            round_rack: { name: '圓盤衣架', w: 0.8, d: 0.8, h: 1.6, color: 0xaf52de },
-            fitting_room: { name: '更衣室', w: 1.0, d: 1.0, h: 2.5, color: FIXED_WALL_COLOR_HEX },
-            backdrop: { name: '背板', w: 3.0, d: 0.3, h: 2.5, color: FIXED_WALL_COLOR_HEX },
-            wall_shelf: { name: '牆面層架', w: 1.0, d: 0.35, h: 1.8, color: 0x34c759 },
-            storage: { name: '倉儲區', w: 1.5, d: 1.5, h: 2.0, color: 0x485460 }
+            human:         { name: '比例模特兒', w: 0.4,  d: 0.3, h: 1.7,  color: 0xff7043 },
+            table:         { name: '收銀桌',     w: 1.0,  d: 0.70, h: 1.0, color: 0x32ade6 },
+            cabinet:       { name: '中島',        w: 1.5,  d: 0.6, h: 1.6,  color: 0x0084ff },
+            folding_table: { name: '摺疊桌',     w: 1.2,  d: 0.6, h: 0.6,  color: 0x0084ff },
+            straight_rack: { name: '直桿吊衣架', w: 1.0,  d: 0.40, h: 1.6,  color: 0xaf52de },
+            round_rack:    { name: '圓盤環形衣架', w: 0.8,  d: 0.80, h: 1.6,  color: 0xaf52de },
+            fitting_room:  { name: '更衣室/試衣間', w: 1.0,  d: 1.00, h: 2.5,  color: FIXED_WALL_COLOR_HEX },
+            backdrop:      { name: '背板',        w: 3.0,  d: 0.30, h: 2.5,  color: FIXED_WALL_COLOR_HEX },
+            wall_shelf:    { name: '牆面層架',   w: 1.0,  d: 0.35, h: 1.8,  color: 0x34c759 },
+            floor_mesh:    { name: '落地鐵網',   w: 0.9,  d: 0.35, h: 1.5,  color: 0x333333 },
+            wall_mesh:     { name: '掛牆鐵網',   w: 0.9,  d: 0.08, h: 1.5,  color: 0x333333 },
+            storage:       { name: '倉儲區',     w: 1.5,  d: 1.50, h: 2.0,  color: 0x485460 }
         };
 
         function init() {
@@ -579,7 +575,7 @@
             if (drawer.classList.contains('collapsed')) toggleDrawer();
         }
 
-        /* 3D 基礎建構與地圖 */
+        /* 3D 基礎格局 */
         function buildGridMapUI() {
             let mapContainer = document.getElementById('grid-map');
             mapContainer.innerHTML = '';
@@ -808,23 +804,204 @@
             }
         }
 
-        /* 物件生成與互動 */
-        function createObject(type, pos = null) {
+        /* 完整展具模型生成器 (電腦版原版還原) */
+        function createShelfGeometry(data, layersCount, customW = null, customD = null, customH = null) {
+            let group = new THREE.Group();
+            let w = customW || data.w, d = customD || data.d, h = customH || data.h, color = data.color;
+            let backMesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.02), new THREE.MeshStandardMaterial({ color: color, roughness: 0.6 }));
+            backMesh.position.set(0, 0, -d/2 + 0.01);
+            group.add(backMesh);
+            let poleMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8, roughness: 0.3 });
+            let leftPole = new THREE.Mesh(new THREE.BoxGeometry(0.03, h, d), poleMat); leftPole.position.set(-w/2 + 0.015, 0, 0);
+            let rightPole = new THREE.Mesh(new THREE.BoxGeometry(0.03, h, d), poleMat); rightPole.position.set(w/2 - 0.015, 0, 0);
+            group.add(leftPole, rightPole);
+            let boardGeo = new THREE.BoxGeometry(w - 0.04, 0.03, d - 0.02);
+            let boardMat = new THREE.MeshStandardMaterial({ color: 0xdddddd, roughness: 0.5 });
+            let startY = -h/2 + 0.2, endY = h/2 - 0.1;
+            let stepY = layersCount > 1 ? (endY - startY) / (layersCount - 1) : 0;
+            for (let i = 0; i < layersCount; i++) {
+                let board = new THREE.Mesh(boardGeo, boardMat);
+                board.position.set(0, (layersCount === 1) ? 0 : (startY + i * stepY), 0.01);
+                group.add(board);
+            }
+            return group;
+        }
+
+        function createMeshGridGeometry(data, customW = null, customD = null, customH = null) {
+            let group = new THREE.Group();
+            let w = customW || data.w, d = customD || data.d, h = customH || data.h;
+            let frameRadius = 0.012, wireRadius = 0.003;
+            let matMetal = new THREE.MeshStandardMaterial({ color: 0x424242, metalness: 0.7, roughness: 0.3 });
+            let matWire = new THREE.MeshStandardMaterial({ color: 0x7f8c8d, metalness: 0.8, roughness: 0.2 });
+            let botLegGeo = new THREE.BoxGeometry(0.03, 0.03, d);
+            let leftLeg = new THREE.Mesh(botLegGeo, matMetal); leftLeg.position.set(-w/2 + 0.02, -h/2 + 0.015, 0);
+            let rightLeg = new THREE.Mesh(botLegGeo, matMetal); rightLeg.position.set(w/2 - 0.02, -h/2 + 0.015, 0);
+            group.add(leftLeg, rightLeg);
+            let botCrossBar = new THREE.Mesh(new THREE.BoxGeometry(w, 0.03, 0.03), matMetal);
+            botCrossBar.position.set(0, -h/2 + 0.015, 0); group.add(botCrossBar);
+            let leftPost = new THREE.Mesh(new THREE.CylinderGeometry(frameRadius, frameRadius, h - 0.03, 16), matMetal); leftPost.position.set(-w/2 + 0.015, 0.015, 0);
+            let rightPost = new THREE.Mesh(new THREE.CylinderGeometry(frameRadius, frameRadius, h - 0.03, 16), matMetal); rightPost.position.set(w/2 - 0.015, 0.015, 0);
+            group.add(leftPost, rightPost);
+            let topBar = new THREE.Mesh(new THREE.CylinderGeometry(frameRadius, frameRadius, w, 16), matMetal);
+            topBar.rotation.z = Math.PI / 2; topBar.position.set(0, h/2 - 0.012, 0); group.add(topBar);
+            let gridStep = 0.1;
+            let vertWireGeo = new THREE.CylinderGeometry(wireRadius, wireRadius, h - 0.08, 8);
+            for (let x = -w/2 + gridStep; x < w/2 - 0.02; x += gridStep) {
+                let vWire = new THREE.Mesh(vertWireGeo, matWire); vWire.position.set(x, 0, 0); group.add(vWire);
+            }
+            let horizWireGeo = new THREE.CylinderGeometry(wireRadius, wireRadius, w - 0.04, 8);
+            for (let y = -h/2 + gridStep; y < h/2 - 0.05; y += gridStep) {
+                let hWire = new THREE.Mesh(horizWireGeo, matWire); hWire.rotation.z = Math.PI / 2; hWire.position.set(0, y, 0); group.add(hWire);
+            }
+            return group;
+        }
+
+        function createStraightRackGeometry(data, customW = null, customD = null, customH = null) {
+            let group = new THREE.Group();
+            let w = customW || data.w, d = customD || data.d, h = customH || data.h, pipeRadius = 0.018;
+            let matMetal = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8, roughness: 0.2 });
+            let botBarGeo = new THREE.CylinderGeometry(pipeRadius, pipeRadius, d, 16);
+            let leftBot = new THREE.Mesh(botBarGeo, matMetal); leftBot.rotation.x = Math.PI / 2; leftBot.position.set(-w/2 + 0.05, -h/2 + 0.02, 0);
+            let rightBot = new THREE.Mesh(botBarGeo, matMetal); rightBot.rotation.x = Math.PI / 2; rightBot.position.set(w/2 - 0.05, -h/2 + 0.02, 0);
+            group.add(leftBot, rightBot);
+            let poleGeo = new THREE.CylinderGeometry(pipeRadius, pipeRadius, h, 16);
+            let leftPole = new THREE.Mesh(poleGeo, matMetal); leftPole.position.set(-w/2 + 0.05, 0, 0);
+            let rightPole = new THREE.Mesh(poleGeo, matMetal); rightPole.position.set(w/2 - 0.05, 0, 0);
+            group.add(leftPole, rightPole);
+            let topBar = new THREE.Mesh(new THREE.CylinderGeometry(pipeRadius, pipeRadius, w, 16), matMetal);
+            topBar.rotation.z = Math.PI / 2; topBar.position.set(0, h/2 - 0.02, 0); group.add(topBar);
+            return group;
+        }
+
+        function createRoundRackGeometry(data, customW = null, customD = null, customH = null) {
+            let group = new THREE.Group();
+            let radius = (customW || data.w) / 2, h = customH || data.h, pipeRadius = 0.018;
+            let matMetal = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8, roughness: 0.2 });
+            let matBase = new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.5 });
+            let base = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.7, radius * 0.7, 0.03, 32), matBase);
+            base.position.set(0, -h/2 + 0.015, 0); group.add(base);
+            let pole = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, h, 24), matMetal); group.add(pole);
+            let ring = new THREE.Mesh(new THREE.TorusGeometry(radius, pipeRadius, 16, 48), matMetal);
+            ring.rotation.x = Math.PI / 2; ring.position.set(0, h/2 - 0.05, 0); group.add(ring);
+            return group;
+        }
+
+        function createFittingRoomGeometry(data, customW = null, customD = null, customH = null, hasTopLayer = false) {
+            let group = new THREE.Group();
+            let w = customW || data.w, d = customD || data.d, h = customH || data.h, wallThick = 0.03;
+            let backWall = new THREE.Mesh(new THREE.BoxGeometry(w, h, wallThick), new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX, roughness: 0.6 }));
+            backWall.position.set(0, 0, -d/2 + wallThick/2); group.add(backWall);
+            let leftWall = new THREE.Mesh(new THREE.BoxGeometry(wallThick, h, d - wallThick), new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX, roughness: 0.6 }));
+            leftWall.position.set(-w/2 + wallThick/2, 0, wallThick/2); group.add(leftWall);
+            let rightWall = new THREE.Mesh(new THREE.BoxGeometry(wallThick, h, d - wallThick), new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX, roughness: 0.6 }));
+            rightWall.position.set(w/2 - wallThick/2, 0, wallThick/2); group.add(rightWall);
+            let topHeader = new THREE.Mesh(new THREE.BoxGeometry(w, 0.2, wallThick), new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX, roughness: 0.6 }));
+            topHeader.position.set(0, h/2 - 0.1, d/2 - wallThick/2); group.add(topHeader);
+            let curtain = new THREE.Mesh(new THREE.BoxGeometry(w - 0.04, h - 0.25, 0.02), new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.9 }));
+            curtain.position.set(0, -0.1, d/2 - wallThick/2); group.add(curtain);
+            if (hasTopLayer) {
+                let topHeaderH = 1.5;
+                let topBoxMesh = new THREE.Mesh(new THREE.BoxGeometry(w, topHeaderH, d), new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX, roughness: 0.6 }));
+                topBoxMesh.position.set(0, h/2 + topHeaderH/2, 0); group.add(topBoxMesh);
+            }
+            return group;
+        }
+
+        function createHumanGeometry(finalW, finalD, finalH) {
+            let group = new THREE.Group();
+            let skinMat = new THREE.MeshStandardMaterial({ color: 0xff7043, roughness: 0.5 });
+            let head = new THREE.Mesh(new THREE.SphereGeometry(0.11, 16, 16), skinMat);
+            head.position.set(0, finalH / 2 - 0.11, 0); group.add(head);
+            let torso = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.65, 0.18), skinMat);
+            torso.position.set(0, finalH / 2 - 0.22 - 0.325, 0); group.add(torso);
+            let legGeo = new THREE.BoxGeometry(0.12, 0.83, 0.15);
+            let leftLeg = new THREE.Mesh(legGeo, skinMat); leftLeg.position.set(-0.08, -finalH / 2 + 0.415, 0);
+            let rightLeg = new THREE.Mesh(legGeo, skinMat); rightLeg.position.set(0.08, -finalH / 2 + 0.415, 0);
+            group.add(leftLeg, rightLeg);
+            return group;
+        }
+
+        function createObject(type, customPos = null) {
             let data = OBJECT_TYPES[type];
             if (!data) return;
 
-            let geo = new THREE.BoxGeometry(data.w, data.h, data.d);
-            let mat = [];
-            for (let i = 0; i < 6; i++) {
-                mat.push(new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.6 }));
-            }
-            let mesh = new THREE.Mesh(geo, mat);
-            mesh.position.set(pos ? pos.x : 0, data.h / 2, pos ? pos.z : 0);
-            mesh.userData = { type: type, customW: data.w, customD: data.d, customH: data.h };
+            let finalW = data.w, finalD = data.d, finalH = data.h;
+            let finalMesh;
 
-            scene.add(mesh);
-            draggableObjects.push(mesh);
-            selectObject(mesh);
+            if (type === 'human') {
+                let humanGroup = createHumanGeometry(finalW, finalD, finalH);
+                let outerGeo = new THREE.BoxGeometry(finalW, finalH, finalD);
+                let materials = [];
+                for(let i=0; i<6; i++) materials.push(new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.6, transparent: true, opacity: 0.0 }));
+                finalMesh = new THREE.Mesh(outerGeo, materials);
+                finalMesh.add(humanGroup);
+            } else if (type === 'wall_shelf') {
+                let shelfGroup = createShelfGeometry(data, 3, finalW, finalD, finalH);
+                let outerGeo = new THREE.BoxGeometry(finalW, finalH, finalD);
+                let materials = [];
+                for(let i=0; i<6; i++) materials.push(new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.6 }));
+                finalMesh = new THREE.Mesh(outerGeo, materials);
+                finalMesh.add(shelfGroup);
+            } else if (type === 'floor_mesh' || type === 'wall_mesh') {
+                let meshGroup = createMeshGridGeometry(data, finalW, finalD, finalH);
+                let outerGeo = new THREE.BoxGeometry(finalW, finalH, finalD);
+                let materials = [];
+                for(let i=0; i<6; i++) materials.push(new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.6, transparent: true, opacity: 0.0 }));
+                finalMesh = new THREE.Mesh(outerGeo, materials);
+                finalMesh.add(meshGroup);
+            } else if (type === 'straight_rack') {
+                let straightGroup = createStraightRackGeometry(data, finalW, finalD, finalH);
+                let outerGeo = new THREE.BoxGeometry(finalW, finalH, finalD);
+                let materials = [];
+                for(let i=0; i<6; i++) materials.push(new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.6, transparent: true, opacity: 0.0 }));
+                finalMesh = new THREE.Mesh(outerGeo, materials);
+                finalMesh.add(straightGroup);
+            } else if (type === 'round_rack') {
+                let roundGroup = createRoundRackGeometry(data, finalW, finalD, finalH);
+                let outerGeo = new THREE.BoxGeometry(finalW, finalH, finalD);
+                let materials = [];
+                for(let i=0; i<6; i++) materials.push(new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.6, transparent: true, opacity: 0.0 }));
+                finalMesh = new THREE.Mesh(outerGeo, materials);
+                finalMesh.add(roundGroup);
+            } else if (type === 'fitting_room') {
+                let fittingRoomGroup = createFittingRoomGeometry(data, finalW, finalD, finalH, false);
+                finalMesh = new THREE.Group();
+                finalMesh.add(fittingRoomGroup);
+            } else if (type === 'folding_table') {
+                let group = new THREE.Group();
+                let topThick = 0.05, legThick = 0.04;
+                let matTop = new THREE.MeshStandardMaterial({ color: 0x2c3e50, roughness: 0.4 });
+                let matLeg = new THREE.MeshStandardMaterial({ color: 0x7f8c8d, metalness: 0.8, roughness: 0.2 });
+                let topMesh = new THREE.Mesh(new THREE.BoxGeometry(finalW, topThick, finalD), matTop);
+                topMesh.position.set(0, finalH / 2 - topThick / 2, 0); group.add(topMesh);
+                let legH = finalH - topThick;
+                let legGeo = new THREE.BoxGeometry(legThick, legH, legThick);
+                let offX = finalW / 2 - legThick / 2 - 0.02, offZ = finalD / 2 - legThick / 2 - 0.02, legY = -topThick / 2 - legH / 2;
+                let l1 = new THREE.Mesh(legGeo, matLeg); l1.position.set(-offX, legY + finalH / 2, -offZ);
+                let l2 = new THREE.Mesh(legGeo, matLeg); l2.position.set(offX, legY + finalH / 2, -offZ);
+                let l3 = new THREE.Mesh(legGeo, matLeg); l3.position.set(-offX, legY + finalH / 2, offZ);
+                let l4 = new THREE.Mesh(legGeo, matLeg); l4.position.set(offX, legY + finalH / 2, offZ);
+                group.add(l1, l2, l3, l4);
+                let outerGeo = new THREE.BoxGeometry(finalW, finalH, finalD);
+                let materials = [];
+                for(let i=0; i<6; i++) materials.push(new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.6, transparent: true, opacity: 0.0 }));
+                finalMesh = new THREE.Mesh(outerGeo, materials);
+                finalMesh.add(group);
+            } else {
+                let geometry = new THREE.BoxGeometry(finalW, finalH, finalD);
+                let materials = [];
+                let initColor = (type === 'backdrop') ? FIXED_WALL_COLOR_HEX : data.color;
+                for(let i=0; i<6; i++) materials.push(new THREE.MeshStandardMaterial({ color: initColor, roughness: 0.6 }));
+                finalMesh = new THREE.Mesh(geometry, materials);
+            }
+
+            let posY = (type === 'wall_mesh') ? 1.1 : finalH / 2;
+            finalMesh.position.set(customPos ? customPos.x : 0, posY, customPos ? customPos.z : 0);
+            finalMesh.userData = { type: type, customW: finalW, customD: finalD, customH: finalH, height: finalH };
+
+            scene.add(finalMesh);
+            draggableObjects.push(finalMesh);
+            selectObject(finalMesh);
             saveToLocalStorage();
         }
 
@@ -856,10 +1033,14 @@
                 -(event.clientY / window.innerHeight) * 2 + 1
             );
             raycaster.setFromCamera(mouse, camera);
-            let intersects = raycaster.intersectObjects(draggableObjects, false);
+            let intersects = raycaster.intersectObjects(draggableObjects, true);
 
             if (intersects.length > 0) {
-                selectObject(intersects[0].object);
+                let hit = intersects[0].object;
+                while (hit.parent && hit.parent !== scene && !hit.userData.type) {
+                    hit = hit.parent;
+                }
+                selectObject(hit);
                 isDragging = true;
                 orbitControls.enabled = false;
                 let intersectionPoint = new THREE.Vector3();
@@ -913,13 +1094,12 @@
             let d = parseFloat(document.getElementById('dim-d').value) / 100;
             let h = parseFloat(document.getElementById('dim-h').value) / 100;
             if (w > 0 && d > 0 && h > 0) {
-                selectedObject.geometry.dispose();
-                selectedObject.geometry = new THREE.BoxGeometry(w, h, d);
-                selectedObject.userData.customW = w;
-                selectedObject.userData.customD = d;
-                selectedObject.userData.customH = h;
-                selectedObject.position.y = h / 2;
-                saveToLocalStorage();
+                let type = selectedObject.userData.type;
+                let pos = { x: selectedObject.position.x, y: selectedObject.position.y, z: selectedObject.position.z };
+                scene.remove(selectedObject);
+                draggableObjects = draggableObjects.filter(o => o !== selectedObject);
+                OBJECT_TYPES[type].w = w; OBJECT_TYPES[type].d = d; OBJECT_TYPES[type].h = h;
+                createObject(type, pos);
             }
         }
 
@@ -935,9 +1115,11 @@
             reader.onload = function(e) {
                 let texture = new THREE.TextureLoader().load(e.target.result);
                 texture.encoding = THREE.sRGBEncoding;
-                selectedObject.material[4].map = texture;
-                selectedObject.material[4].color.setHex(0xffffff);
-                selectedObject.material[4].needsUpdate = true;
+                if (Array.isArray(selectedObject.material)) {
+                    selectedObject.material[4].map = texture;
+                    selectedObject.material[4].color.setHex(0xffffff);
+                    selectedObject.material[4].needsUpdate = true;
+                }
                 saveToLocalStorage();
             };
             reader.readAsDataURL(file);

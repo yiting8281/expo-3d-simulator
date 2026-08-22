@@ -100,7 +100,7 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.4);
         }
 
-        /* 底部抽屜面板 (最高圖層，完全攔截觸控) */
+        /* 底部抽屜面板 */
         #mobile-drawer {
             position: absolute;
             bottom: 0;
@@ -473,7 +473,15 @@
                     </div>
 
                     <button class="app-btn upload-face-btn" onclick="triggerFaceUpload('front')">🖼️ 上傳單片牆面圖片</button>
-                    <button id="rm-wall-front" class="app-btn remove-face-btn" onclick="clearFaceTexture('front')" style="display:none;">❌ 移除牆面輸出</button>
+
+                    <!-- 自選相鄰牆面跨圖區塊 -->
+                    <div style="background: rgba(0, 132, 255, 0.12); padding: 8px; border-radius: 6px; border: 1px solid rgba(0, 132, 255, 0.3); margin-top: 8px;">
+                        <div id="wall-group-title" style="font-size:11px; color:#4da6ff; font-weight:600; margin-bottom:6px;">🔗 自選相鄰牆面跨圖輸出</div>
+                        <div id="wall-multiselect-container" style="display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto; margin-bottom: 6px; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 4px;"></div>
+                        <button class="app-btn upload-face-btn" onclick="triggerCustomGroupUpload()" style="background-color: rgba(0, 132, 255, 0.25); border:1px solid rgba(0, 132, 255, 0.6); color:#fff; font-weight:600; margin-bottom:0;">✨ 上傳勾選牆面「跨圖大圖」</button>
+                    </div>
+
+                    <button id="rm-wall-front" class="app-btn remove-face-btn" onclick="clearFaceTexture('front')" style="display:none; margin-top:8px;">❌ 移除牆面輸出</button>
                     <button class="app-btn" onclick="removeSelectedWallSegment()" style="background-color: rgba(255, 69, 58, 0.15); color: #ff6961; border: 1px solid rgba(255, 69, 58, 0.3); margin-top: 8px;">🗑️ 隱藏／移除此段隔牆</button>
                 </div>
 
@@ -510,7 +518,16 @@
                     <div id="image-management-section">
                         <label id="front-label">▶ 正面輸出貼圖</label>
                         <button class="app-btn upload-face-btn" onclick="triggerFaceUpload('front')">🖼️ 上傳正面圖片</button>
-                        <button id="rm-front" class="app-btn remove-face-btn" onclick="clearFaceTexture('front')" style="display:none;">❌ 移除正面輸出</button>
+                        <button id="btn-group-fitting" class="app-btn upload-face-btn" onclick="triggerGroupFittingUpload()" style="display:none; margin-top:6px; background-color: rgba(0, 132, 255, 0.15); border:1px solid rgba(0, 132, 255, 0.4); color:#4da6ff;">✨ 上傳多間更衣室「招牌跨圖大圖」</button>
+
+                        <!-- 展櫃自選跨圖區塊 -->
+                        <div id="cabinet-group-box" style="display:none; background: rgba(0, 132, 255, 0.12); padding: 8px; border-radius: 6px; border: 1px solid rgba(0, 132, 255, 0.3); margin-top: 8px;">
+                            <div style="font-size:11px; color:#4da6ff; font-weight:600; margin-bottom:6px;">🔗 自選相鄰展櫃/中島正面跨圖</div>
+                            <div id="cabinet-multiselect-container" style="display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto; margin-bottom: 6px; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 4px;"></div>
+                            <button class="app-btn upload-face-btn" onclick="triggerGroupCabinetUpload()" style="background-color: rgba(0, 132, 255, 0.25); border:1px solid rgba(0, 132, 255, 0.6); color:#fff; font-weight:600; margin-bottom:0;">✨ 上傳勾選展櫃「跨圖大圖」</button>
+                        </div>
+
+                        <button id="rm-front" class="app-btn remove-face-btn" onclick="clearFaceTexture('front')" style="display:none; margin-top:8px;">❌ 移除正面輸出</button>
 
                         <div id="side-image-controls">
                             <label style="margin-top: 10px;">▶ 左側邊輸出貼圖</label>
@@ -614,13 +631,11 @@
             buildGridMapUI();
             initProjects();
 
-            // 只在 3D 渲染畫布上監聽事件，徹底隔離抽屜點擊
             renderer.domElement.addEventListener('pointerdown', onCanvasPointerDown);
             renderer.domElement.addEventListener('pointermove', onCanvasPointerMove);
             renderer.domElement.addEventListener('pointerup', onCanvasPointerUp);
             window.addEventListener('resize', onWindowResize);
 
-            // 抽屜容器攔截所有指標與點擊事件傳遞
             let drawerEl = document.getElementById('mobile-drawer');
             ['pointerdown', 'pointermove', 'pointerup', 'touchstart', 'touchmove', 'touchend', 'click'].forEach(evtName => {
                 drawerEl.addEventListener(evtName, e => e.stopPropagation(), { passive: false });
@@ -851,6 +866,10 @@
                 let wallState = elevatedWallSegments[segmentId] || {};
                 let hasTop = wallState.hasTop || false;
 
+                let rIdx = parseInt(segmentId.split('-')[0]);
+                let cIdx = parseInt(segmentId.split('-')[1]);
+                let dirStr = segmentId.split('-')[2];
+
                 let baseGeo = new THREE.BoxGeometry(w, FRAME_HEIGHT, d);
                 let baseMaterials = [];
                 for(let i=0; i<6; i++) baseMaterials.push(new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX, roughness: 0.6 }));
@@ -859,6 +878,9 @@
                 baseMesh.userData = {
                     type: 'booth_wall',
                     segmentId: segmentId,
+                    r: rIdx,
+                    c: cIdx,
+                    dir: dirStr,
                     hasTopLayer: hasTop,
                     name: `展位外圍牆面 (${dirLabel}${hasTop ? ' - 400cm加高' : ''})`
                 };
@@ -880,6 +902,9 @@
                     topMesh.userData = {
                         type: 'booth_wall_top',
                         segmentId: segmentId,
+                        r: rIdx,
+                        c: cIdx,
+                        dir: dirStr,
                         name: `外圍牆面頂層看板 (${dirLabel})`
                     };
 
@@ -924,7 +949,6 @@
             updateWallsQuickSelectList();
         }
 
-        /* 快速選擇清單 */
         function updateWallsQuickSelectList() {
             let container = document.getElementById('walls-button-list');
             if (!container) return;
@@ -1224,6 +1248,26 @@
                     wallTopModeBox.style.display = hasTop ? 'block' : 'none';
                     rmWallFront.style.display = (wallState.baseImg || wallState.img) ? 'block' : 'none';
 
+                    // 產生相鄰同方向牆面的跨圖多選核取方塊
+                    let dir = obj.userData.dir;
+                    let sameDirWalls = wallObjects.filter(w => w.userData.type === 'booth_wall' && w.userData.dir === dir);
+                    if (dir === 'back' || dir === 'front') sameDirWalls.sort((a, b) => a.userData.c - b.userData.c);
+                    else sameDirWalls.sort((a, b) => a.userData.r - b.userData.r);
+
+                    let wallContainer = document.getElementById('wall-multiselect-container');
+                    wallContainer.innerHTML = '';
+                    sameDirWalls.forEach(w => {
+                        let sId = w.userData.segmentId;
+                        let div = document.createElement('div');
+                        div.style.display = 'flex'; div.style.alignItems = 'center'; div.style.gap = '6px';
+                        let cb = document.createElement('input'); cb.type = 'checkbox'; cb.className = 'wall-custom-checkbox'; cb.value = sId;
+                        if (sId === segId) cb.checked = true;
+                        let lbl = document.createElement('span'); lbl.style.fontSize = '11px'; lbl.style.color = '#fff';
+                        lbl.innerText = `格子 (${w.userData.r+1},${w.userData.c+1}) 的${dir === 'back' ? '後牆' : dir === 'front' ? '前牆' : dir === 'left' ? '左牆' : '右牆'}`;
+                        div.appendChild(cb); div.appendChild(lbl);
+                        wallContainer.appendChild(div);
+                    });
+
                 } else {
                     wallSegmentControl.style.display = 'none';
                     propContainer.style.display = 'block';
@@ -1253,6 +1297,8 @@
                     let frontLabel = document.getElementById('front-label');
                     let sideImageControls = document.getElementById('side-image-controls');
                     let imageSection = document.getElementById('image-management-section');
+                    let btnGroupFitting = document.getElementById('btn-group-fitting');
+                    let cabinetGroupBox = document.getElementById('cabinet-group-box');
 
                     let noImageTypes = ['straight_rack', 'round_rack', 'folding_table', 'human', 'floor_mesh', 'wall_mesh'];
                     if (imageSection) imageSection.style.display = noImageTypes.includes(type) ? 'none' : 'block';
@@ -1262,14 +1308,42 @@
                         shelfControl.style.display = 'none';
                         toggleBtn.innerText = obj.userData.hasTopLayer ? '❌ 取消頂層追加（回復 250cm）' : '➕ 雙層加高：追加 150cm 頂層獨立招牌';
                         if (frontLabel) frontLabel.innerText = obj.userData.hasTopLayer ? '▶ 頂層追加區輸出貼圖 (150cm)' : '▶ 正面輸出貼圖';
+                        if (btnGroupFitting) btnGroupFitting.style.display = (type === 'fitting_room') ? 'block' : 'none';
+                        if (cabinetGroupBox) cabinetGroupBox.style.display = 'none';
                     } else if (type === 'wall_shelf') {
                         backdropControl.style.display = 'none';
                         shelfControl.style.display = 'block';
                         document.getElementById('shelf-count-display').innerText = `目前層數：${obj.userData.shelfLayers || 3} 層板`;
+                        if (btnGroupFitting) btnGroupFitting.style.display = 'none';
+                        if (cabinetGroupBox) cabinetGroupBox.style.display = 'none';
                     } else {
                         backdropControl.style.display = 'none';
                         shelfControl.style.display = 'none';
                         if (frontLabel) frontLabel.innerText = '▶ 正面輸出貼圖';
+                        if (btnGroupFitting) btnGroupFitting.style.display = 'none';
+
+                        let cabinetTypes = ['cabinet', 'table'];
+                        if (cabinetTypes.includes(type)) {
+                            if (cabinetGroupBox) {
+                                cabinetGroupBox.style.display = 'block';
+                                let cabContainer = document.getElementById('cabinet-multiselect-container');
+                                cabContainer.innerHTML = '';
+                                let allCabinets = draggableObjects.filter(o => cabinetTypes.includes(o.userData.type));
+                                allCabinets.sort((a, b) => a.position.x - b.position.x);
+                                allCabinets.forEach(cab => {
+                                    let div = document.createElement('div');
+                                    div.style.display = 'flex'; div.style.alignItems = 'center'; div.style.gap = '6px';
+                                    let cb = document.createElement('input'); cb.type = 'checkbox'; cb.className = 'cabinet-custom-checkbox'; cb.value = cab.id.toString();
+                                    if (cab === obj) cb.checked = true;
+                                    let lbl = document.createElement('span'); lbl.style.fontSize = '11px'; lbl.style.color = '#fff';
+                                    lbl.innerText = `${OBJECT_TYPES[cab.userData.type]?.name} (X:${cab.position.x.toFixed(1)}, Z:${cab.position.z.toFixed(1)})`;
+                                    div.appendChild(cb); div.appendChild(lbl);
+                                    cabContainer.appendChild(div);
+                                });
+                            }
+                        } else {
+                            if (cabinetGroupBox) cabinetGroupBox.style.display = 'none';
+                        }
                     }
 
                     if (sideImageControls) {
@@ -1287,6 +1361,242 @@
                 wallSegmentControl.style.display = 'none';
                 propTitle.innerText = '未選取任何物件';
             }
+        }
+
+        /* 跨圖觸發與上傳處理 */
+        function triggerCustomGroupUpload() {
+            currentTargetUploadFace = 'custom_group';
+            document.getElementById('face-image-upload').click();
+        }
+
+        function triggerGroupFittingUpload() {
+            currentTargetUploadFace = 'group_fitting';
+            document.getElementById('face-image-upload').click();
+        }
+
+        function triggerGroupCabinetUpload() {
+            currentTargetUploadFace = 'group_cabinet';
+            document.getElementById('face-image-upload').click();
+        }
+
+        function handleFaceUpload(event) {
+            let file = event.target.files[0];
+            if (!file || !selectedObject) return;
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                let base64Data = e.target.result;
+
+                if (currentTargetUploadFace === 'custom_group') {
+                    let checkboxes = document.querySelectorAll('.wall-custom-checkbox:checked');
+                    let selectedSegmentIds = Array.from(checkboxes).map(cb => cb.value);
+                    if (selectedSegmentIds.length > 0) {
+                        let wallMode = document.getElementById('booth-wall-mode-select')?.value || 'full_span';
+                        let dir = selectedObject.userData.dir;
+                        let matchedBaseWalls = wallObjects.filter(w => selectedSegmentIds.includes(w.userData.segmentId) && w.userData.type === 'booth_wall');
+                        let matchedTopWalls = wallObjects.filter(w => selectedSegmentIds.includes(w.userData.segmentId) && w.userData.type === 'booth_wall_top');
+
+                        if (dir === 'back' || dir === 'front') {
+                            matchedBaseWalls.sort((a, b) => a.userData.c - b.userData.c);
+                            matchedTopWalls.sort((a, b) => a.userData.c - b.userData.c);
+                        } else {
+                            matchedBaseWalls.sort((a, b) => a.userData.r - b.userData.r);
+                            matchedTopWalls.sort((a, b) => a.userData.r - b.userData.r);
+                        }
+
+                        if (wallMode === 'full_span' && matchedTopWalls.length > 0) {
+                            applyCustomGroupTextureToWallsSpan(matchedBaseWalls, matchedTopWalls, base64Data);
+                        } else if (wallMode === 'top_only' && matchedTopWalls.length > 0) {
+                            applyCustomGroupTextureToWalls(matchedTopWalls, base64Data, true);
+                        } else {
+                            applyCustomGroupTextureToWalls(matchedBaseWalls, base64Data, false);
+                        }
+                    }
+                } else if (currentTargetUploadFace === 'group_fitting') {
+                    let frObjects = draggableObjects.filter(o => o.userData.type === 'fitting_room');
+                    if (frObjects.length > 0) {
+                        frObjects.sort((a, b) => a.position.x - b.position.x);
+                        applyGroupTextureToFittingRooms(frObjects, base64Data);
+                    }
+                } else if (currentTargetUploadFace === 'group_cabinet') {
+                    let checkboxes = document.querySelectorAll('.cabinet-custom-checkbox:checked');
+                    let selectedIds = Array.from(checkboxes).map(cb => cb.value);
+                    let cabObjects = draggableObjects.filter(o => selectedIds.includes(o.id.toString()));
+                    if (cabObjects.length > 0) {
+                        cabObjects.sort((a, b) => a.position.x - b.position.x);
+                        applyGroupTextureToCabinets(cabObjects, base64Data);
+                    }
+                } else if (selectedObject.userData.type === 'booth_wall' || selectedObject.userData.type === 'booth_wall_top') {
+                    let segId = selectedObject.userData.segmentId;
+                    if (!elevatedWallSegments[segId]) elevatedWallSegments[segId] = { hasTop: (selectedObject.userData.type === 'booth_wall_top'), img: null, baseImg: null };
+                    if (selectedObject.userData.type === 'booth_wall_top') {
+                        elevatedWallSegments[segId].img = base64Data;
+                        applyTextureToWallTop(selectedObject, base64Data);
+                    } else {
+                        elevatedWallSegments[segId].baseImg = base64Data;
+                        applyTextureToWallBase(selectedObject, base64Data);
+                    }
+                } else {
+                    if (!selectedObject.userData.images) selectedObject.userData.images = {};
+                    selectedObject.userData.images[currentTargetUploadFace] = base64Data;
+                    applyTextureToFace(selectedObject, currentTargetUploadFace, base64Data);
+                }
+
+                saveToLocalStorage();
+                selectObject(selectedObject);
+                event.target.value = '';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        /* 跨圖大圖裁切演算法 */
+        function applyCustomGroupTextureToWalls(wallMeshes, base64Data, isTopLayer) {
+            let img = new Image();
+            img.onload = function() {
+                let totalCount = wallMeshes.length;
+                let canvasW = 1024 * totalCount;
+                let canvasH = isTopLayer ? 512 : 1024;
+                let masterCanvas = document.createElement('canvas');
+                let masterCtx = masterCanvas.getContext('2d');
+                masterCanvas.width = canvasW; masterCanvas.height = canvasH;
+                masterCtx.fillStyle = '#545454'; masterCtx.fillRect(0, 0, canvasW, canvasH);
+                masterCtx.drawImage(img, 0, 0, canvasW, canvasH);
+
+                wallMeshes.forEach((mesh, index) => {
+                    let subCanvas = document.createElement('canvas');
+                    let subCtx = subCanvas.getContext('2d');
+                    subCanvas.width = 1024; subCanvas.height = canvasH;
+                    subCtx.drawImage(masterCanvas, index * 1024, 0, 1024, canvasH, 0, 0, 1024, canvasH);
+                    let texture = new THREE.CanvasTexture(subCanvas);
+                    texture.encoding = THREE.sRGBEncoding;
+
+                    if (Array.isArray(mesh.material)) {
+                        mesh.material[4].map = texture;
+                        mesh.material[4].color.setHex(0xffffff);
+                        mesh.material[4].needsUpdate = true;
+                    }
+                    let segId = mesh.userData.segmentId;
+                    if (segId) {
+                        if (!elevatedWallSegments[segId]) elevatedWallSegments[segId] = { hasTop: true, img: null, baseImg: null };
+                        if (isTopLayer) elevatedWallSegments[segId].img = subCanvas.toDataURL('image/jpeg', 0.8);
+                        else elevatedWallSegments[segId].baseImg = subCanvas.toDataURL('image/jpeg', 0.8);
+                    }
+                });
+                saveToLocalStorage();
+            };
+            img.src = base64Data;
+        }
+
+        function applyCustomGroupTextureToWallsSpan(baseWalls, topWalls, base64Data) {
+            let img = new Image();
+            img.onload = function() {
+                let totalCount = baseWalls.length;
+                let canvasW = 1024 * totalCount;
+                let canvasH = 1024;
+                let masterCanvas = document.createElement('canvas');
+                let masterCtx = masterCanvas.getContext('2d');
+                masterCanvas.width = canvasW; masterCanvas.height = canvasH;
+                masterCtx.fillStyle = '#545454'; masterCtx.fillRect(0, 0, canvasW, canvasH);
+                masterCtx.drawImage(img, 0, 0, canvasW, canvasH);
+
+                baseWalls.forEach((baseMesh, index) => {
+                    let segId = baseMesh.userData.segmentId;
+                    let topMesh = topWalls.find(t => t.userData.segmentId === segId);
+                    if (!elevatedWallSegments[segId]) elevatedWallSegments[segId] = { hasTop: true, img: null, baseImg: null };
+
+                    let colCanvas = document.createElement('canvas');
+                    let colCtx = colCanvas.getContext('2d');
+                    colCanvas.width = 1024; colCanvas.height = 1024;
+                    colCtx.drawImage(masterCanvas, index * 1024, 0, 1024, 1024, 0, 0, 1024, 1024);
+
+                    let baseCanvas = document.createElement('canvas');
+                    let baseCtx = baseCanvas.getContext('2d');
+                    baseCanvas.width = 1024; baseCanvas.height = 1024;
+                    baseCtx.drawImage(colCanvas, 0, 1024 * 0.375, 1024, 1024 * 0.625, 0, 0, 1024, 1024);
+                    let baseBase64 = baseCanvas.toDataURL('image/jpeg', 0.8);
+                    elevatedWallSegments[segId].baseImg = baseBase64;
+                    applyTextureToWallBase(baseMesh, baseBase64);
+
+                    if (topMesh) {
+                        let topCanvas = document.createElement('canvas');
+                        let topCtx = topCanvas.getContext('2d');
+                        topCanvas.width = 1024; topCanvas.height = 512;
+                        topCtx.drawImage(colCanvas, 0, 0, 1024, 1024 * 0.375, 0, 0, 1024, 512);
+                        let topBase64 = topCanvas.toDataURL('image/jpeg', 0.8);
+                        elevatedWallSegments[segId].img = topBase64;
+                        applyTextureToWallTop(topMesh, topBase64);
+                    }
+                });
+                saveToLocalStorage();
+            };
+            img.src = base64Data;
+        }
+
+        function applyGroupTextureToCabinets(cabinets, base64Data) {
+            let img = new Image();
+            img.onload = function() {
+                let totalWidth = cabinets.reduce((sum, mesh) => sum + (mesh.userData.customW || 1.0), 0);
+                let canvasW = 1024 * cabinets.length;
+                let canvasH = 1024;
+                let masterCanvas = document.createElement('canvas');
+                let masterCtx = masterCanvas.getContext('2d');
+                masterCanvas.width = canvasW; masterCanvas.height = canvasH;
+                masterCtx.fillStyle = '#545454'; masterCtx.fillRect(0, 0, canvasW, canvasH);
+                masterCtx.drawImage(img, 0, 0, canvasW, canvasH);
+
+                let currentXPixel = 0;
+                cabinets.forEach((mesh) => {
+                    let w = mesh.userData.customW || 1.0;
+                    let pixelWidth = (w / totalWidth) * canvasW;
+                    let subCanvas = document.createElement('canvas');
+                    let subCtx = subCanvas.getContext('2d');
+                    subCanvas.width = 1024; subCanvas.height = canvasH;
+                    subCtx.drawImage(masterCanvas, currentXPixel, 0, pixelWidth, canvasH, 0, 0, 1024, canvasH);
+                    let slicedBase64 = subCanvas.toDataURL('image/jpeg', 0.8);
+                    if(!mesh.userData.images) mesh.userData.images = {};
+                    mesh.userData.images['front'] = slicedBase64;
+                    applyTextureToFace(mesh, 'front', slicedBase64);
+                    currentXPixel += pixelWidth;
+                });
+                saveToLocalStorage();
+            };
+            img.src = base64Data;
+        }
+
+        function applyGroupTextureToFittingRooms(fittingRooms, base64Data) {
+            let img = new Image();
+            img.onload = function() {
+                let totalCount = fittingRooms.length;
+                let canvasW = 1024 * totalCount;
+                let canvasH = 512;
+                let masterCanvas = document.createElement('canvas');
+                let masterCtx = masterCanvas.getContext('2d');
+                masterCanvas.width = canvasW; masterCanvas.height = canvasH;
+                masterCtx.fillStyle = '#545454'; masterCtx.fillRect(0, 0, canvasW, canvasH);
+                masterCtx.drawImage(img, 0, 0, canvasW, canvasH);
+
+                fittingRooms.forEach((mesh, index) => {
+                    let subCanvas = document.createElement('canvas');
+                    let subCtx = subCanvas.getContext('2d');
+                    subCanvas.width = 1024; subCanvas.height = canvasH;
+                    subCtx.drawImage(masterCanvas, index * 1024, 0, 1024, canvasH, 0, 0, 1024, canvasH);
+                    let slicedBase64 = subCanvas.toDataURL('image/jpeg', 0.8);
+                    if(!mesh.userData.images) mesh.userData.images = {};
+                    mesh.userData.images['front'] = slicedBase64;
+
+                    if (!mesh.userData.hasTopLayer) {
+                        let pos = { x: mesh.position.x, y: 1.25, z: mesh.position.z };
+                        let rot = { x: mesh.rotation.x, y: mesh.rotation.y, z: mesh.rotation.z };
+                        let dims = { w: mesh.userData.customW, d: mesh.userData.customD, h: mesh.userData.customH };
+                        scene.remove(mesh);
+                        draggableObjects = draggableObjects.filter(o => o !== mesh);
+                        createObject('fitting_room', pos, rot, false, mesh.userData.images, true, 3, dims);
+                    } else {
+                        applyTextureToFace(mesh, 'front', slicedBase64);
+                    }
+                });
+                saveToLocalStorage();
+            };
+            img.src = base64Data;
         }
 
         /* 隔牆加高控制 */
@@ -1453,37 +1763,6 @@
             document.getElementById('face-image-upload').click();
         }
 
-        function handleFaceUpload(event) {
-            let file = event.target.files[0];
-            if (!file || !selectedObject) return;
-            let reader = new FileReader();
-            reader.onload = function(e) {
-                let base64Data = e.target.result;
-                let type = selectedObject.userData.type;
-
-                if (type === 'booth_wall' || type === 'booth_wall_top') {
-                    let segId = selectedObject.userData.segmentId;
-                    if (!elevatedWallSegments[segId]) elevatedWallSegments[segId] = { hasTop: (type === 'booth_wall_top'), img: null, baseImg: null };
-                    if (type === 'booth_wall_top') {
-                        elevatedWallSegments[segId].img = base64Data;
-                        applyTextureToWallTop(selectedObject, base64Data);
-                    } else {
-                        elevatedWallSegments[segId].baseImg = base64Data;
-                        applyTextureToWallBase(selectedObject, base64Data);
-                    }
-                } else {
-                    if (!selectedObject.userData.images) selectedObject.userData.images = {};
-                    selectedObject.userData.images[currentTargetUploadFace] = base64Data;
-                    applyTextureToFace(selectedObject, currentTargetUploadFace, base64Data);
-                }
-
-                saveToLocalStorage();
-                selectObject(selectedObject);
-                event.target.value = '';
-            };
-            reader.readAsDataURL(file);
-        }
-
         function clearFaceTexture(face) {
             if (!selectedObject) return;
             let type = selectedObject.userData.type;
@@ -1529,12 +1808,12 @@
             saveToLocalStorage();
         }
 
-        /* 3D 畫布專屬觸控事件 (解決穿透) */
+        /* 3D 畫布專屬觸控事件 */
         function onCanvasPointerDown(event) {
             let drawer = document.getElementById('mobile-drawer');
             let rect = drawer.getBoundingClientRect();
             if (!drawer.classList.contains('collapsed') && event.clientY >= rect.top) {
-                return; // 如果抽屜展開且點擊在抽屜區域，直接忽略
+                return;
             }
 
             let raycaster = new THREE.Raycaster();

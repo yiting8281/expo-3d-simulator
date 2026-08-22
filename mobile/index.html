@@ -367,10 +367,10 @@
         <div class="drawer-header" onclick="toggleDrawer()">
             <div class="drawer-handle"></div>
             <div class="drawer-tabs" onclick="event.stopPropagation()">
-                <button class="tab-btn active" onclick="switchTab('tab-booth')">📐 展位格局</button>
-                <button class="tab-btn" onclick="switchTab('tab-items')">📦 展具庫</button>
-                <button class="tab-btn" onclick="switchTab('tab-props')" id="tab-props-btn">⚙️ 屬性編輯</button>
-                <button class="tab-btn" onclick="switchTab('tab-project')">📂 方案/檔案</button>
+                <button class="tab-btn active" id="tab-booth-btn" onclick="switchTab('tab-booth')">📐 展位格局</button>
+                <button class="tab-btn" id="tab-items-btn" onclick="switchTab('tab-items')">📦 展具庫</button>
+                <button class="tab-btn" id="tab-props-btn" onclick="switchTab('tab-props')">⚙️ 屬性編輯</button>
+                <button class="tab-btn" id="tab-project-btn" onclick="switchTab('tab-project')">📂 方案/檔案</button>
             </div>
         </div>
 
@@ -453,7 +453,7 @@
                 </div>
             </div>
 
-            <!-- 分頁 3: 選取物件屬性 (完整上傳與加高控制) -->
+            <!-- 分頁 3: 選取物件屬性 -->
             <div id="tab-props" class="tab-pane">
                 <h3 id="mobile-prop-title" style="color:var(--accent);">未選取任何物件</h3>
 
@@ -477,12 +477,10 @@
 
                 <!-- 展具屬性控制區 -->
                 <div id="prop-controls-container" style="display:none;">
-                    <!-- 加高看板開關 (背板 / 更衣室) -->
                     <div id="backdrop-layer-control" style="display:none; background: rgba(0, 132, 255, 0.08); padding: 10px; border-radius: var(--radius-sm); border: 1px solid rgba(0, 132, 255, 0.2); margin-bottom: 10px;">
                         <button id="toggle-layer-btn" class="app-btn" onclick="toggleBackdropLayer()" style="background-color: var(--accent); color: #111; font-weight:600; margin-bottom:0;">➕ 雙層加高：追加 150cm 頂層獨立招牌</button>
                     </div>
 
-                    <!-- 牆面層架層數控制 -->
                     <div id="shelf-layer-control" style="display:none; background: rgba(52, 199, 89, 0.08); padding: 10px; border-radius: var(--radius-sm); border: 1px solid rgba(52, 199, 89, 0.2); margin-bottom: 10px;">
                         <div id="shelf-count-display" style="font-size: 12px; color: #fff; font-weight: 600; margin-bottom: 8px;">目前層數：3 層板</div>
                         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
@@ -491,7 +489,6 @@
                         </div>
                     </div>
 
-                    <!-- 尺寸自訂 -->
                     <label>尺寸調整 (cm)</label>
                     <div class="dim-grid">
                         <div class="dim-input-box">
@@ -508,7 +505,6 @@
                         </div>
                     </div>
 
-                    <!-- 貼圖輸出管理 -->
                     <div id="image-management-section">
                         <label id="front-label">▶ 正面輸出貼圖</label>
                         <button class="app-btn upload-face-btn" onclick="triggerFaceUpload('front')">🖼️ 上傳正面圖片</button>
@@ -618,7 +614,7 @@
             animate();
         }
 
-        /* 介面抽屜切換 */
+        /* 介面抽屜切換 (安全切換) */
         function toggleDrawer() {
             let drawer = document.getElementById('mobile-drawer');
             let btn = document.getElementById('drawer-toggle-btn');
@@ -634,11 +630,15 @@
         function switchTab(tabId) {
             document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            let targetBtn = document.getElementById(tabId + '-btn') || event.target;
+            
+            let targetPane = document.getElementById(tabId);
+            if (targetPane) targetPane.classList.add('active');
+
+            let targetBtn = document.getElementById(tabId + '-btn');
             if (targetBtn) targetBtn.classList.add('active');
+
             let drawer = document.getElementById('mobile-drawer');
-            if (drawer.classList.contains('collapsed')) toggleDrawer();
+            if (drawer && drawer.classList.contains('collapsed')) toggleDrawer();
         }
 
         /* 3D 基礎格局 */
@@ -1109,8 +1109,14 @@
                 finalMesh = new THREE.Mesh(geometry, materials);
             }
 
-            let posY = (type === 'wall_mesh') ? 1.1 : finalH / 2;
-            finalMesh.position.set(customPos ? customPos.x : 0, posY, customPos ? customPos.z : 0);
+            let posY = (type === 'wall_mesh') ? 1.1 : (finalH / 2);
+            if (type === 'fitting_room') posY = 1.25; // 更衣室底座永遠站在地面 (Y=1.25)
+
+            finalMesh.position.set(
+                customPos ? customPos.x : 0,
+                customPos ? customPos.y : posY,
+                customPos ? customPos.z : 0
+            );
             if (customRot) finalMesh.rotation.set(customRot.x, customRot.y, customRot.z);
 
             let normalizedImages = { front: null, left: null, right: null };
@@ -1227,8 +1233,6 @@
                     document.getElementById('rm-left').style.display = imgs.left ? 'block' : 'none';
                     document.getElementById('rm-right').style.display = imgs.right ? 'block' : 'none';
                 }
-
-                switchTab('tab-props');
             } else {
                 quickActions.style.display = 'none';
                 propContainer.style.display = 'none';
@@ -1237,6 +1241,7 @@
             }
         }
 
+        /* 隔牆加高控制 */
         function toggleWallSegmentHeight() {
             if (!selectedObject) return;
             let segId = selectedObject.userData.segmentId;
@@ -1265,6 +1270,7 @@
             saveToLocalStorage();
         }
 
+        /* 背板 / 更衣室加高控制 (重新校正 Y 軸高度) */
         function toggleBackdropLayer() {
             if (!selectedObject) return;
             let type = selectedObject.userData.type;
@@ -1273,11 +1279,18 @@
             let currentState = selectedObject.userData.hasTopLayer || false;
             let newState = !currentState;
 
-            let pos = { x: selectedObject.position.x, y: selectedObject.position.y, z: selectedObject.position.z };
+            let newH = (type === 'backdrop' && newState) ? 4.0 : 2.5;
+            let posY = (type === 'fitting_room') ? 1.25 : (newH / 2);
+
+            let pos = { x: selectedObject.position.x, y: posY, z: selectedObject.position.z };
             let rot = { x: selectedObject.rotation.x, y: selectedObject.rotation.y, z: selectedObject.rotation.z };
             let imgs = selectedObject.userData.images;
             let shelfLayers = selectedObject.userData.shelfLayers;
-            let dims = { w: selectedObject.userData.customW, d: selectedObject.userData.customD, h: selectedObject.userData.customH };
+            let dims = { 
+                w: selectedObject.userData.customW || OBJECT_TYPES[type].w, 
+                d: selectedObject.userData.customD || OBJECT_TYPES[type].d, 
+                h: newH 
+            };
 
             scene.remove(selectedObject);
             draggableObjects = draggableObjects.filter(o => o !== selectedObject);
@@ -1485,6 +1498,7 @@
                     hit = hit.parent;
                 }
                 selectObject(hit);
+                switchTab('tab-props');
                 if (hit.userData.type !== 'booth_wall' && hit.userData.type !== 'booth_wall_top') {
                     isDragging = true;
                     orbitControls.enabled = false;
@@ -1534,7 +1548,7 @@
                 }
             } else if (event.key.toLowerCase() === 'c') {
                 let type = selectedObject.userData.type;
-                createObject(type, { x: selectedObject.position.x + 0.5, z: selectedObject.position.z + 0.5 });
+                createObject(type, { x: selectedObject.position.x + 0.5, y: selectedObject.position.y, z: selectedObject.position.z + 0.5 });
             }
         }
 
@@ -1545,7 +1559,7 @@
             let h = parseFloat(document.getElementById('dim-h').value) / 100;
             if (w > 0 && d > 0 && h > 0) {
                 let type = selectedObject.userData.type;
-                let pos = { x: selectedObject.position.x, y: selectedObject.position.y, z: selectedObject.position.z };
+                let pos = { x: selectedObject.position.x, y: h / 2, z: selectedObject.position.z };
                 let rot = { x: selectedObject.rotation.x, y: selectedObject.rotation.y, z: selectedObject.rotation.z };
                 let imgs = selectedObject.userData.images;
                 let hasTop = selectedObject.userData.hasTopLayer;
@@ -1565,6 +1579,7 @@
             orbitControls.target.set(0, 0, 0);
         }
 
+        /* 完整暫存與格局還原邏輯 */
         function initProjects() {
             let stored = localStorage.getItem('expo_simulator_projects_v1') || localStorage.getItem('expo_mobile_save');
             if (stored) {

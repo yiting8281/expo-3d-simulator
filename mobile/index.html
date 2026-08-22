@@ -543,7 +543,6 @@
 
             buildGridMapUI();
             initProjects();
-            render3DFloor();
 
             window.addEventListener('pointerdown', onPointerDown);
             window.addEventListener('pointermove', onPointerMove);
@@ -585,7 +584,6 @@
                     cell.className = 'grid-cell';
                     cell.id = `cell-${r}-${c}`;
                     cell.innerText = `${r+1},${c+1}`;
-                    if (activeFloorGrid.includes(`${r}-${c}`)) cell.classList.add('active');
                     cell.addEventListener('click', () => toggleGridCell(r, c));
                     mapContainer.appendChild(cell);
                 }
@@ -597,7 +595,8 @@
             let idx = activeFloorGrid.indexOf(gridId);
             if (idx === -1) activeFloorGrid.push(gridId);
             else activeFloorGrid.splice(idx, 1);
-            document.getElementById(`cell-${r}-${c}`).classList.toggle('active');
+            let cell = document.getElementById(`cell-${r}-${c}`);
+            if (cell) cell.classList.toggle('active');
             render3DFloor();
             saveToLocalStorage();
         }
@@ -804,7 +803,7 @@
             }
         }
 
-        /* 完整展具模型生成器 (電腦版原版還原) */
+        /* 完整展具模型生成器 */
         function createShelfGeometry(data, layersCount, customW = null, customD = null, customH = null) {
             let group = new THREE.Group();
             let w = customW || data.w, d = customD || data.d, h = customH || data.h, color = data.color;
@@ -921,11 +920,13 @@
             return group;
         }
 
-        function createObject(type, customPos = null) {
+        function createObject(type, customPos = null, customRot = null, shouldSave = true, customDims = null) {
             let data = OBJECT_TYPES[type];
             if (!data) return;
 
-            let finalW = data.w, finalD = data.d, finalH = data.h;
+            let finalW = customDims?.w || data.w;
+            let finalD = customDims?.d || data.d;
+            let finalH = customDims?.h || data.h;
             let finalMesh;
 
             if (type === 'human') {
@@ -997,12 +998,15 @@
 
             let posY = (type === 'wall_mesh') ? 1.1 : finalH / 2;
             finalMesh.position.set(customPos ? customPos.x : 0, posY, customPos ? customPos.z : 0);
+            if (customRot) finalMesh.rotation.set(customRot.x, customRot.y, customRot.z);
+
             finalMesh.userData = { type: type, customW: finalW, customD: finalD, customH: finalH, height: finalH };
 
             scene.add(finalMesh);
             draggableObjects.push(finalMesh);
             selectObject(finalMesh);
-            saveToLocalStorage();
+
+            if (shouldSave) saveToLocalStorage();
         }
 
         function selectObject(obj) {
@@ -1084,7 +1088,7 @@
                 saveToLocalStorage();
             } else if (event.key.toLowerCase() === 'c') {
                 let type = selectedObject.userData.type;
-                createObject(type, { x: selectedObject.position.x + 0.5, z: selectedObject.position.z + 0.5 });
+                createObject(type, { x: selectedObject.position.x + 0.5, y: selectedObject.position.y, z: selectedObject.position.z + 0.5 });
             }
         }
 
@@ -1096,10 +1100,10 @@
             if (w > 0 && d > 0 && h > 0) {
                 let type = selectedObject.userData.type;
                 let pos = { x: selectedObject.position.x, y: selectedObject.position.y, z: selectedObject.position.z };
+                let rot = { x: selectedObject.rotation.x, y: selectedObject.rotation.y, z: selectedObject.rotation.z };
                 scene.remove(selectedObject);
                 draggableObjects = draggableObjects.filter(o => o !== selectedObject);
-                OBJECT_TYPES[type].w = w; OBJECT_TYPES[type].d = d; OBJECT_TYPES[type].h = h;
-                createObject(type, pos);
+                createObject(type, pos, rot, true, { w, d, h });
             }
         }
 
@@ -1133,25 +1137,108 @@
             orbitControls.target.set(0, 0, 0);
         }
 
+        /* 完整暫存與格局還原邏輯 (核心修復) */
         function initProjects() {
-            let stored = localStorage.getItem('expo_mobile_save');
+            let stored = localStorage.getItem('expo_simulator_projects_v1') || localStorage.getItem('expo_mobile_save');
             if (stored) {
                 try {
-                    let data = JSON.parse(stored);
-                    activeFloorGrid = data.activeFloorGrid || ['2-2', '2-3'];
-                    if (data.objects) {
-                        data.objects.forEach(o => createObject(o.type, o.position));
+                    let parsed = JSON.parse(stored);
+                    let data = parsed.projects ? parsed.projects[parsed.currentProjectId]?.data : parsed;
+                    if (data) {
+                        applyProjectDataToScene(data);
+                        return;
                     }
-                } catch(e) {}
+                } catch(e) {
+                    console.error("載入暫存失敗：", e);
+                }
+            }
+            // 預設初次載入
+            render3DFloor();
+        }
+
+        function applyProjectDataToScene(data) {
+            // 還原格局格子
+            activeFloorGrid = data.activeFloorGrid || ['2-2', '2-3'];
+            document.querySelectorAll('.grid-cell').forEach(c => c.classList.remove('active'));
+            activeFloorGrid.forEach(gridId => {
+                let cell = document.getElementById(`cell-${gridId}`);
+                if (cell) cell.classList.add('active');
+            });
+
+            // 還原地板顏色
+            if (data.floorColor) {
+                currentFloorColorHex = data.floorColor;
+                let colorInput = document.getElementById('floor-color-input');
+                if (colorInput) colorInput.value = data.floorColor;
+            }
+
+            // 還原各項勾選狀態
+            if (document.getElementById('show-frame-check')) document.getElementById('show-frame-check').checked = (data.showFrame !== undefined) ? data.showFrame : true;
+            if (document.getElementById('show-fascia-check')) document.getElementById('show-fascia-check').checked = (data.showFascia !== undefined) ? data.showFascia : true;
+            if (document.getElementById('show-main-grid-check')) document.getElementById('show-main-grid-check').checked = (data.showMainGrid !== undefined) ? data.showMainGrid : true;
+            if (document.getElementById('show-sub-grid-check')) document.getElementById('show-sub-grid-check').checked = (data.showSubGrid !== undefined) ? data.showSubGrid : true;
+
+            if (document.getElementById('fascia-front-check')) document.getElementById('fascia-front-check').checked = (data.showFasciaFront !== undefined) ? data.showFasciaFront : true;
+            if (document.getElementById('fascia-back-check')) document.getElementById('fascia-back-check').checked = (data.showFasciaBack !== undefined) ? data.showFasciaBack : true;
+            if (document.getElementById('fascia-left-check')) document.getElementById('fascia-left-check').checked = (data.showFasciaLeft !== undefined) ? data.showFasciaLeft : true;
+            if (document.getElementById('fascia-right-check')) document.getElementById('fascia-right-check').checked = (data.showFasciaRight !== undefined) ? data.showFasciaRight : true;
+
+            if (data.fasciaText !== undefined && document.getElementById('fascia-text-input')) {
+                document.getElementById('fascia-text-input').value = data.fasciaText;
+            }
+
+            if (data.walls) {
+                if (document.getElementById('wall-back-check')) document.getElementById('wall-back-check').checked = !!data.walls.back;
+                if (document.getElementById('wall-left-check')) document.getElementById('wall-left-check').checked = !!data.walls.left;
+                if (document.getElementById('wall-right-check')) document.getElementById('wall-right-check').checked = !!data.walls.right;
+                if (document.getElementById('wall-front-check')) document.getElementById('wall-front-check').checked = !!data.walls.front;
+            }
+
+            disabledWallSegments = data.disabledWallSegments || [];
+
+            // 重新繪製 3D 展位格局
+            render3DFloor();
+
+            // 還原展具
+            draggableObjects.forEach(obj => scene.remove(obj));
+            draggableObjects.length = 0;
+            if (data.objects && data.objects.length > 0) {
+                data.objects.forEach(o => {
+                    createObject(o.type, o.position, o.rotation, false, o.customDims);
+                });
             }
         }
 
         function saveToLocalStorage() {
             let layout = {
+                expoTitle: document.getElementById('expo-title-input')?.value || '展位方案',
+                floorColor: currentFloorColorHex,
+                showFrame: document.getElementById('show-frame-check')?.checked ?? true,
+                showFascia: document.getElementById('show-fascia-check')?.checked ?? true,
+                showFasciaFront: document.getElementById('fascia-front-check')?.checked ?? true,
+                showFasciaBack: document.getElementById('fascia-back-check')?.checked ?? true,
+                showFasciaLeft: document.getElementById('fascia-left-check')?.checked ?? true,
+                showFasciaRight: document.getElementById('fascia-right-check')?.checked ?? true,
+                showMainGrid: document.getElementById('show-main-grid-check')?.checked ?? true,
+                showSubGrid: document.getElementById('show-sub-grid-check')?.checked ?? true,
+                fasciaText: document.getElementById('fascia-text-input')?.value || 'COMPRESSPORT',
+                walls: {
+                    back: document.getElementById('wall-back-check')?.checked ?? true,
+                    left: document.getElementById('wall-left-check')?.checked ?? true,
+                    right: document.getElementById('wall-right-check')?.checked ?? false,
+                    front: document.getElementById('wall-front-check')?.checked ?? false
+                },
+                disabledWallSegments: disabledWallSegments,
                 activeFloorGrid: activeFloorGrid,
                 objects: draggableObjects.map(o => ({
                     type: o.userData.type,
-                    position: { x: o.position.x, y: o.position.y, z: o.position.z }
+                    position: { x: o.position.x, y: o.position.y, z: o.position.z },
+                    rotation: { x: o.rotation.x, y: o.rotation.y, z: o.rotation.z },
+                    customDims: {
+                        w: o.userData.customW || OBJECT_TYPES[o.userData.type]?.w,
+                        d: o.userData.customD || OBJECT_TYPES[o.userData.type]?.d,
+                        h: o.userData.customH || OBJECT_TYPES[o.userData.type]?.h
+                    }
                 }))
             };
             localStorage.setItem('expo_mobile_save', JSON.stringify(layout));
@@ -1174,8 +1261,12 @@
             a.click();
         }
 
-        function updateStructureUI() { render3DFloor(); }
-        function onTitleInputChange() {}
+        function updateStructureUI() {
+            render3DFloor();
+            saveToLocalStorage();
+        }
+
+        function onTitleInputChange() { saveToLocalStorage(); }
         function createNewProject() { clearAllFloors(); }
         function switchProject() {}
 

@@ -6,8 +6,8 @@
     <title>EXPO 展場配置模擬器 - 手機版</title>
     <style>
         :root {
-            --bg-glass: rgba(22, 22, 25, 0.92);
-            --bg-glass-card: rgba(35, 35, 40, 0.75);
+            --bg-glass: rgba(22, 22, 25, 0.94);
+            --bg-glass-card: rgba(35, 35, 40, 0.8);
             --border-glass: rgba(255, 255, 255, 0.12);
             --border-glass-focus: rgba(0, 149, 255, 0.6);
             --primary: #0084ff;
@@ -45,7 +45,7 @@
             z-index: 1;
         }
 
-        /* 頂部輕量視角控制列 */
+        /* 頂部視角快捷列 */
         #mobile-top-bar {
             position: absolute;
             top: 12px;
@@ -77,7 +77,7 @@
             border-radius: 4px;
         }
 
-        /* 浮動操作捷徑列 (選取物件時顯示) */
+        /* 浮動操作捷徑列 */
         #mobile-quick-actions {
             position: absolute;
             top: 60px;
@@ -106,7 +106,7 @@
             bottom: 0;
             left: 0;
             right: 0;
-            z-index: 20;
+            z-index: 50;
             background: var(--bg-glass);
             backdrop-filter: blur(25px);
             -webkit-backdrop-filter: blur(25px);
@@ -116,6 +116,8 @@
             flex-direction: column;
             max-height: 75vh;
             transition: transform 0.3s cubic-bezier(0.1, 0.9, 0.2, 1);
+            touch-action: pan-y;
+            pointer-events: auto;
         }
 
         #mobile-drawer.collapsed {
@@ -246,7 +248,7 @@
         }
         button.app-btn {
             width: 100%;
-            padding: 10px 12px;
+            padding: 11px 12px;
             background: rgba(255, 255, 255, 0.06);
             color: var(--text-main);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -262,14 +264,14 @@
         button.action-btn { background: rgba(0, 132, 255, 0.15); border-color: rgba(0, 132, 255, 0.35); color: #4da6ff; }
         button.save-btn { background: rgba(52, 199, 89, 0.15); border-color: rgba(52, 199, 89, 0.35); color: #30d158; }
         button.upload-face-btn {
-            background-color: rgba(255, 159, 10, 0.12);
-            border: 1px dashed rgba(255, 159, 10, 0.4);
+            background-color: rgba(255, 159, 10, 0.15);
+            border: 1px dashed rgba(255, 159, 10, 0.5);
             color: var(--accent);
             font-size: 12px;
         }
         button.remove-face-btn {
-            background-color: rgba(255, 69, 58, 0.12);
-            border: 1px solid rgba(255, 69, 58, 0.25);
+            background-color: rgba(255, 69, 58, 0.15);
+            border: 1px solid rgba(255, 69, 58, 0.3);
             color: #ff6961;
             font-size: 11px;
             padding: 6px;
@@ -362,8 +364,8 @@
         <button class="quick-btn" onclick="onKeyDown({key:'Delete'})" style="color:var(--danger)">🗑️ 刪除</button>
     </div>
 
-    <!-- 底部抽屜面板 -->
-    <div id="mobile-drawer">
+    <!-- 底部抽屜面板 (完全隔離點擊與觸控) -->
+    <div id="mobile-drawer" onpointerdown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onclick="event.stopPropagation()">
         <div class="drawer-header" onclick="toggleDrawer()">
             <div class="drawer-handle"></div>
             <div class="drawer-tabs" onclick="event.stopPropagation()">
@@ -524,7 +526,7 @@
                     <button class="app-btn" onclick="onKeyDown({key:'Delete'})" style="color:var(--danger); border-color:rgba(255,69,58,0.3); margin-top: 12px;">🗑️ 刪除此物件</button>
                 </div>
 
-                <!-- 外圍所有現有牆面清單 (點擊直達選取與加高) -->
+                <!-- 外圍所有現有牆面清單 -->
                 <div id="all-walls-quick-select" style="margin-top:16px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:10px;">
                     <label style="color:var(--accent); font-weight:600;">🧱 快速選擇外圍牆面進行加高/貼圖：</label>
                     <div id="walls-button-list" style="display:flex; flex-direction:column; gap:6px;"></div>
@@ -647,7 +649,7 @@
             if (drawer && drawer.classList.contains('collapsed')) toggleDrawer();
         }
 
-        /* 3D 格局 */
+        /* 3D 基礎格局 */
         function buildGridMapUI() {
             let mapContainer = document.getElementById('grid-map');
             mapContainer.innerHTML = '';
@@ -836,7 +838,6 @@
                 }
             }
 
-            /* 隔牆生成與 150cm 頂層加高 */
             function createWallSegment(w, d, px, pz, segmentId, dirLabel) {
                 if (disabledWallSegments.includes(segmentId)) return;
 
@@ -904,7 +905,7 @@
                     }
                     if (c === 0 || !gridMap[r][c - 1]) {
                         if (checkLeft) createWallSegment(wallThick, CELL_SIZE, minX - wallThick/2, posZ, `${r}-${c}-left`, '左牆');
-                        if (showFrame) { addFrameLine(minX, minZ, minX, maxZ, 0, FRAME_HEIGHT); addVerticalPost(minX, minZ); addVerticalPost(minX, maxZ); }
+                        if (showFrame) { addFrameLine(minX, minZ, minX, maxZ, 0, FRAME_HEIGHT); addVerticalPost(minX, minZ); addVerticalPost(maxX, minZ); }
                     }
                     if (c === GRID_MAP_SIZE - 1 || !gridMap[r][c + 1]) {
                         if (checkRight) createWallSegment(wallThick, CELL_SIZE, maxX + wallThick/2, posZ, `${r}-${c}-right`, '右牆');
@@ -916,7 +917,7 @@
             updateWallsQuickSelectList();
         }
 
-        /* 更新屬性面板中所有牆面快速選擇清單 */
+        /* 快速選擇清單 */
         function updateWallsQuickSelectList() {
             let container = document.getElementById('walls-button-list');
             if (!container) return;
@@ -939,7 +940,8 @@
                 btn.style.backgroundColor = isElevated ? 'rgba(255,159,10,0.15)' : 'rgba(255,255,255,0.06)';
                 btn.style.borderColor = isElevated ? 'var(--accent)' : 'rgba(255,255,255,0.1)';
                 btn.innerHTML = `<span>${w.userData.name}</span><span style="color:${isElevated ? 'var(--accent)' : 'var(--text-secondary)'}; font-weight:600;">${isElevated ? '400cm' : '250cm'}</span>`;
-                btn.onclick = () => {
+                btn.onclick = (e) => {
+                    e.stopPropagation();
                     selectObject(w);
                 };
                 container.appendChild(btn);
@@ -1520,9 +1522,12 @@
             saveToLocalStorage();
         }
 
-        /* 射線選取物件與牆段 */
+        /* 射線選取物件與牆段 (防抽屜點擊穿透) */
         function onPointerDown(event) {
-            if (event.clientY > window.innerHeight - 70) return;
+            let drawer = document.getElementById('mobile-drawer');
+            let rect = drawer.getBoundingClientRect();
+            if (event.clientY >= rect.top) return; // 點擊在抽屜範圍內完全不觸發 3D 選取
+
             let raycaster = new THREE.Raycaster();
             let mouse = new THREE.Vector2(
                 (event.clientX / window.innerWidth) * 2 - 1,
@@ -1588,7 +1593,7 @@
                 }
             } else if (event.key.toLowerCase() === 'c') {
                 let type = selectedObject.userData.type;
-                createObject(type, { x: selectedObject.position.x + 0.5, y: selectedObject.position.y, z: selectedObject.position.z + 0.5 });
+                createObject(type, { x: selectedObject.position.x + 0.5, z: selectedObject.position.z + 0.5 });
             }
         }
 

@@ -261,6 +261,20 @@
         }
         button.action-btn { background: rgba(0, 132, 255, 0.15); border-color: rgba(0, 132, 255, 0.35); color: #4da6ff; }
         button.save-btn { background: rgba(52, 199, 89, 0.15); border-color: rgba(52, 199, 89, 0.35); color: #30d158; }
+        button.upload-face-btn {
+            background-color: rgba(255, 159, 10, 0.12);
+            border: 1px dashed rgba(255, 159, 10, 0.4);
+            color: var(--accent);
+            font-size: 12px;
+        }
+        button.remove-face-btn {
+            background-color: rgba(255, 69, 58, 0.12);
+            border: 1px solid rgba(255, 69, 58, 0.25);
+            color: #ff6961;
+            font-size: 11px;
+            padding: 6px;
+            margin-bottom: 8px;
+        }
 
         .grid-map {
             display: grid;
@@ -439,27 +453,79 @@
                 </div>
             </div>
 
-            <!-- 分頁 3: 選取物件屬性 -->
+            <!-- 分頁 3: 選取物件屬性 (完整上傳與加高控制) -->
             <div id="tab-props" class="tab-pane">
                 <h3 id="mobile-prop-title" style="color:var(--accent);">未選取任何物件</h3>
+
+                <!-- 外圍單段隔牆控制區 -->
+                <div id="wall-segment-control" style="display:none; background: rgba(0, 132, 255, 0.08); padding: 12px; border-radius: var(--radius-sm); border: 1px solid rgba(0, 132, 255, 0.2); margin-bottom: 10px;">
+                    <button id="toggle-wall-height-btn" class="app-btn" onclick="toggleWallSegmentHeight()" style="background-color: var(--accent); color: #111; font-weight:600;">➕ 雙層加高：追加 150cm 頂層看板</button>
+
+                    <div id="wall-top-mode-box" style="display:none; background: rgba(255, 159, 10, 0.1); border: 1px solid rgba(255, 159, 10, 0.3); padding: 8px; border-radius: 6px; margin-bottom: 8px;">
+                        <label style="color:var(--accent); font-size:11px; margin:0 0 4px 0; font-weight:600;">🎯 牆面加高貼圖範圍</label>
+                        <select id="booth-wall-mode-select" class="custom-select" style="margin-bottom:0;">
+                            <option value="full_span" selected>1. 整面跨高 (400cm 完整延伸)</option>
+                            <option value="bottom_only">2. 僅貼下方 (250cm 基底牆)</option>
+                            <option value="top_only">3. 僅貼上方 (150cm 頂層看板)</option>
+                        </select>
+                    </div>
+
+                    <button class="app-btn upload-face-btn" onclick="triggerFaceUpload('front')">🖼️ 上傳單片牆面圖片</button>
+                    <button id="rm-wall-front" class="app-btn remove-face-btn" onclick="clearFaceTexture('front')" style="display:none;">❌ 移除牆面輸出</button>
+                    <button class="app-btn" onclick="removeSelectedWallSegment()" style="background-color: rgba(255, 69, 58, 0.15); color: #ff6961; border: 1px solid rgba(255, 69, 58, 0.3); margin-top: 8px;">🗑️ 隱藏／移除此段隔牆</button>
+                </div>
+
+                <!-- 展具屬性控制區 -->
                 <div id="prop-controls-container" style="display:none;">
+                    <!-- 加高看板開關 (背板 / 更衣室) -->
+                    <div id="backdrop-layer-control" style="display:none; background: rgba(0, 132, 255, 0.08); padding: 10px; border-radius: var(--radius-sm); border: 1px solid rgba(0, 132, 255, 0.2); margin-bottom: 10px;">
+                        <button id="toggle-layer-btn" class="app-btn" onclick="toggleBackdropLayer()" style="background-color: var(--accent); color: #111; font-weight:600; margin-bottom:0;">➕ 雙層加高：追加 150cm 頂層獨立招牌</button>
+                    </div>
+
+                    <!-- 牆面層架層數控制 -->
+                    <div id="shelf-layer-control" style="display:none; background: rgba(52, 199, 89, 0.08); padding: 10px; border-radius: var(--radius-sm); border: 1px solid rgba(52, 199, 89, 0.2); margin-bottom: 10px;">
+                        <div id="shelf-count-display" style="font-size: 12px; color: #fff; font-weight: 600; margin-bottom: 8px;">目前層數：3 層板</div>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
+                            <button class="app-btn" onclick="adjustShelfLayers(1)" style="background-color: rgba(52, 199, 89, 0.2); color: #30d158; margin-bottom:0;">➕ 增加一層</button>
+                            <button class="app-btn" onclick="adjustShelfLayers(-1)" style="margin-bottom:0;">➖ 減少一層</button>
+                        </div>
+                    </div>
+
+                    <!-- 尺寸自訂 -->
                     <label>尺寸調整 (cm)</label>
                     <div class="dim-grid">
                         <div class="dim-input-box">
-                            <span style="font-size:10px; color:var(--text-secondary);">寬</span>
+                            <span id="lbl-dim-w" style="font-size:10px; color:var(--text-secondary);">寬 W</span>
                             <input type="number" id="dim-w" step="5" onchange="updateSelectedDimensions()">
                         </div>
                         <div class="dim-input-box">
-                            <span style="font-size:10px; color:var(--text-secondary);">深</span>
+                            <span id="lbl-dim-d" style="font-size:10px; color:var(--text-secondary);">深 D</span>
                             <input type="number" id="dim-d" step="5" onchange="updateSelectedDimensions()">
                         </div>
                         <div class="dim-input-box">
-                            <span style="font-size:10px; color:var(--text-secondary);">高</span>
+                            <span style="font-size:10px; color:var(--text-secondary);">高 H</span>
                             <input type="number" id="dim-h" step="5" onchange="updateSelectedDimensions()">
                         </div>
                     </div>
-                    <button class="app-btn action-btn" onclick="triggerFaceUpload('front')">🖼️ 上傳正面貼圖</button>
-                    <button class="app-btn" onclick="onKeyDown({key:'Delete'})" style="color:var(--danger); border-color:rgba(255,69,58,0.3);">🗑️ 刪除此物件</button>
+
+                    <!-- 貼圖輸出管理 -->
+                    <div id="image-management-section">
+                        <label id="front-label">▶ 正面輸出貼圖</label>
+                        <button class="app-btn upload-face-btn" onclick="triggerFaceUpload('front')">🖼️ 上傳正面圖片</button>
+                        <button id="rm-front" class="app-btn remove-face-btn" onclick="clearFaceTexture('front')" style="display:none;">❌ 移除正面輸出</button>
+
+                        <div id="side-image-controls">
+                            <label style="margin-top: 10px;">▶ 左側邊輸出貼圖</label>
+                            <button class="app-btn upload-face-btn" onclick="triggerFaceUpload('left')">🖼️ 上傳左側圖片</button>
+                            <button id="rm-left" class="app-btn remove-face-btn" onclick="clearFaceTexture('left')" style="display:none;">❌ 移除左側輸出</button>
+
+                            <label style="margin-top: 10px;">▶ 右側邊輸出貼圖</label>
+                            <button class="app-btn upload-face-btn" onclick="triggerFaceUpload('right')">🖼️ 上傳右側圖片</button>
+                            <button id="rm-right" class="app-btn remove-face-btn" onclick="clearFaceTexture('right')" style="display:none;">❌ 移除右側輸出</button>
+                        </div>
+                    </div>
+
+                    <button class="app-btn" onclick="onKeyDown({key:'Delete'})" style="color:var(--danger); border-color:rgba(255,69,58,0.3); margin-top: 12px;">🗑️ 刪除此物件</button>
                 </div>
             </div>
 
@@ -569,7 +635,8 @@
             document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
-            event.target.classList.add('active');
+            let targetBtn = document.getElementById(tabId + '-btn') || event.target;
+            if (targetBtn) targetBtn.classList.add('active');
             let drawer = document.getElementById('mobile-drawer');
             if (drawer.classList.contains('collapsed')) toggleDrawer();
         }
@@ -763,14 +830,51 @@
                 }
             }
 
-            function createWallSegment(w, d, px, pz, segmentId) {
+            function createWallSegment(w, d, px, pz, segmentId, dirLabel) {
                 if (disabledWallSegments.includes(segmentId)) return;
+
+                let wallState = elevatedWallSegments[segmentId] || {};
+                let hasTop = wallState.hasTop || false;
+
                 let baseGeo = new THREE.BoxGeometry(w, FRAME_HEIGHT, d);
-                let baseMesh = new THREE.Mesh(baseGeo, new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX, roughness: 0.6 }));
+                let baseMaterials = [];
+                for(let i=0; i<6; i++) baseMaterials.push(new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX, roughness: 0.6 }));
+                let baseMesh = new THREE.Mesh(baseGeo, baseMaterials);
                 baseMesh.position.set(px, FRAME_HEIGHT / 2, pz);
-                baseMesh.userData = { type: 'booth_wall', segmentId: segmentId };
+                baseMesh.userData = {
+                    type: 'booth_wall',
+                    segmentId: segmentId,
+                    hasTopLayer: hasTop,
+                    name: `展位外圍牆面 (${dirLabel}${hasTop ? ' - 400cm加高' : ''})`
+                };
+
+                if (wallState.baseImg) {
+                    applyTextureToWallBase(baseMesh, wallState.baseImg);
+                }
+
                 structureGroup.add(baseMesh);
                 wallObjects.push(baseMesh);
+
+                if (hasTop) {
+                    let topH = 1.5;
+                    let topGeo = new THREE.BoxGeometry(w, topH, d);
+                    let topMaterials = [];
+                    for(let i=0; i<6; i++) topMaterials.push(new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX, roughness: 0.6 }));
+                    let topMesh = new THREE.Mesh(topGeo, topMaterials);
+                    topMesh.position.set(px, FRAME_HEIGHT + topH / 2, pz);
+                    topMesh.userData = {
+                        type: 'booth_wall_top',
+                        segmentId: segmentId,
+                        name: `外圍牆面頂層看板 (${dirLabel})`
+                    };
+
+                    if (wallState.img) {
+                        applyTextureToWallTop(topMesh, wallState.img);
+                    }
+
+                    structureGroup.add(topMesh);
+                    wallObjects.push(topMesh);
+                }
             }
 
             for (let r = 0; r < GRID_MAP_SIZE; r++) {
@@ -784,19 +888,19 @@
                     let maxZ = posZ + CELL_SIZE / 2;
 
                     if (r === 0 || !gridMap[r - 1][c]) {
-                        if (checkBack) createWallSegment(CELL_SIZE, wallThick, posX, minZ - wallThick/2, `${r}-${c}-back`);
+                        if (checkBack) createWallSegment(CELL_SIZE, wallThick, posX, minZ - wallThick/2, `${r}-${c}-back`, '後牆');
                         if (showFrame) { addFrameLine(minX, minZ, maxX, minZ, 0, FRAME_HEIGHT); addVerticalPost(minX, minZ); addVerticalPost(maxX, minZ); }
                     }
                     if (r === GRID_MAP_SIZE - 1 || !gridMap[r + 1][c]) {
-                        if (checkFront) createWallSegment(CELL_SIZE, wallThick, posX, maxZ + wallThick/2, `${r}-${c}-front`);
+                        if (checkFront) createWallSegment(CELL_SIZE, wallThick, posX, maxZ + wallThick/2, `${r}-${c}-front`, '前牆');
                         if (showFrame) { addFrameLine(minX, maxZ, maxX, maxZ, 0, FRAME_HEIGHT); addVerticalPost(minX, maxZ); addVerticalPost(maxX, maxZ); }
                     }
                     if (c === 0 || !gridMap[r][c - 1]) {
-                        if (checkLeft) createWallSegment(wallThick, CELL_SIZE, minX - wallThick/2, posZ, `${r}-${c}-left`);
+                        if (checkLeft) createWallSegment(wallThick, CELL_SIZE, minX - wallThick/2, posZ, `${r}-${c}-left`, '左牆');
                         if (showFrame) { addFrameLine(minX, minZ, minX, maxZ, 0, FRAME_HEIGHT); addVerticalPost(minX, minZ); addVerticalPost(minX, maxZ); }
                     }
                     if (c === GRID_MAP_SIZE - 1 || !gridMap[r][c + 1]) {
-                        if (checkRight) createWallSegment(wallThick, CELL_SIZE, maxX + wallThick/2, posZ, `${r}-${c}-right`);
+                        if (checkRight) createWallSegment(wallThick, CELL_SIZE, maxX + wallThick/2, posZ, `${r}-${c}-right`, '右牆');
                         if (showFrame) { addFrameLine(maxX, minZ, maxX, maxZ, 0, FRAME_HEIGHT); addVerticalPost(maxX, minZ); addVerticalPost(maxX, maxZ); }
                     }
                 }
@@ -889,18 +993,26 @@
             let group = new THREE.Group();
             let w = customW || data.w, d = customD || data.d, h = customH || data.h, wallThick = 0.03;
             let backWall = new THREE.Mesh(new THREE.BoxGeometry(w, h, wallThick), new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX, roughness: 0.6 }));
+            backWall.name = 'backWallMesh';
             backWall.position.set(0, 0, -d/2 + wallThick/2); group.add(backWall);
             let leftWall = new THREE.Mesh(new THREE.BoxGeometry(wallThick, h, d - wallThick), new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX, roughness: 0.6 }));
+            leftWall.name = 'leftWallMesh';
             leftWall.position.set(-w/2 + wallThick/2, 0, wallThick/2); group.add(leftWall);
             let rightWall = new THREE.Mesh(new THREE.BoxGeometry(wallThick, h, d - wallThick), new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX, roughness: 0.6 }));
+            rightWall.name = 'rightWallMesh';
             rightWall.position.set(w/2 - wallThick/2, 0, wallThick/2); group.add(rightWall);
             let topHeader = new THREE.Mesh(new THREE.BoxGeometry(w, 0.2, wallThick), new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX, roughness: 0.6 }));
+            topHeader.name = 'topHeaderMesh';
             topHeader.position.set(0, h/2 - 0.1, d/2 - wallThick/2); group.add(topHeader);
             let curtain = new THREE.Mesh(new THREE.BoxGeometry(w - 0.04, h - 0.25, 0.02), new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.9 }));
+            curtain.name = 'curtainMesh';
             curtain.position.set(0, -0.1, d/2 - wallThick/2); group.add(curtain);
             if (hasTopLayer) {
                 let topHeaderH = 1.5;
-                let topBoxMesh = new THREE.Mesh(new THREE.BoxGeometry(w, topHeaderH, d), new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX, roughness: 0.6 }));
+                let topMaterials = [];
+                for(let i=0; i<6; i++) topMaterials.push(new THREE.MeshStandardMaterial({ color: FIXED_WALL_COLOR_HEX, roughness: 0.6 }));
+                let topBoxMesh = new THREE.Mesh(new THREE.BoxGeometry(w, topHeaderH, d), topMaterials);
+                topBoxMesh.name = 'topBannerMesh';
                 topBoxMesh.position.set(0, h/2 + topHeaderH/2, 0); group.add(topBoxMesh);
             }
             return group;
@@ -920,7 +1032,7 @@
             return group;
         }
 
-        function createObject(type, customPos = null, customRot = null, shouldSave = true, customDims = null) {
+        function createObject(type, customPos = null, customRot = null, shouldSave = true, savedImages = null, hasTopLayer = false, shelfLayers = 3, customDims = null) {
             let data = OBJECT_TYPES[type];
             if (!data) return;
 
@@ -937,7 +1049,7 @@
                 finalMesh = new THREE.Mesh(outerGeo, materials);
                 finalMesh.add(humanGroup);
             } else if (type === 'wall_shelf') {
-                let shelfGroup = createShelfGeometry(data, 3, finalW, finalD, finalH);
+                let shelfGroup = createShelfGeometry(data, shelfLayers, finalW, finalD, finalH);
                 let outerGeo = new THREE.BoxGeometry(finalW, finalH, finalD);
                 let materials = [];
                 for(let i=0; i<6; i++) materials.push(new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.6 }));
@@ -965,7 +1077,7 @@
                 finalMesh = new THREE.Mesh(outerGeo, materials);
                 finalMesh.add(roundGroup);
             } else if (type === 'fitting_room') {
-                let fittingRoomGroup = createFittingRoomGeometry(data, finalW, finalD, finalH, false);
+                let fittingRoomGroup = createFittingRoomGeometry(data, finalW, finalD, finalH, hasTopLayer);
                 finalMesh = new THREE.Group();
                 finalMesh.add(fittingRoomGroup);
             } else if (type === 'folding_table') {
@@ -989,6 +1101,7 @@
                 finalMesh = new THREE.Mesh(outerGeo, materials);
                 finalMesh.add(group);
             } else {
+                if (type === 'backdrop' && hasTopLayer) finalH = 4.0;
                 let geometry = new THREE.BoxGeometry(finalW, finalH, finalD);
                 let materials = [];
                 let initColor = (type === 'backdrop') ? FIXED_WALL_COLOR_HEX : data.color;
@@ -1000,10 +1113,31 @@
             finalMesh.position.set(customPos ? customPos.x : 0, posY, customPos ? customPos.z : 0);
             if (customRot) finalMesh.rotation.set(customRot.x, customRot.y, customRot.z);
 
-            finalMesh.userData = { type: type, customW: finalW, customD: finalD, customH: finalH, height: finalH };
+            let normalizedImages = { front: null, left: null, right: null };
+            if (savedImages) {
+                normalizedImages.front = savedImages.front || null;
+                normalizedImages.left = savedImages.left || null;
+                normalizedImages.right = savedImages.right || null;
+            }
+
+            finalMesh.userData = {
+                type: type,
+                customW: finalW,
+                customD: finalD,
+                customH: finalH,
+                height: finalH,
+                hasTopLayer: hasTopLayer,
+                shelfLayers: shelfLayers,
+                images: normalizedImages
+            };
 
             scene.add(finalMesh);
             draggableObjects.push(finalMesh);
+
+            if (normalizedImages.front) applyTextureToFace(finalMesh, 'front', normalizedImages.front);
+            if (normalizedImages.left) applyTextureToFace(finalMesh, 'left', normalizedImages.left);
+            if (normalizedImages.right) applyTextureToFace(finalMesh, 'right', normalizedImages.right);
+
             selectObject(finalMesh);
 
             if (shouldSave) saveToLocalStorage();
@@ -1013,20 +1147,325 @@
             selectedObject = obj;
             let quickActions = document.getElementById('mobile-quick-actions');
             let propContainer = document.getElementById('prop-controls-container');
+            let wallSegmentControl = document.getElementById('wall-segment-control');
             let propTitle = document.getElementById('mobile-prop-title');
 
             if (obj) {
                 quickActions.style.display = 'flex';
-                propContainer.style.display = 'block';
-                propTitle.innerText = `目前選取：${OBJECT_TYPES[obj.userData.type]?.name || '展具'}`;
-                document.getElementById('dim-w').value = Math.round((obj.userData.customW || 1) * 100);
-                document.getElementById('dim-d').value = Math.round((obj.userData.customD || 1) * 100);
-                document.getElementById('dim-h').value = Math.round((obj.userData.customH || 1) * 100);
+                let type = obj.userData.type;
+
+                if (type === 'booth_wall' || type === 'booth_wall_top') {
+                    propTitle.innerText = obj.userData.name || '目前選取：單段牆面';
+                    wallSegmentControl.style.display = 'block';
+                    propContainer.style.display = 'none';
+
+                    let segId = obj.userData.segmentId;
+                    let wallState = elevatedWallSegments[segId] || {};
+                    let hasTop = wallState.hasTop || false;
+                    let toggleWallBtn = document.getElementById('toggle-wall-height-btn');
+                    let wallTopModeBox = document.getElementById('wall-top-mode-box');
+                    let rmWallFront = document.getElementById('rm-wall-front');
+
+                    toggleWallBtn.innerText = hasTop ? '❌ 取消雙層加高（回復 250cm）' : '➕ 雙層加高：追加 150cm 頂層看板';
+                    wallTopModeBox.style.display = hasTop ? 'block' : 'none';
+                    rmWallFront.style.display = (wallState.baseImg || wallState.img) ? 'block' : 'none';
+
+                } else {
+                    wallSegmentControl.style.display = 'none';
+                    propContainer.style.display = 'block';
+                    propTitle.innerText = `目前選取：${OBJECT_TYPES[type]?.name || '展具'}`;
+
+                    let curW = obj.userData.customW || OBJECT_TYPES[type].w;
+                    let curD = obj.userData.customD || OBJECT_TYPES[type].d;
+                    let curH = obj.userData.customH || OBJECT_TYPES[type].h;
+
+                    let lblW = document.getElementById('lbl-dim-w');
+                    let lblD = document.getElementById('lbl-dim-d');
+                    if (type === 'round_rack') {
+                        if (lblW) lblW.innerText = '直徑 W';
+                        if (lblD) lblD.innerText = '直徑 D';
+                    } else {
+                        if (lblW) lblW.innerText = '寬 W';
+                        if (lblD) lblD.innerText = '深 D';
+                    }
+
+                    document.getElementById('dim-w').value = Math.round(curW * 100);
+                    document.getElementById('dim-d').value = Math.round(curD * 100);
+                    document.getElementById('dim-h').value = Math.round(curH * 100);
+
+                    let backdropControl = document.getElementById('backdrop-layer-control');
+                    let shelfControl = document.getElementById('shelf-layer-control');
+                    let toggleBtn = document.getElementById('toggle-layer-btn');
+                    let frontLabel = document.getElementById('front-label');
+                    let sideImageControls = document.getElementById('side-image-controls');
+                    let imageSection = document.getElementById('image-management-section');
+
+                    let noImageTypes = ['straight_rack', 'round_rack', 'folding_table', 'human', 'floor_mesh', 'wall_mesh'];
+                    if (imageSection) imageSection.style.display = noImageTypes.includes(type) ? 'none' : 'block';
+
+                    if (type === 'backdrop' || type === 'fitting_room') {
+                        backdropControl.style.display = 'block';
+                        shelfControl.style.display = 'none';
+                        toggleBtn.innerText = obj.userData.hasTopLayer ? '❌ 取消頂層追加（回復 250cm）' : '➕ 雙層加高：追加 150cm 頂層獨立招牌';
+                        if (frontLabel) frontLabel.innerText = obj.userData.hasTopLayer ? '▶ 頂層追加區輸出貼圖 (150cm)' : '▶ 正面輸出貼圖';
+                    } else if (type === 'wall_shelf') {
+                        backdropControl.style.display = 'none';
+                        shelfControl.style.display = 'block';
+                        document.getElementById('shelf-count-display').innerText = `目前層數：${obj.userData.shelfLayers || 3} 層板`;
+                    } else {
+                        backdropControl.style.display = 'none';
+                        shelfControl.style.display = 'none';
+                        if (frontLabel) frontLabel.innerText = '▶ 正面輸出貼圖';
+                    }
+
+                    if (sideImageControls) {
+                        sideImageControls.style.display = (type === 'fitting_room' || type === 'cabinet') ? 'block' : 'none';
+                    }
+
+                    let imgs = obj.userData.images || {};
+                    document.getElementById('rm-front').style.display = imgs.front ? 'block' : 'none';
+                    document.getElementById('rm-left').style.display = imgs.left ? 'block' : 'none';
+                    document.getElementById('rm-right').style.display = imgs.right ? 'block' : 'none';
+                }
+
+                switchTab('tab-props');
             } else {
                 quickActions.style.display = 'none';
                 propContainer.style.display = 'none';
+                wallSegmentControl.style.display = 'none';
                 propTitle.innerText = '未選取任何物件';
             }
+        }
+
+        function toggleWallSegmentHeight() {
+            if (!selectedObject) return;
+            let segId = selectedObject.userData.segmentId;
+            if (!segId) return;
+
+            if (!elevatedWallSegments[segId]) {
+                elevatedWallSegments[segId] = { hasTop: true, img: null, baseImg: null };
+            } else {
+                elevatedWallSegments[segId].hasTop = !elevatedWallSegments[segId].hasTop;
+            }
+
+            render3DFloor();
+            let newObj = wallObjects.find(w => w.userData.segmentId === segId);
+            if (newObj) selectObject(newObj);
+            saveToLocalStorage();
+        }
+
+        function removeSelectedWallSegment() {
+            if (!selectedObject) return;
+            let segId = selectedObject.userData.segmentId;
+            if (segId && !disabledWallSegments.includes(segId)) {
+                disabledWallSegments.push(segId);
+            }
+            selectObject(null);
+            render3DFloor();
+            saveToLocalStorage();
+        }
+
+        function toggleBackdropLayer() {
+            if (!selectedObject) return;
+            let type = selectedObject.userData.type;
+            if (type !== 'backdrop' && type !== 'fitting_room') return;
+
+            let currentState = selectedObject.userData.hasTopLayer || false;
+            let newState = !currentState;
+
+            let pos = { x: selectedObject.position.x, y: selectedObject.position.y, z: selectedObject.position.z };
+            let rot = { x: selectedObject.rotation.x, y: selectedObject.rotation.y, z: selectedObject.rotation.z };
+            let imgs = selectedObject.userData.images;
+            let shelfLayers = selectedObject.userData.shelfLayers;
+            let dims = { w: selectedObject.userData.customW, d: selectedObject.userData.customD, h: selectedObject.userData.customH };
+
+            scene.remove(selectedObject);
+            draggableObjects = draggableObjects.filter(o => o !== selectedObject);
+
+            createObject(type, pos, rot, true, imgs, newState, shelfLayers, dims);
+        }
+
+        function adjustShelfLayers(delta) {
+            if (!selectedObject || selectedObject.userData.type !== 'wall_shelf') return;
+            let currentLayers = selectedObject.userData.shelfLayers || 3;
+            let newLayers = currentLayers + delta;
+            if (newLayers < 1 || newLayers > 6) return;
+
+            let type = selectedObject.userData.type;
+            let data = OBJECT_TYPES[type];
+            let curW = selectedObject.userData.customW || data.w;
+            let curD = selectedObject.userData.customD || data.d;
+            let curH = selectedObject.userData.customH || data.h;
+
+            while(selectedObject.children.length > 0){
+                selectedObject.remove(selectedObject.children[0]);
+            }
+
+            let newShelfGroup = createShelfGeometry(data, newLayers, curW, curD, curH);
+            selectedObject.add(newShelfGroup);
+            selectedObject.userData.shelfLayers = newLayers;
+
+            selectObject(selectedObject);
+            saveToLocalStorage();
+        }
+
+        function applyTextureToWallBase(mesh, base64Data) {
+            let img = new Image();
+            img.onload = function() {
+                let canvas = document.createElement('canvas');
+                let ctx = canvas.getContext('2d');
+                canvas.width = 1024; canvas.height = 1024;
+                ctx.fillStyle = '#545454'; ctx.fillRect(0, 0, 1024, 1024);
+                ctx.drawImage(img, 0, 0, 1024, 1024);
+                let texture = new THREE.CanvasTexture(canvas);
+                texture.encoding = THREE.sRGBEncoding;
+                if (Array.isArray(mesh.material)) {
+                    mesh.material[4].map = texture;
+                    mesh.material[4].color.setHex(0xffffff);
+                    mesh.material[4].needsUpdate = true;
+                }
+            };
+            img.src = base64Data;
+        }
+
+        function applyTextureToWallTop(mesh, base64Data) {
+            let img = new Image();
+            img.onload = function() {
+                let canvas = document.createElement('canvas');
+                let ctx = canvas.getContext('2d');
+                canvas.width = 1024; canvas.height = 512;
+                ctx.fillStyle = '#545454'; ctx.fillRect(0, 0, 1024, 512);
+                ctx.drawImage(img, 0, 0, 1024, 512);
+                let texture = new THREE.CanvasTexture(canvas);
+                texture.encoding = THREE.sRGBEncoding;
+                if (Array.isArray(mesh.material)) {
+                    mesh.material[4].map = texture;
+                    mesh.material[4].color.setHex(0xffffff);
+                    mesh.material[4].needsUpdate = true;
+                }
+            };
+            img.src = base64Data;
+        }
+
+        function applyTextureToFace(mesh, face, base64Data) {
+            if (!mesh) return;
+            let type = mesh.userData.type;
+            let img = new Image();
+            img.onload = function() {
+                let canvas = document.createElement('canvas');
+                let ctx = canvas.getContext('2d');
+                canvas.width = 1024; canvas.height = 1024;
+                ctx.fillStyle = '#545454'; ctx.fillRect(0, 0, 1024, 1024);
+                ctx.drawImage(img, 0, 0, 1024, 1024);
+                let texture = new THREE.CanvasTexture(canvas);
+                texture.encoding = THREE.sRGBEncoding;
+
+                if (type === 'fitting_room') {
+                    if (face === 'front') {
+                        let topBanner = mesh.getObjectByName('topBannerMesh');
+                        if (topBanner) {
+                            topBanner.material[4].map = texture;
+                            topBanner.material[4].color.setHex(0xffffff);
+                            topBanner.material[4].needsUpdate = true;
+                        }
+                    } else {
+                        let targetWallName = (face === 'left') ? 'leftWallMesh' : 'rightWallMesh';
+                        let targetWall = mesh.getObjectByName(targetWallName);
+                        if (targetWall) {
+                            targetWall.material.map = texture;
+                            targetWall.material.color.setHex(0xffffff);
+                            targetWall.material.needsUpdate = true;
+                        }
+                    }
+                } else if (Array.isArray(mesh.material)) {
+                    let faceIdx = (face === 'left') ? 1 : (face === 'right') ? 0 : 4;
+                    mesh.material[faceIdx].map = texture;
+                    mesh.material[faceIdx].color.setHex(0xffffff);
+                    mesh.material[faceIdx].needsUpdate = true;
+                }
+            };
+            img.src = base64Data;
+        }
+
+        function triggerFaceUpload(face) {
+            currentTargetUploadFace = face;
+            document.getElementById('face-image-upload').click();
+        }
+
+        function handleFaceUpload(event) {
+            let file = event.target.files[0];
+            if (!file || !selectedObject) return;
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                let base64Data = e.target.result;
+                let type = selectedObject.userData.type;
+
+                if (type === 'booth_wall' || type === 'booth_wall_top') {
+                    let segId = selectedObject.userData.segmentId;
+                    if (!elevatedWallSegments[segId]) elevatedWallSegments[segId] = { hasTop: (type === 'booth_wall_top'), img: null, baseImg: null };
+                    if (type === 'booth_wall_top') {
+                        elevatedWallSegments[segId].img = base64Data;
+                        applyTextureToWallTop(selectedObject, base64Data);
+                    } else {
+                        elevatedWallSegments[segId].baseImg = base64Data;
+                        applyTextureToWallBase(selectedObject, base64Data);
+                    }
+                } else {
+                    if (!selectedObject.userData.images) selectedObject.userData.images = {};
+                    selectedObject.userData.images[currentTargetUploadFace] = base64Data;
+                    applyTextureToFace(selectedObject, currentTargetUploadFace, base64Data);
+                }
+
+                saveToLocalStorage();
+                selectObject(selectedObject);
+                event.target.value = '';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearFaceTexture(face) {
+            if (!selectedObject) return;
+            let type = selectedObject.userData.type;
+
+            if (type === 'booth_wall' || type === 'booth_wall_top') {
+                let segId = selectedObject.userData.segmentId;
+                if (segId && elevatedWallSegments[segId]) {
+                    if (type === 'booth_wall_top') elevatedWallSegments[segId].img = null;
+                    else elevatedWallSegments[segId].baseImg = null;
+                }
+                if (Array.isArray(selectedObject.material)) {
+                    selectedObject.material[4].map = null;
+                    selectedObject.material[4].color.setHex(FIXED_WALL_COLOR_HEX);
+                    selectedObject.material[4].needsUpdate = true;
+                }
+            } else {
+                if (selectedObject.userData.images) selectedObject.userData.images[face] = null;
+                if (type === 'fitting_room') {
+                    if (face === 'front') {
+                        let topBanner = selectedObject.getObjectByName('topBannerMesh');
+                        if (topBanner) {
+                            topBanner.material[4].map = null;
+                            topBanner.material[4].color.setHex(FIXED_WALL_COLOR_HEX);
+                            topBanner.material[4].needsUpdate = true;
+                        }
+                    } else {
+                        let targetWall = selectedObject.getObjectByName(face === 'left' ? 'leftWallMesh' : 'rightWallMesh');
+                        if (targetWall) {
+                            targetWall.material.map = null;
+                            targetWall.material.color.setHex(FIXED_WALL_COLOR_HEX);
+                            targetWall.material.needsUpdate = true;
+                        }
+                    }
+                } else if (Array.isArray(selectedObject.material)) {
+                    let faceIdx = (face === 'left') ? 1 : (face === 'right') ? 0 : 4;
+                    selectedObject.material[faceIdx].map = null;
+                    selectedObject.material[faceIdx].color.setHex(FIXED_WALL_COLOR_HEX);
+                    selectedObject.material[faceIdx].needsUpdate = true;
+                }
+            }
+
+            selectObject(selectedObject);
+            saveToLocalStorage();
         }
 
         function onPointerDown(event) {
@@ -1037,7 +1476,8 @@
                 -(event.clientY / window.innerHeight) * 2 + 1
             );
             raycaster.setFromCamera(mouse, camera);
-            let intersects = raycaster.intersectObjects(draggableObjects, true);
+            let targets = [...draggableObjects, ...wallObjects];
+            let intersects = raycaster.intersectObjects(targets, true);
 
             if (intersects.length > 0) {
                 let hit = intersects[0].object;
@@ -1045,11 +1485,13 @@
                     hit = hit.parent;
                 }
                 selectObject(hit);
-                isDragging = true;
-                orbitControls.enabled = false;
-                let intersectionPoint = new THREE.Vector3();
-                raycaster.ray.intersectPlane(planeHelper, intersectionPoint);
-                dragOffset.copy(selectedObject.position).sub(intersectionPoint);
+                if (hit.userData.type !== 'booth_wall' && hit.userData.type !== 'booth_wall_top') {
+                    isDragging = true;
+                    orbitControls.enabled = false;
+                    let intersectionPoint = new THREE.Vector3();
+                    raycaster.ray.intersectPlane(planeHelper, intersectionPoint);
+                    dragOffset.copy(selectedObject.position).sub(intersectionPoint);
+                }
             } else {
                 if (!isDragging) selectObject(null);
             }
@@ -1082,18 +1524,22 @@
                 selectedObject.rotation.y += Math.PI / 2;
                 saveToLocalStorage();
             } else if (event.key === 'Delete' || event.key === 'Backspace') {
-                scene.remove(selectedObject);
-                draggableObjects = draggableObjects.filter(o => o !== selectedObject);
-                selectObject(null);
-                saveToLocalStorage();
+                if (selectedObject.userData.type === 'booth_wall' || selectedObject.userData.type === 'booth_wall_top') {
+                    removeSelectedWallSegment();
+                } else {
+                    scene.remove(selectedObject);
+                    draggableObjects = draggableObjects.filter(o => o !== selectedObject);
+                    selectObject(null);
+                    saveToLocalStorage();
+                }
             } else if (event.key.toLowerCase() === 'c') {
                 let type = selectedObject.userData.type;
-                createObject(type, { x: selectedObject.position.x + 0.5, y: selectedObject.position.y, z: selectedObject.position.z + 0.5 });
+                createObject(type, { x: selectedObject.position.x + 0.5, z: selectedObject.position.z + 0.5 });
             }
         }
 
         function updateSelectedDimensions() {
-            if (!selectedObject) return;
+            if (!selectedObject || selectedObject.userData.type === 'booth_wall') return;
             let w = parseFloat(document.getElementById('dim-w').value) / 100;
             let d = parseFloat(document.getElementById('dim-d').value) / 100;
             let h = parseFloat(document.getElementById('dim-h').value) / 100;
@@ -1101,32 +1547,14 @@
                 let type = selectedObject.userData.type;
                 let pos = { x: selectedObject.position.x, y: selectedObject.position.y, z: selectedObject.position.z };
                 let rot = { x: selectedObject.rotation.x, y: selectedObject.rotation.y, z: selectedObject.rotation.z };
+                let imgs = selectedObject.userData.images;
+                let hasTop = selectedObject.userData.hasTopLayer;
+                let shelfLayers = selectedObject.userData.shelfLayers;
+
                 scene.remove(selectedObject);
                 draggableObjects = draggableObjects.filter(o => o !== selectedObject);
-                createObject(type, pos, rot, true, { w, d, h });
+                createObject(type, pos, rot, true, imgs, hasTop, shelfLayers, { w, d, h });
             }
-        }
-
-        function triggerFaceUpload(face) {
-            currentTargetUploadFace = face;
-            document.getElementById('face-image-upload').click();
-        }
-
-        function handleFaceUpload(event) {
-            let file = event.target.files[0];
-            if (!file || !selectedObject) return;
-            let reader = new FileReader();
-            reader.onload = function(e) {
-                let texture = new THREE.TextureLoader().load(e.target.result);
-                texture.encoding = THREE.sRGBEncoding;
-                if (Array.isArray(selectedObject.material)) {
-                    selectedObject.material[4].map = texture;
-                    selectedObject.material[4].color.setHex(0xffffff);
-                    selectedObject.material[4].needsUpdate = true;
-                }
-                saveToLocalStorage();
-            };
-            reader.readAsDataURL(file);
         }
 
         function switchView(type) {
@@ -1137,7 +1565,6 @@
             orbitControls.target.set(0, 0, 0);
         }
 
-        /* 完整暫存與格局還原邏輯 (核心修復) */
         function initProjects() {
             let stored = localStorage.getItem('expo_simulator_projects_v1') || localStorage.getItem('expo_mobile_save');
             if (stored) {
@@ -1152,12 +1579,10 @@
                     console.error("載入暫存失敗：", e);
                 }
             }
-            // 預設初次載入
             render3DFloor();
         }
 
         function applyProjectDataToScene(data) {
-            // 還原格局格子
             activeFloorGrid = data.activeFloorGrid || ['2-2', '2-3'];
             document.querySelectorAll('.grid-cell').forEach(c => c.classList.remove('active'));
             activeFloorGrid.forEach(gridId => {
@@ -1165,14 +1590,12 @@
                 if (cell) cell.classList.add('active');
             });
 
-            // 還原地板顏色
             if (data.floorColor) {
                 currentFloorColorHex = data.floorColor;
                 let colorInput = document.getElementById('floor-color-input');
                 if (colorInput) colorInput.value = data.floorColor;
             }
 
-            // 還原各項勾選狀態
             if (document.getElementById('show-frame-check')) document.getElementById('show-frame-check').checked = (data.showFrame !== undefined) ? data.showFrame : true;
             if (document.getElementById('show-fascia-check')) document.getElementById('show-fascia-check').checked = (data.showFascia !== undefined) ? data.showFascia : true;
             if (document.getElementById('show-main-grid-check')) document.getElementById('show-main-grid-check').checked = (data.showMainGrid !== undefined) ? data.showMainGrid : true;
@@ -1195,16 +1618,15 @@
             }
 
             disabledWallSegments = data.disabledWallSegments || [];
+            elevatedWallSegments = data.elevatedWallSegments || {};
 
-            // 重新繪製 3D 展位格局
             render3DFloor();
 
-            // 還原展具
             draggableObjects.forEach(obj => scene.remove(obj));
             draggableObjects.length = 0;
             if (data.objects && data.objects.length > 0) {
                 data.objects.forEach(o => {
-                    createObject(o.type, o.position, o.rotation, false, o.customDims);
+                    createObject(o.type, o.position, o.rotation, false, o.images, o.hasTopLayer, o.shelfLayers, o.customDims);
                 });
             }
         }
@@ -1229,11 +1651,15 @@
                     front: document.getElementById('wall-front-check')?.checked ?? false
                 },
                 disabledWallSegments: disabledWallSegments,
+                elevatedWallSegments: elevatedWallSegments,
                 activeFloorGrid: activeFloorGrid,
                 objects: draggableObjects.map(o => ({
                     type: o.userData.type,
                     position: { x: o.position.x, y: o.position.y, z: o.position.z },
                     rotation: { x: o.rotation.x, y: o.rotation.y, z: o.rotation.z },
+                    hasTopLayer: o.userData.hasTopLayer || false,
+                    shelfLayers: o.userData.shelfLayers || 3,
+                    images: o.userData.images || {},
                     customDims: {
                         w: o.userData.customW || OBJECT_TYPES[o.userData.type]?.w,
                         d: o.userData.customD || OBJECT_TYPES[o.userData.type]?.d,

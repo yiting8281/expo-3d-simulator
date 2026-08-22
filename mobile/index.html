@@ -353,11 +353,11 @@
             <button onclick="switchView('left')">側視</button>
         </div>
         <div class="top-btn-group">
-            <button onclick="toggleDrawer()" id="drawer-toggle-btn">收合選單 ⬇️</button>
+            <button onclick="toggleDrawer()" id="drawer-toggle-btn">展開選單 ⬆️</button>
         </div>
     </div>
 
-    <!-- 選中物件時的懸浮快捷列 (點擊齒輪才開啟編輯面板) -->
+    <!-- 選中物件時的懸浮快捷列 -->
     <div id="mobile-quick-actions">
         <button class="quick-btn" onclick="openPropsDrawer()" style="background:var(--primary); color:#fff; border-color:var(--primary);">⚙️ 編輯屬性</button>
         <button class="quick-btn" onclick="onKeyDown({key:'r'})">🔄 轉 90°</button>
@@ -365,8 +365,8 @@
         <button class="quick-btn" onclick="onKeyDown({key:'Delete'})" style="color:var(--danger)">🗑️ 刪除</button>
     </div>
 
-    <!-- 底部抽屜面板 -->
-    <div id="mobile-drawer">
+    <!-- 底部抽屜面板 (預設加上 collapsed 收合) -->
+    <div id="mobile-drawer" class="collapsed">
         <div class="drawer-header" onclick="toggleDrawer()">
             <div class="drawer-handle"></div>
             <div class="drawer-tabs" onclick="event.stopPropagation()">
@@ -939,7 +939,7 @@
                     }
                     if (c === 0 || !gridMap[r][c - 1]) {
                         if (checkLeft) createWallSegment(wallThick, CELL_SIZE, minX - wallThick/2, posZ, `${r}-${c}-left`, '左牆');
-                        if (showFrame) { addFrameLine(minX, minZ, minX, maxZ, 0, FRAME_HEIGHT); addVerticalPost(minX, minZ); addVerticalPost(minX, maxZ); }
+                        if (showFrame) { addFrameLine(minX, minZ, minX, maxZ, 0, FRAME_HEIGHT); addVerticalPost(minX, minZ); addVerticalPost(maxX, minZ); }
                     }
                     if (c === GRID_MAP_SIZE - 1 || !gridMap[r][c + 1]) {
                         if (checkRight) createWallSegment(wallThick, CELL_SIZE, maxX + wallThick/2, posZ, `${r}-${c}-right`, '右牆');
@@ -1809,7 +1809,7 @@
             saveToLocalStorage();
         }
 
-        /* 3D 畫布專屬觸控事件 */
+        /* 3D 畫布專屬觸控事件 (點選物件不展開抽屜) */
         function onCanvasPointerDown(event) {
             let drawer = document.getElementById('mobile-drawer');
             let rect = drawer.getBoundingClientRect();

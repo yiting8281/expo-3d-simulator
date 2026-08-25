@@ -263,6 +263,7 @@
         }
         button.action-btn { background: rgba(0, 132, 255, 0.15); border-color: rgba(0, 132, 255, 0.35); color: #4da6ff; }
         button.save-btn { background: rgba(52, 199, 89, 0.15); border-color: rgba(52, 199, 89, 0.35); color: #30d158; }
+        button.danger-btn { background: rgba(255, 69, 58, 0.15); border-color: rgba(255, 69, 58, 0.35); color: #ff453a; }
         button.upload-face-btn {
             background-color: rgba(255, 159, 10, 0.15);
             border: 1px dashed rgba(255, 159, 10, 0.5);
@@ -365,7 +366,7 @@
         <button class="quick-btn" onclick="onKeyDown({key:'Delete'})" style="color:var(--danger)">🗑️ 刪除</button>
     </div>
 
-    <!-- 底部抽屜面板 (預設加上 collapsed 收合) -->
+    <!-- 底部抽屜面板 -->
     <div id="mobile-drawer" class="collapsed">
         <div class="drawer-header" onclick="toggleDrawer()">
             <div class="drawer-handle"></div>
@@ -437,7 +438,7 @@
                 </div>
             </div>
 
-            <!-- 分頁 2: 完整展具新增庫 -->
+            <!-- 分頁 2: 展具新增庫 -->
             <div id="tab-items" class="tab-pane">
                 <h3>點擊新增展具</h3>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
@@ -460,7 +461,6 @@
             <div id="tab-props" class="tab-pane">
                 <h3 id="mobile-prop-title" style="color:var(--accent);">未選取任何物件</h3>
 
-                <!-- 外圍單段隔牆控制區 -->
                 <div id="wall-segment-control" style="display:none; background: rgba(0, 132, 255, 0.08); padding: 12px; border-radius: var(--radius-sm); border: 1px solid rgba(0, 132, 255, 0.2); margin-bottom: 10px;">
                     <button id="toggle-wall-height-btn" class="app-btn" onclick="toggleWallSegmentHeight()" style="background-color: var(--accent); color: #111; font-weight:600;">➕ 雙層加高：追加 150cm 頂層看板</button>
 
@@ -485,7 +485,6 @@
                     <button class="app-btn" onclick="removeSelectedWallSegment()" style="background-color: rgba(255, 69, 58, 0.15); color: #ff6961; border: 1px solid rgba(255, 69, 58, 0.3); margin-top: 8px;">🗑️ 隱藏／移除此段隔牆</button>
                 </div>
 
-                <!-- 展具屬性控制區 -->
                 <div id="prop-controls-container" style="display:none;">
                     <div id="backdrop-layer-control" style="display:none; background: rgba(0, 132, 255, 0.08); padding: 10px; border-radius: var(--radius-sm); border: 1px solid rgba(0, 132, 255, 0.2); margin-bottom: 10px;">
                         <button id="toggle-layer-btn" class="app-btn" onclick="toggleBackdropLayer()" style="background-color: var(--accent); color: #111; font-weight:600; margin-bottom:0;">➕ 雙層加高：追加 150cm 頂層獨立招牌</button>
@@ -542,20 +541,29 @@
                     <button class="app-btn" onclick="onKeyDown({key:'Delete'})" style="color:var(--danger); border-color:rgba(255,69,58,0.3); margin-top: 12px;">🗑️ 刪除此物件</button>
                 </div>
 
-                <!-- 外圍所有現有牆面清單 -->
                 <div id="all-walls-quick-select" style="margin-top:16px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:10px;">
                     <label style="color:var(--accent); font-weight:600;">🧱 快速選擇外圍牆面進行加高/貼圖：</label>
                     <div id="walls-button-list" style="display:flex; flex-direction:column; gap:6px;"></div>
                 </div>
             </div>
 
-            <!-- 分頁 4: 方案與存檔 -->
+            <!-- 分頁 4: 方案與存檔 (已修復完整功能) -->
             <div id="tab-project" class="tab-pane">
                 <h3>方案管理</h3>
+                <label>選擇或切換方案</label>
                 <select id="project-select" class="custom-select" onchange="switchProject(this.value)"></select>
+                <label>修改當前方案名稱</label>
                 <input type="text" id="expo-title-input" placeholder="方案名稱" oninput="onTitleInputChange()">
-                <button class="app-btn action-btn" onclick="createNewProject()">➕ 新增空白方案</button>
-                <button class="app-btn save-btn" onclick="exportJSON()">💾 匯出 JSON 備份</button>
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:12px;">
+                    <button class="app-btn action-btn" onclick="createNewProject()" style="margin-bottom:0;">➕ 新增空白方案</button>
+                    <button class="app-btn danger-btn" onclick="deleteCurrentProject()" style="margin-bottom:0;">🗑️ 刪除此方案</button>
+                </div>
+
+                <h3 style="margin-top:16px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:10px;">備份與匯出</h3>
+                <button class="app-btn save-btn" onclick="exportJSON()">💾 匯出全部方案 JSON</button>
+                <button class="app-btn action-btn" onclick="document.getElementById('import-json-file').click()">📂 匯入 JSON 備份</button>
+                <input type="file" id="import-json-file" accept=".json" style="display:none;" onchange="importJSON(event)">
                 <button class="app-btn" onclick="exportImage()">🖼️ 匯出配置截圖</button>
             </div>
         </div>
@@ -583,8 +591,9 @@
         let CELL_SIZE = 3;
         let FRAME_HEIGHT = 2.5;
         let FIXED_WALL_COLOR_HEX = 0x545454;
+        
         let projectsData = {};
-        let currentProjectId = null;
+        let currentProjectId = 'proj_default';
 
         const OBJECT_TYPES = {
             human:         { name: '比例模特兒', w: 0.4,  d: 0.3, h: 1.7,  color: 0xff7043 },
@@ -705,6 +714,9 @@
             document.querySelectorAll('.grid-cell').forEach(c => c.classList.remove('active'));
             disabledWallSegments = [];
             elevatedWallSegments = {};
+            draggableObjects.forEach(obj => scene.remove(obj));
+            draggableObjects.length = 0;
+            selectObject(null);
             render3DFloor();
             saveToLocalStorage();
         }
@@ -765,27 +777,29 @@
 
             activeFloorGrid.forEach(gridId => {
                 let [r, c] = gridId.split('-').map(Number);
-                gridMap[r][c] = true;
-                let posX = c * CELL_SIZE - offset;
-                let posZ = r * CELL_SIZE - offset;
+                if (r >= 0 && r < GRID_MAP_SIZE && c >= 0 && c < GRID_MAP_SIZE) {
+                    gridMap[r][c] = true;
+                    let posX = c * CELL_SIZE - offset;
+                    let posZ = r * CELL_SIZE - offset;
 
-                let tile = new THREE.Mesh(
-                    new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE),
-                    new THREE.MeshBasicMaterial({ color: parseInt(currentFloorColorHex.replace('#', '0x')), side: THREE.DoubleSide })
-                );
-                tile.rotation.x = -Math.PI / 2;
-                tile.position.set(posX, 0, posZ);
-                floorGroup.add(tile);
+                    let tile = new THREE.Mesh(
+                        new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE),
+                        new THREE.MeshBasicMaterial({ color: parseInt(currentFloorColorHex.replace('#', '0x')), side: THREE.DoubleSide })
+                    );
+                    tile.rotation.x = -Math.PI / 2;
+                    tile.position.set(posX, 0, posZ);
+                    floorGroup.add(tile);
 
-                if (showSubGrid) {
-                    let fineGrid = new THREE.GridHelper(CELL_SIZE, 3, 0x444444, 0x333333);
-                    fineGrid.position.set(posX, 0.002, posZ);
-                    floorGroup.add(fineGrid);
-                }
-                if (showMainGrid) {
-                    let mainGrid = new THREE.GridHelper(CELL_SIZE, 1, 0x0084ff, 0x0084ff);
-                    mainGrid.position.set(posX, 0.004, posZ);
-                    floorGroup.add(mainGrid);
+                    if (showSubGrid) {
+                        let fineGrid = new THREE.GridHelper(CELL_SIZE, 3, 0x444444, 0x333333);
+                        fineGrid.position.set(posX, 0.002, posZ);
+                        floorGroup.add(fineGrid);
+                    }
+                    if (showMainGrid) {
+                        let mainGrid = new THREE.GridHelper(CELL_SIZE, 1, 0x0084ff, 0x0084ff);
+                        mainGrid.position.set(posX, 0.004, posZ);
+                        floorGroup.add(mainGrid);
+                    }
                 }
             });
 
@@ -1809,7 +1823,7 @@
             saveToLocalStorage();
         }
 
-        /* 3D 畫布專屬觸控事件 (點選物件不展開抽屜) */
+        /* 3D 畫布專屬觸控事件 */
         function onCanvasPointerDown(event) {
             let drawer = document.getElementById('mobile-drawer');
             let rect = drawer.getBoundingClientRect();
@@ -1912,25 +1926,169 @@
             orbitControls.target.set(0, 0, 0);
         }
 
-        /* 完整暫存與格局還原邏輯 */
+        /* -------------------------------------------------------------
+           完整多方案管理與存取邏輯 (修復核心)
+        ------------------------------------------------------------- */
+        function getDefaultProjectData(title = '預設方案 1') {
+            return {
+                title: title,
+                activeFloorGrid: ['2-2', '2-3'],
+                floorColor: '#2d2d2d',
+                showFrame: true,
+                showFascia: true,
+                showFasciaFront: true,
+                showFasciaBack: true,
+                showFasciaLeft: true,
+                showFasciaRight: true,
+                showMainGrid: true,
+                showSubGrid: true,
+                fasciaText: 'COMPRESSPORT',
+                walls: { back: true, left: true, right: false, front: false },
+                disabledWallSegments: [],
+                elevatedWallSegments: {},
+                objects: []
+            };
+        }
+
         function initProjects() {
-            let stored = localStorage.getItem('expo_simulator_projects_v1') || localStorage.getItem('expo_mobile_save');
+            let stored = localStorage.getItem('expo_simulator_projects_v2');
             if (stored) {
                 try {
                     let parsed = JSON.parse(stored);
-                    let data = parsed.projects ? parsed.projects[parsed.currentProjectId]?.data : parsed;
-                    if (data) {
-                        applyProjectDataToScene(data);
-                        return;
-                    }
+                    projectsData = parsed.projects || {};
+                    currentProjectId = parsed.currentProjectId || Object.keys(projectsData)[0] || 'proj_1';
                 } catch(e) {
-                    console.error("載入暫存失敗：", e);
+                    console.error("載入方案失敗，建立預設方案", e);
                 }
             }
-            render3DFloor();
+
+            if (!projectsData || Object.keys(projectsData).length === 0) {
+                currentProjectId = 'proj_1';
+                projectsData = {
+                    'proj_1': getDefaultProjectData('展位方案 A')
+                };
+            }
+
+            renderProjectSelectOptions();
+            loadProject(currentProjectId);
+        }
+
+        function renderProjectSelectOptions() {
+            let select = document.getElementById('project-select');
+            if (!select) return;
+            select.innerHTML = '';
+            for (let id in projectsData) {
+                let opt = document.createElement('option');
+                opt.value = id;
+                opt.innerText = projectsData[id].title || '未命名方案';
+                if (id === currentProjectId) opt.selected = true;
+                select.appendChild(opt);
+            }
+        }
+
+        function getCurrentSceneData() {
+            return {
+                title: document.getElementById('expo-title-input')?.value || '展位方案',
+                floorColor: currentFloorColorHex,
+                showFrame: document.getElementById('show-frame-check')?.checked ?? true,
+                showFascia: document.getElementById('show-fascia-check')?.checked ?? true,
+                showFasciaFront: document.getElementById('fascia-front-check')?.checked ?? true,
+                showFasciaBack: document.getElementById('fascia-back-check')?.checked ?? true,
+                showFasciaLeft: document.getElementById('fascia-left-check')?.checked ?? true,
+                showFasciaRight: document.getElementById('fascia-right-check')?.checked ?? true,
+                showMainGrid: document.getElementById('show-main-grid-check')?.checked ?? true,
+                showSubGrid: document.getElementById('show-sub-grid-check')?.checked ?? true,
+                fasciaText: document.getElementById('fascia-text-input')?.value || 'COMPRESSPORT',
+                walls: {
+                    back: document.getElementById('wall-back-check')?.checked ?? true,
+                    left: document.getElementById('wall-left-check')?.checked ?? true,
+                    right: document.getElementById('wall-right-check')?.checked ?? false,
+                    front: document.getElementById('wall-front-check')?.checked ?? false
+                },
+                disabledWallSegments: disabledWallSegments,
+                elevatedWallSegments: elevatedWallSegments,
+                activeFloorGrid: activeFloorGrid,
+                objects: draggableObjects.map(o => ({
+                    type: o.userData.type,
+                    position: { x: o.position.x, y: o.position.y, z: o.position.z },
+                    rotation: { x: o.rotation.x, y: o.rotation.y, z: o.rotation.z },
+                    hasTopLayer: o.userData.hasTopLayer || false,
+                    shelfLayers: o.userData.shelfLayers || 3,
+                    images: o.userData.images || {},
+                    customDims: {
+                        w: o.userData.customW || OBJECT_TYPES[o.userData.type]?.w,
+                        d: o.userData.customD || OBJECT_TYPES[o.userData.type]?.d,
+                        h: o.userData.customH || OBJECT_TYPES[o.userData.type]?.h
+                    }
+                }))
+            };
+        }
+
+        function saveToLocalStorage() {
+            if (!currentProjectId) currentProjectId = 'proj_1';
+            projectsData[currentProjectId] = getCurrentSceneData();
+            
+            let packageData = {
+                currentProjectId: currentProjectId,
+                projects: projectsData
+            };
+            localStorage.setItem('expo_simulator_projects_v2', JSON.stringify(packageData));
+        }
+
+        function loadProject(id) {
+            if (!projectsData[id]) return;
+            currentProjectId = id;
+            let data = projectsData[id];
+            
+            let titleInput = document.getElementById('expo-title-input');
+            if (titleInput) titleInput.value = data.title || '';
+
+            applyProjectDataToScene(data);
+            renderProjectSelectOptions();
+        }
+
+        function switchProject(id) {
+            saveToLocalStorage(); // 先存好當前方案
+            loadProject(id);
+        }
+
+        function createNewProject() {
+            saveToLocalStorage();
+            let newId = 'proj_' + Date.now();
+            let count = Object.keys(projectsData).length + 1;
+            projectsData[newId] = getDefaultProjectData(`新展位方案 ${count}`);
+            loadProject(newId);
+            saveToLocalStorage();
+        }
+
+        function deleteCurrentProject() {
+            let keys = Object.keys(projectsData);
+            if (keys.length <= 1) {
+                alert('至少需保留一個方案！');
+                return;
+            }
+            if (confirm(`確定要刪除「${projectsData[currentProjectId]?.title || '此方案'}」嗎？`)) {
+                delete projectsData[currentProjectId];
+                let nextId = Object.keys(projectsData)[0];
+                loadProject(nextId);
+                saveToLocalStorage();
+            }
+        }
+
+        function onTitleInputChange() {
+            let title = document.getElementById('expo-title-input').value;
+            if (projectsData[currentProjectId]) {
+                projectsData[currentProjectId].title = title;
+            }
+            let select = document.getElementById('project-select');
+            if (select && select.querySelector(`option[value="${currentProjectId}"]`)) {
+                select.querySelector(`option[value="${currentProjectId}"]`).innerText = title || '未命名方案';
+            }
+            saveToLocalStorage();
         }
 
         function applyProjectDataToScene(data) {
+            selectObject(null);
             activeFloorGrid = data.activeFloorGrid || ['2-2', '2-3'];
             document.querySelectorAll('.grid-cell').forEach(c => c.classList.remove('active'));
             activeFloorGrid.forEach(gridId => {
@@ -1979,51 +2137,45 @@
             }
         }
 
-        function saveToLocalStorage() {
-            let layout = {
-                expoTitle: document.getElementById('expo-title-input')?.value || '展位方案',
-                floorColor: currentFloorColorHex,
-                showFrame: document.getElementById('show-frame-check')?.checked ?? true,
-                showFascia: document.getElementById('show-fascia-check')?.checked ?? true,
-                showFasciaFront: document.getElementById('fascia-front-check')?.checked ?? true,
-                showFasciaBack: document.getElementById('fascia-back-check')?.checked ?? true,
-                showFasciaLeft: document.getElementById('fascia-left-check')?.checked ?? true,
-                showFasciaRight: document.getElementById('fascia-right-check')?.checked ?? true,
-                showMainGrid: document.getElementById('show-main-grid-check')?.checked ?? true,
-                showSubGrid: document.getElementById('show-sub-grid-check')?.checked ?? true,
-                fasciaText: document.getElementById('fascia-text-input')?.value || 'COMPRESSPORT',
-                walls: {
-                    back: document.getElementById('wall-back-check')?.checked ?? true,
-                    left: document.getElementById('wall-left-check')?.checked ?? true,
-                    right: document.getElementById('wall-right-check')?.checked ?? false,
-                    front: document.getElementById('wall-front-check')?.checked ?? false
-                },
-                disabledWallSegments: disabledWallSegments,
-                elevatedWallSegments: elevatedWallSegments,
-                activeFloorGrid: activeFloorGrid,
-                objects: draggableObjects.map(o => ({
-                    type: o.userData.type,
-                    position: { x: o.position.x, y: o.position.y, z: o.position.z },
-                    rotation: { x: o.rotation.x, y: o.rotation.y, z: o.rotation.z },
-                    hasTopLayer: o.userData.hasTopLayer || false,
-                    shelfLayers: o.userData.shelfLayers || 3,
-                    images: o.userData.images || {},
-                    customDims: {
-                        w: o.userData.customW || OBJECT_TYPES[o.userData.type]?.w,
-                        d: o.userData.customD || OBJECT_TYPES[o.userData.type]?.d,
-                        h: o.userData.customH || OBJECT_TYPES[o.userData.type]?.h
-                    }
-                }))
-            };
-            localStorage.setItem('expo_mobile_save', JSON.stringify(layout));
-        }
-
         function exportJSON() {
-            let blob = new Blob([localStorage.getItem('expo_mobile_save') || '{}'], { type: "application/json" });
+            saveToLocalStorage();
+            let packageData = {
+                currentProjectId: currentProjectId,
+                projects: projectsData
+            };
+            let blob = new Blob([JSON.stringify(packageData, null, 2)], { type: "application/json" });
             let a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = `EXPO_Mobile_${Date.now()}.json`;
+            a.download = `EXPO_Projects_Backup_${Date.now()}.json`;
             a.click();
+        }
+
+        function importJSON(event) {
+            let file = event.target.files[0];
+            if (!file) return;
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    let parsed = JSON.parse(e.target.result);
+                    if (parsed.projects) {
+                        projectsData = parsed.projects;
+                        currentProjectId = parsed.currentProjectId || Object.keys(projectsData)[0];
+                    } else {
+                        // 相容單一舊格式
+                        let singleId = 'proj_' + Date.now();
+                        projectsData = {};
+                        projectsData[singleId] = parsed;
+                        currentProjectId = singleId;
+                    }
+                    saveToLocalStorage();
+                    loadProject(currentProjectId);
+                    alert('方案備份匯入成功！');
+                } catch(err) {
+                    alert('匯入失敗：JSON 格式不正確');
+                }
+                event.target.value = '';
+            };
+            reader.readAsText(file);
         }
 
         function exportImage() {
@@ -2031,7 +2183,7 @@
             renderer.render(scene, camera);
             let a = document.createElement('a');
             a.href = renderer.domElement.toDataURL("image/png");
-            a.download = `EXPO_Capture_${Date.now()}.png`;
+            a.download = `EXPO_${projectsData[currentProjectId]?.title || 'Capture'}_${Date.now()}.png`;
             a.click();
         }
 
@@ -2039,10 +2191,6 @@
             render3DFloor();
             saveToLocalStorage();
         }
-
-        function onTitleInputChange() { saveToLocalStorage(); }
-        function createNewProject() { clearAllFloors(); }
-        function switchProject() {}
 
         function onWindowResize() {
             camera.aspect = window.innerWidth / window.innerHeight;

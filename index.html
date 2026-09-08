@@ -765,7 +765,7 @@
         let targetControlsTarget = null; 
         let ANIMATION_SPEED = 0.08; 
 
-        let SNAP_UNIT = 0.1;    
+        let SNAP_UNIT = 0.01;    
         let GRID_MAP_SIZE = 5; 
         let CELL_SIZE = 3;     
         let FRAME_HEIGHT = 2.5; 
@@ -2734,7 +2734,7 @@
             targetObj.updateMatrixWorld(true);
             let targetBox = new THREE.Box3().setFromObject(targetObj);
 
-            let epsilon = 0.01;
+            let epsilon = 0.02;
             targetBox.min.x += epsilon;
             targetBox.min.z += epsilon;
             targetBox.max.x -= epsilon;

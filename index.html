@@ -578,6 +578,7 @@
             <button class="action-btn" onclick="createObject('round_rack')">⭕ 新睜圓盤環形衣架 (80x80x160)</button>
             <button class="action-btn" onclick="createObject('fitting_room')">🚪 新增更衣室/試衣間 (100x100x250)</button>
             <button class="action-btn" onclick="createObject('backdrop')">🧱 新增背板 (300x30x250)</button>
+             <button class="action-btn" onclick="createObject('pearl_board')" style="background:rgba(255,159,10,.15);color:#ffbd65;border-color:rgba(255,159,10,.35)">🪧 新增自訂珍珠板 (可跨越、懸空)</button>
             <button class="action-btn" onclick="createObject('wall_shelf')">🪜 新增牆面層架 (100x35x180)</button>
             <button class="action-btn" onclick="createObject('floor_mesh')">🥅 新增落地鐵網 (90x30x150)</button>
             <button class="action-btn" onclick="createObject('wall_mesh')">🖼️ 新增掛牆鐵網 (90x10x150)</button>
@@ -677,7 +678,7 @@
                     </div>
                     <div class="dim-input-box">
                         <label id="lbl-dim-d">深度 D</label>
-                        <input type="number" id="dim-d" step="5" min="10" onchange="updateSelectedDimensions()">
+                        <input type="number" id="dim-d" step="0.1" min="0.1" onchange="updateSelectedDimensions()">
                     </div>
                     <div class="dim-input-box">
                         <label>高度 H</label>
@@ -686,7 +687,17 @@
                 </div>
             </div>
 
-            <!-- 可隱藏的圖片管理區塊 -->
+            <!-- 珍珠板獨立高度與輸出 -->
+             <div id="pearl-board-control" class="section" style="display:none;background:rgba(255,159,10,.08);padding:10px;border-radius:8px;border:1px solid rgba(255,159,10,.3)">
+                <h4 style="font-size:12px;color:#ff9f0a;margin-bottom:8px">🪧 珍珠板自由配置與輸出</h4>
+                <label>底部離地高度 (cm)，0 為落地</label>
+                <input type="number" id="pearl-bottom-cm" min="0" step="5" value="0" onchange="updatePearlBottomHeight()" style="width:100%;background:#202024;color:#fff;border:1px solid #555;padding:8px;border-radius:6px">
+                <div style="font-size:11px;color:#aaa;margin:8px 0">可跨越展具與牆面，拖曳時保留離地高度。尺寸欄位請填實際成品尺寸；厚度 D 預設 0.5cm。</div>
+                <button class="img-btn" onclick="exportPearlBoardSVG()">📐 匯出此片珍珠板尺寸圖 (SVG)</button>
+                <button class="img-btn" onclick="exportPearlBoardArtwork()">🖼️ 匯出此片圖面預覽 (JPG)</button>
+             </div>
+
+             <!-- 可隱藏的圖片管理區塊 -->
             <div class="section" id="image-management-section">
                 <h4 id="output-section-title" style="font-size:12px; color:var(--text-secondary); margin-bottom:8px;">📋 各面輸出示意圖管理</h4>
                 
@@ -784,7 +795,8 @@
             straight_rack: { name: '直桿吊衣架', w: 1.0,  d: 0.40, h: 1.6,  color: 0xaf52de }, 
             round_rack:    { name: '圓盤環形衣架', w: 0.8,  d: 0.80, h: 1.6,  color: 0xaf52de }, 
             fitting_room:  { name: '更衣室/試衣間', w: 1.0,  d: 1.00, h: 2.5,  color: FIXED_WALL_COLOR_HEX }, 
-            backdrop:      { name: '背板',        w: 3.0,  d: 0.30, h: 2.5,  color: FIXED_WALL_COLOR_HEX }, 
+            backdrop:      { name: '背板',        w: 3.0,  d: 0.30, h: 2.5,  color: FIXED_WALL_COLOR_HEX },
+            pearl_board:   { name: '自訂珍珠板', w: 2.0,  d: 0.005, h: 0.9, color: 0xf8f8f8 }, 
             wall_shelf:    { name: '牆面層架',   w: 1.0,  d: 0.35, h: 1.8,  color: 0x34c759 }, 
             floor_mesh:    { name: '落地鐵網',   w: 0.9,  d: 0.35, h: 1.5,  color: 0x333333 }, 
             wall_mesh:     { name: '掛牆鐵網',   w: 0.9,  d: 0.08, h: 1.5,  color: 0x333333 }, 
@@ -1059,7 +1071,7 @@
                         },
                         hasTopLayer: obj.userData.hasTopLayer || false, 
                         shelfLayers: obj.userData.shelfLayers || 3,
-                        images: { front: null, left: null, right: null }
+                        images: obj.userData.type === 'pearl_board' ? { front: obj.userData.images?.front || null, left: null, right: null } : { front: null, left: null, right: null }
                     }))
                 };
 
@@ -1904,7 +1916,8 @@
                 customH: finalH,
                 hasTopLayer: hasTopLayer, 
                 shelfLayers: shelfLayers, 
-                images: normalizedImages 
+                images: normalizedImages,
+                pearlBottomCm: type === 'pearl_board' ? Math.max(0, Math.round((finalMesh.position.y - finalH/2)*100)) : 0
             };
             
             scene.add(finalMesh);
@@ -1930,6 +1943,7 @@
 
             let type = selectedObject.userData.type;
             let pos = { x: selectedObject.position.x, y: selectedObject.position.y, z: selectedObject.position.z };
+            if (type === 'pearl_board') pos.y = (selectedObject.userData.pearlBottomCm || 0)/100 + hInput / 2;
             let rot = { x: selectedObject.rotation.x, y: selectedObject.rotation.y, z: selectedObject.rotation.z };
             let imgs = selectedObject.userData.images;
             let hasTop = selectedObject.userData.hasTopLayer;
@@ -2039,7 +2053,9 @@
             if (raycaster.ray.intersectPlane(planeHelper, intersectionPoint)) {
                 selectedObject.position.copy(intersectionPoint.add(dragOffset));
                 
-                if (selectedObject.userData.type === 'wall_mesh') {
+                if (selectedObject.userData.type === 'pearl_board') {
+                    selectedObject.position.y = (selectedObject.userData.pearlBottomCm || 0) / 100 + selectedObject.userData.height / 2;
+                } else if (selectedObject.userData.type === 'wall_mesh') {
                     selectedObject.position.y = Math.max(selectedObject.userData.height / 2, selectedObject.position.y);
                 } else {
                     selectedObject.position.y = selectedObject.userData.height / 2;
@@ -2060,7 +2076,8 @@
                 if (checkCollision(selectedObject)) {
                     selectedObject.position.copy(previousPosition); 
                 } else {
-                    saveToLocalStorage(); 
+                    saveToLocalStorage();
+                    if (selectedObject.userData.type === 'pearl_board') updateRightPanelUI();
                 }
             }
         }
@@ -2734,6 +2751,8 @@
             targetObj.updateMatrixWorld(true);
             let targetBox = new THREE.Box3().setFromObject(targetObj);
 
+            // 自訂珍珠板允許跨越既有展具與隔牆；它是展示圖面而非碰撞實體。
+            if (targetObj.userData.type === 'pearl_board') return false;
             let epsilon = 0.02;
             targetBox.min.x += epsilon;
             targetBox.min.z += epsilon;
@@ -2746,6 +2765,7 @@
                 otherObj.updateMatrixWorld(true);
                 let otherBox = new THREE.Box3().setFromObject(otherObj);
 
+                if (otherObj.userData.type === 'pearl_board') continue;
                 if (targetBox.intersectsBox(otherBox)) return true; 
             }
             return false; 
@@ -2862,6 +2882,11 @@
             let shelfControl = document.getElementById('shelf-layer-control');
             let normalControls = document.getElementById('normal-object-controls');
             let imageSection = document.getElementById('image-management-section');
+            let pearlControl = document.getElementById('pearl-board-control');
+            if (pearlControl) {
+                pearlControl.style.display = type === 'pearl_board' ? 'block' : 'none';
+                if (type === 'pearl_board') document.getElementById('pearl-bottom-cm').value = Math.max(0, Math.round((selectedObject.position.y - selectedObject.userData.height / 2)*100));
+            }
             let includeTopBox = document.getElementById('include-top-box');
             let btnGroupFitting = document.getElementById('btn-group-fitting');
             let cabinetGroupBox = document.getElementById('cabinet-group-box');
@@ -3131,11 +3156,66 @@
             }
         }
 
+        function updatePearlBottomHeight() {
+            if (!selectedObject || selectedObject.userData.type !== 'pearl_board') return;
+            let val = Number(document.getElementById('pearl-bottom-cm').value);
+            if (!Number.isFinite(val) || val < 0) return;
+            selectedObject.userData.pearlBottomCm = val;
+            selectedObject.position.y = val / 100 + selectedObject.userData.height / 2;
+            saveToLocalStorage();
+        }
+
+        function downloadPearlFile(content, mime, ext) {
+            let title = (document.getElementById('expo-title-input').value || 'EXPO').replace(/[\\/:*?"<>|]/g,'_');
+            let blob = new Blob([content], {type:mime});
+            let url = URL.createObjectURL(blob);
+            let a = document.createElement('a'); a.href = url;
+            a.download = `${title}_珍珠板_${Math.round(selectedObject.userData.customW*100)}x${Math.round(selectedObject.userData.customH*100)}cm.${ext}`;
+            a.click(); setTimeout(()=>URL.revokeObjectURL(url),1000);
+        }
+
+        function exportPearlBoardSVG() {
+            const o = selectedObject;
+            if (!o || o.userData.type !== 'pearl_board') return;
+            const w = o.userData.customW*1000, h=o.userData.customH*1000; // 公尺 => 毫米
+            const pad = 75, safeW=w+pad*2, safeH=h+pad*2;
+            const artwork = o.userData.images?.front;
+            const safeImage = artwork && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(artwork) ? artwork : null;
+            const picture = safeImage ? `<image x="${pad}" y="${pad}" width="${w}" height="${h}" preserveAspectRatio="none" href="${safeImage}"/>` : `<rect x="${pad}" y="${pad}" width="${w}" height="${h}" fill="#fff"/>`;
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${safeW}mm" height="${safeH}mm" viewBox="0 0 ${safeW} ${safeH}">
+            <rect width="100%" height="100%" fill="#f0f0f0"/>${picture}
+            <rect x="${pad}" y="${pad}" width="${w}" height="${h}" fill="none" stroke="#f00" stroke-width="1"/>
+            <g fill="none" stroke="#111" stroke-width="1"><path d="M${pad},${pad-20} H${pad+w} M${pad},${pad-27} v14 M${pad+w},${pad-27} v14 M${pad-20},${pad} V${pad+h} M${pad-27},${pad} h14 M${pad-27},${pad+h} h14"/></g>
+            <g font-family="Arial,sans-serif" font-size="17" fill="#111"><text x="${pad+w/2}" y="${pad-29}" text-anchor="middle">${o.userData.customW*100} cm</text><text x="${pad-32}" y="${pad+h/2}" text-anchor="middle" transform="rotate(-90 ${pad-32} ${pad+h/2})">${o.userData.customH*100} cm</text><text x="${pad}" y="${pad+h+35}">成品：${o.userData.customW*100} × ${o.userData.customH*100} cm　厚度：${o.userData.customD*100} cm　底部離地：${o.userData.pearlBottomCm||0} cm</text><text x="${pad}" y="${pad+h+55}" font-size="12">尺寸示意圖；紅線為裁切邊。內嵌圖片為低解析預覽，非印刷原稿；未含出血。</text></g></svg>`;
+            downloadPearlFile(svg,'image/svg+xml;charset=utf-8','svg');
+        }
+
+        function exportPearlBoardArtwork() {
+            if (!selectedObject || selectedObject.userData.type !== 'pearl_board') return;
+            const src = selectedObject.userData.images?.front;
+            if (!src) {alert('請先在「正面輸出」上傳圖片');return;}
+            const a = document.createElement('a'); a.href=src;
+            a.download=`珍珠板圖面預覽_${Math.round(selectedObject.userData.customW*100)}x${Math.round(selectedObject.userData.customH*100)}cm.jpg`;
+            a.click();
+        }
+
         function exportJSON() {
             let titleValue = document.getElementById('expo-title-input').value;
             let layoutData = projectsData[currentProjectId]?.data || {};
             
-            let dataStr = JSON.stringify(layoutData, null, 2);
+            // 匯出 JSON 時，以場景目前的物件為準，包含珍珠板上傳圖面。
+            saveToLocalStorage();
+            let dataSnapshot = JSON.parse(JSON.stringify(projectsData[currentProjectId]?.data || layoutData));
+            dataSnapshot.objects = draggableObjects.map(obj => ({
+                type: obj.userData.type,
+                position: { x: obj.position.x, y: obj.position.y, z: obj.position.z },
+                rotation: { x: obj.rotation.x, y: obj.rotation.y, z: obj.rotation.z },
+                customDims: { w: obj.userData.customW, d: obj.userData.customD, h: obj.userData.customH },
+                hasTopLayer: !!obj.userData.hasTopLayer,
+                shelfLayers: obj.userData.shelfLayers || 3,
+                images: obj.userData.type === 'pearl_board' ? { ...obj.userData.images } : { front: null, left: null, right: null }
+            }));
+            let dataStr = JSON.stringify(dataSnapshot, null, 2);
             let blob = new Blob([dataStr], { type: "application/json" });
             let url = URL.createObjectURL(blob);
             

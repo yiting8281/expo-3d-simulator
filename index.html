@@ -689,7 +689,7 @@
 
             <!-- 珍珠板獨立高度與輸出 -->
              <div id="pearl-board-control" class="section" style="display:none;background:rgba(255,159,10,.08);padding:10px;border-radius:8px;border:1px solid rgba(255,159,10,.3)">
-                <h4 style="font-size:12px;color:#ff9f0a;margin-bottom:8px">🪧 珍珠板自由配置與輸出</h4>
+                <h4 style="font-size:12px;color:#ff9f0a;margin-bottom:8px">🪧 珍珠板自由配置與輸出</h4><div style="font-size:11px;color:#aaa;margin-bottom:8px">⚡ 已啟用輕量貼圖模式：3D 預覽自動壓縮圖片；正式印刷請保留原始設計檔。</div>
                 <label>底部離地高度 (cm)，0 為落地</label>
                 <input type="number" id="pearl-bottom-cm" min="0" step="5" value="0" onchange="updatePearlBottomHeight()" style="width:100%;background:#202024;color:#fff;border:1px solid #555;padding:8px;border-radius:6px">
                 <div style="font-size:11px;color:#aaa;margin:8px 0">可跨越展具與牆面，拖曳時保留離地高度。尺寸欄位請填實際成品尺寸；厚度 D 預設 0.5cm。</div>
@@ -751,6 +751,16 @@
 
     <script>
         let scene, camera, renderer, orbitControls;
+        // 效能：只有場景或視角有變更時才繪圖，操作中上限 30 FPS。
+        let sceneNeedsRender = true;
+        let lastRenderTime = -Infinity;
+        const INTERACTIVE_FRAME_MS = 1000 / 30;
+        let previousCameraPositionForRender = new THREE.Vector3();
+        let previousCameraQuaternionForRender = new THREE.Quaternion();
+        let previousSelectionPositionForRender = new THREE.Vector3();
+        let previousSelectionRefForRender = null;
+        function invalidateRender() { sceneNeedsRender = true; }
+
         let draggableObjects = [];
         let wallObjects = []; 
         let selectedObject = null;
@@ -1024,6 +1034,7 @@
         }
 
         function saveToLocalStorage() {
+            invalidateRender();
             if (!currentProjectId || !projectsData[currentProjectId]) return;
 
             try {
@@ -1104,7 +1115,8 @@
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
             camera.position.set(0, 12, 15); 
 
-            renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+            renderer = new THREE.WebGLRenderer({ antialias: false, preserveDrawingBuffer: true, powerPreference: "high-performance" });
+            renderer.setPixelRatio(1); // 固定 1x，避免高 DPI 螢幕耗用大量 GPU 記憶體
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.outputEncoding = THREE.sRGBEncoding;
             container.appendChild(renderer.domElement);
@@ -1112,6 +1124,7 @@
             orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
             orbitControls.enableDamping = true;
             orbitControls.dampingFactor = 0.05;
+            orbitControls.addEventListener('change', invalidateRender);
             
             setOrbitControlsMode(false);
 
@@ -1144,6 +1157,10 @@
             window.addEventListener('keydown', onGlobalKeyDown);
             window.addEventListener('keyup', onGlobalKeyUp);
             window.addEventListener('resize', onWindowResize);
+            // 透過介面按鈕變更材質、物件、牆面後，安排下一次繪圖。
+            document.addEventListener('click', invalidateRender, true);
+            document.addEventListener('change', invalidateRender, true);
+            document.addEventListener('input', invalidateRender, true);
 
             render3DFloor();
             loadFromLocalStorage();
@@ -1270,6 +1287,7 @@
 
             let texture = new THREE.CanvasTexture(canvas);
             texture.encoding = THREE.sRGBEncoding;
+                    invalidateRender();
             return texture;
         }
 
@@ -1279,6 +1297,7 @@
         }
 
         function render3DFloor() {
+            invalidateRender();
             while(floorGroup.children.length > 0) floorGroup.remove(floorGroup.children[0]);
             while(structureGroup.children.length > 0) structureGroup.remove(structureGroup.children[0]);
             wallObjects.length = 0; 
@@ -1785,6 +1804,7 @@
         }
 
         function createObject(type, customPos = null, customRot = null, shouldSave = true, savedImages = null, hasTopLayer = false, shelfLayers = 3, customDims = null) {
+            invalidateRender();
             let data = OBJECT_TYPES[type];
             if (!data) return;
 
@@ -2113,7 +2133,7 @@
                     let canvas = document.createElement('canvas');
                     let ctx = canvas.getContext('2d');
                     
-                    let maxDim = 1024; 
+                    let maxDim = (selectedObject?.userData?.type === 'pearl_board') ? 768 : 1024; // 3D 模擬用圖，不保留印刷原稿像素
                     let w = img.width;
                     let h = img.height;
                     
@@ -2128,7 +2148,7 @@
                     ctx.fillRect(0, 0, w, h);
                     ctx.drawImage(img, 0, 0, w, h);
                     
-                    let base64Data = canvas.toDataURL('image/jpeg', 0.8);
+                    let base64Data = canvas.toDataURL('image/jpeg', selectedObject?.userData?.type === 'pearl_board' ? 0.70 : 0.8);
 
                     if (currentTargetUploadFace === 'custom_group') {
                         let checkboxes = document.querySelectorAll('.wall-custom-checkbox:checked');
@@ -2389,6 +2409,7 @@
 
                     let texture = new THREE.CanvasTexture(subCanvas);
                     texture.encoding = THREE.sRGBEncoding;
+                    invalidateRender();
 
                     if (Array.isArray(mesh.material)) {
                         let faceIdx = getWallInnerFaceIndex(mesh);
@@ -2481,6 +2502,7 @@
 
                 let texture = new THREE.CanvasTexture(canvas);
                 texture.encoding = THREE.sRGBEncoding;
+                    invalidateRender();
 
                 if (Array.isArray(mesh.material)) {
                     let faceIdx = getWallInnerFaceIndex(mesh);
@@ -2506,6 +2528,7 @@
 
                 let texture = new THREE.CanvasTexture(canvas);
                 texture.encoding = THREE.sRGBEncoding;
+                    invalidateRender();
 
                 if (Array.isArray(mesh.material)) {
                     let faceIdx = getWallInnerFaceIndex(mesh);
@@ -2553,6 +2576,7 @@
         }
 
         function applyTextureToFace(mesh, face, base64Data) {
+            invalidateRender();
             if (!mesh) return;
 
             let oldTarget = currentTargetUploadFace;
@@ -2585,6 +2609,7 @@
 
                             let texture = new THREE.CanvasTexture(canvas);
                             texture.encoding = THREE.sRGBEncoding;
+                    invalidateRender();
 
                             topBanner.material[4].map = texture;
                             topBanner.material[4].color.setHex(0xffffff);
@@ -2646,6 +2671,7 @@
 
                             let texture = new THREE.CanvasTexture(canvas);
                             texture.encoding = THREE.sRGBEncoding;
+                    invalidateRender();
                             targetWall.material.map = texture;
                             targetWall.material.color.setHex(0xffffff);
                             targetWall.material.needsUpdate = true;
@@ -2658,8 +2684,12 @@
                         }
                     }
                 } else if (Array.isArray(mesh.material)) {
-                    let canvasWidth = 1024;
-                    let canvasHeight = Math.min(4096, Math.max(128, Math.round(canvasWidth * (faceHeight / faceWidth))));
+                    // 限制貼圖長邊，避免窄側面被建立為 1024×4096 甚至更多。
+                    // 珍珠板薄側面不應使用大幅正面圖的解析度。
+                    let maxSide = type === 'pearl_board' ? 768 : 1024;
+                    let ratio = Math.max(0.01, faceHeight / Math.max(0.001, faceWidth));
+                    let canvasWidth = ratio >= 1 ? Math.max(16, Math.round(maxSide / ratio)) : maxSide;
+                    let canvasHeight = ratio >= 1 ? maxSide : Math.max(16, Math.round(maxSide * ratio));
                     let canvas = document.createElement('canvas');
                     let ctx = canvas.getContext('2d');
                     canvas.width = canvasWidth; canvas.height = canvasHeight;
@@ -2669,8 +2699,13 @@
 
                     let texture = new THREE.CanvasTexture(canvas);
                     texture.encoding = THREE.sRGBEncoding;
+                    invalidateRender();
 
+                    // 換圖前釋放原本 GPU 貼圖，避免反覆上傳後累積記憶體。
+                    let previousMap = mesh.material[faceIndex].map;
+                    invalidateRender();
                     mesh.material[faceIndex].map = texture;
+                    if (previousMap && previousMap !== texture) previousMap.dispose();
                     mesh.material[faceIndex].color.setHex(0xffffff); 
                     mesh.material[faceIndex].needsUpdate = true;
                 }
@@ -2826,6 +2861,7 @@
         }
 
         function selectObject(obj) {
+            invalidateRender();
             if (selectedObject && selectedObject !== obj) {
                 resetObjectMaterials(selectedObject);
             }
@@ -3276,15 +3312,22 @@
         }
 
         function onWindowResize() {
+            invalidateRender();
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        function animate() {
+        function animate(now = 0) {
             requestAnimationFrame(animate);
-            if (targetCameraPosition) camera.position.lerp(targetCameraPosition, ANIMATION_SPEED);
-            if (targetControlsTarget) orbitControls.target.lerp(targetControlsTarget, ANIMATION_SPEED);
+            if (targetCameraPosition) {
+                camera.position.lerp(targetCameraPosition, ANIMATION_SPEED);
+                invalidateRender();
+            }
+            if (targetControlsTarget) {
+                orbitControls.target.lerp(targetControlsTarget, ANIMATION_SPEED);
+                invalidateRender();
+            }
             if (targetCameraPosition && targetControlsTarget) {
                 if (camera.position.distanceTo(targetCameraPosition) < 0.01 && orbitControls.target.distanceTo(targetControlsTarget) < 0.01) {
                     camera.position.copy(targetCameraPosition);
@@ -3292,8 +3335,20 @@
                     targetCameraPosition = null; targetControlsTarget = null;
                 }
             }
+            // 保留 OrbitControls 慣性，但不再每一幀向 GPU 重畫全部場景。
             orbitControls.update();
+            if (!camera.position.equals(previousCameraPositionForRender) ||
+                !camera.quaternion.equals(previousCameraQuaternionForRender)) invalidateRender();
+            if (selectedObject !== previousSelectionRefForRender ||
+                (selectedObject && !selectedObject.position.equals(previousSelectionPositionForRender))) invalidateRender();
+            if (!sceneNeedsRender || now - lastRenderTime < INTERACTIVE_FRAME_MS) return;
             renderer.render(scene, camera);
+            lastRenderTime = now;
+            sceneNeedsRender = false;
+            previousCameraPositionForRender.copy(camera.position);
+            previousCameraQuaternionForRender.copy(camera.quaternion);
+            previousSelectionRefForRender = selectedObject;
+            if (selectedObject) previousSelectionPositionForRender.copy(selectedObject.position);
         }
 
         window.onload = init;
